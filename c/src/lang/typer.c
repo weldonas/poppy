@@ -267,7 +267,7 @@ const struct type * find_unexpr_type(struct parse_tree *tree, struct OUTER_TYPE_
                         // unexpr -> DEC IDENTIFIER
                         struct parse_tree *id; load_child_at(id, tree, 1);
                         const struct type *id_type = find_symbol_type(id, outer_map);
-                        return id_type && id_type->assignable ? id_type : NULL;
+                        return id_type && is_assignable(id_type) ? id_type : NULL;
                 case SYMBOL_IDENTIFIER:
                         // unexpr -> IDENTIFIER
                         return find_symbol_type(head, outer_map);
@@ -299,13 +299,13 @@ const struct type * find_multexpr_type(struct parse_tree *tree, struct OUTER_TYP
         // multexpr -> multexpr MOD unexpr
         struct parse_tree *op1; load_child_at(op1, tree, 0);
         const struct type *op1_type = find_multexpr_type(op1, outer_map);
-        if ((op1_type == NULL) || !op1_type->numeric){
+        if ((op1_type == NULL) || !is_numeric(op1_type)){
                 return NULL;
         }
 
         struct parse_tree *op2; load_child_at(op2, tree, 2);
         const struct type *op2_type = find_unexpr_type(op2, outer_map);
-        if ((op2_type == NULL) || !op2_type->numeric){
+        if ((op2_type == NULL) || !is_numeric(op2_type)){
                 return NULL;
         }
 
@@ -323,13 +323,13 @@ const struct type * find_addexpr_type(struct parse_tree *tree, struct OUTER_TYPE
         // addexpr -> addexpr MINUS multexpr
         struct parse_tree *op1; load_child_at(op1, tree, 0);
         const struct type *op1_type = find_addexpr_type(op1, outer_map);
-        if ((op1_type == NULL) || !op1_type->numeric){
+        if ((op1_type == NULL) || !is_numeric(op1_type)){
                 return NULL;
         }
 
         struct parse_tree *op2; load_child_at(op2, tree, 2);
         const struct type *op2_type = find_multexpr_type(op2, outer_map);
-        if ((op2_type == NULL) || !op2_type->numeric){
+        if ((op2_type == NULL) || !is_numeric(op2_type)){
                 return NULL;
         }
 
@@ -378,7 +378,7 @@ const struct type * find_uncond_type(struct parse_tree *tree, struct OUTER_TYPE_
                 return NULL;
         }
 
-        if (require_numeric && !op1_type->numeric){
+        if (require_numeric && !is_numeric(op1_type)){
                 return NULL;
         }
 

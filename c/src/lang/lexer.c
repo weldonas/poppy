@@ -7,7 +7,7 @@
 
 #define MAX_TOKEN_LENGTH 127
 
-bool is_numeric(char c){
+bool is_numeric_char(char c){
         return (c >= '0') && (c <= '9');
 }
 
@@ -50,7 +50,7 @@ struct lex_data find_numeric_value (FILE* file, char *val){
         ret.excess = 0;
         ret.val_len = 1;
         
-        while (!feof(file) && (ret.val_len <= MAX_TOKEN_LENGTH) && is_numeric(val[ret.val_len - 1])){
+        while (!feof(file) && (ret.val_len <= MAX_TOKEN_LENGTH) && is_numeric_char(val[ret.val_len - 1])){
                 val[ret.val_len] = fgetc(file);
                 ++ret.val_len;
         }
@@ -68,7 +68,7 @@ struct lex_data find_alphanumeric_value (FILE* file, char *val){
         ret.excess = 0;
         ret.val_len = 1;
         
-        while (!feof(file) && (ret.val_len <= MAX_TOKEN_LENGTH) && (is_numeric(val[ret.val_len - 1]) || is_alphabetic(val[ret.val_len - 1]))){
+        while (!feof(file) && (ret.val_len <= MAX_TOKEN_LENGTH) && (is_numeric_char(val[ret.val_len - 1]) || is_alphabetic(val[ret.val_len - 1]))){
                 val[ret.val_len] = fgetc(file);
                 ++ret.val_len;
         }
@@ -315,7 +315,7 @@ struct LIST(token)* lex(FILE *file){
                         default:
                                 if (is_alphabetic(val[0])){
                                         data = find_alphanumeric_value(file, val);
-                                } else if (is_numeric(val[0])){
+                                } else if (is_numeric_char(val[0])){
                                         data = find_numeric_value(file, val);
                                 }
                 }
