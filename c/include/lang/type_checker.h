@@ -1,5 +1,5 @@
-#ifndef TYPER_H
-#define TYPER_H
+#ifndef TYPE_CHECKER_H
+#define TYPE_CHECKER_H
 
 #include "data/map.h"
 #include "lang/parser.h"

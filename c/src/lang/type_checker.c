@@ -1,4 +1,4 @@
-#include "lang/typer.h"
+#include "lang/type_checker.h"
 
 #include <assert.h>
 #include <stdlib.h>
