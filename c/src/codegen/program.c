@@ -68,39 +68,37 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 strcpy(ret, instr);
                                 return ret;
                         }
-
-                        return generate_from_tree(tree->children->head->data, functions, within);
-                } else if (child_symbol == SYMBOL_IF){
-                        struct parse_tree *cond; load_child_at(cond, tree, 2);
-                        char *cond_code = generate_from_tree(cond, functions, within);
-                        struct parse_tree *then; load_child_at(then, tree, 5);
-                        char *then_code = generate_from_tree(then, functions, within);
-                        struct parse_tree *optelse;  load_child_at(optelse, tree, 7);
-
-                        if ((optelse->children == NULL) || (optelse->children->len == 0)){
-                                return if_stmt(cond_code, then_code, NULL);
-                        }
-
-                        struct parse_tree *else_stmts; load_child_at(else_stmts, optelse, 2);
-                        char *else_code = generate_from_tree(else_stmts, functions, within);
-                        return if_stmt(cond_code, then_code, else_code);
-                } else if (child_symbol == SYMBOL_WHILE){
-                        struct parse_tree *cond; load_child_at(cond, tree, 2);
-                        char *cond_code = generate_from_tree(cond, functions, within);
-                        struct parse_tree *stmts; load_child_at(stmts, tree, 5);
-                        char *stmts_code = generate_from_tree(stmts, functions, within);
-                        return while_loop(cond_code, stmts_code);
-                } else if (child_symbol == SYMBOL_FOR){
-                        struct parse_tree *init; load_child_at(init, tree, 2);
-                        char *init_code = generate_from_tree(init, functions, within);
-                        struct parse_tree *cond; load_child_at(cond, tree, 4);
-                        char *cond_code = generate_from_tree(cond, functions, within);
-                        struct parse_tree *post; load_child_at(post, tree, 6);
-                        char *post_code = generate_from_tree(post, functions, within);
-                        struct parse_tree *body; load_child_at(body, tree, 9);
-                        char *body_code = generate_from_tree(body, functions, within);
-                        return for_loop(init_code, cond_code, post_code, body_code);      
                 }
+                return generate_from_tree(tree->children->head->data, functions, within);
+        } else if (symbol == SYMBOL_IFSTMT){
+                struct parse_tree *cond; load_child_at(cond, tree, 2);
+                char *cond_code = generate_from_tree(cond, functions, within);
+                struct parse_tree *then; load_child_at(then, tree, 5);
+                char *then_code = generate_from_tree(then, functions, within);
+                struct parse_tree *optelse;  load_child_at(optelse, tree, 7);
+
+                if ((optelse->children == NULL) || (optelse->children->len == 0)){
+                        return if_stmt(cond_code, then_code, NULL);
+                }
+                struct parse_tree *else_stmts; load_child_at(else_stmts, optelse, 2);
+                char *else_code = generate_from_tree(else_stmts, functions, within);
+                return if_stmt(cond_code, then_code, else_code);
+        } else if (symbol == SYMBOL_WHILESTMT){
+                struct parse_tree *cond; load_child_at(cond, tree, 2);
+                char *cond_code = generate_from_tree(cond, functions, within);
+                struct parse_tree *stmts; load_child_at(stmts, tree, 5);
+                char *stmts_code = generate_from_tree(stmts, functions, within);
+                return while_loop(cond_code, stmts_code);
+        } else if (symbol == SYMBOL_FORSTMT){
+                struct parse_tree *init; load_child_at(init, tree, 2);
+                char *init_code = generate_from_tree(init, functions, within);
+                struct parse_tree *cond; load_child_at(cond, tree, 4);
+                char *cond_code = generate_from_tree(cond, functions, within);
+                struct parse_tree *post; load_child_at(post, tree, 6);
+                char *post_code = generate_from_tree(post, functions, within);
+                struct parse_tree *body; load_child_at(body, tree, 9);
+                char *body_code = generate_from_tree(body, functions, within);
+                return for_loop(init_code, cond_code, post_code, body_code);      
         } else if (symbol == SYMBOL_SEMISTMT){
                 return generate_from_tree(tree->children->head->data, functions, within);
         } else if (symbol == SYMBOL_VARDEC){

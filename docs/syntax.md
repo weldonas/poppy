@@ -35,11 +35,14 @@ $$\begin{align*}
 \text{ret} &\rightarrow \text{HOP}  \\
 \text{ret} &\rightarrow \text{HOP} {type} \\
 \text{semistmt} &\rightarrow \text{expr} \\
-\text{stmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE stmts RBRACE optelse}  \\
+\text{stmt} &\rightarrow \text{ifstmt}  \\
+\text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE stmts RBRACE optelse}  \\
 \text{optelse} &\rightarrow \varnothing  \\
 \text{optelse} &\rightarrow \text{ELSE LBRACE stmts RBRACE}  \\
-\text{stmt} &\rightarrow \text{WHILE LPAREN expr RPAREN LBRACE stmts RBRACE}  \\
-\text{stmt} &\rightarrow \text{FOR LPAREN semistmt SEMICOLON expr SEMICOLON semistmt RPAREN LBRACE stmts RBRACE}  \\
+\text{stmt} &\rightarrow \text{whilestmt}  \\
+\text{whilestmt} &\rightarrow \text{WHILE LPAREN expr RPAREN LBRACE stmts RBRACE}  \\
+\text{stmt} &\rightarrow \text{forstmt}  \\
+\text{forstmt} &\rightarrow \text{FOR LPAREN semistmt SEMICOLON expr SEMICOLON semistmt RPAREN LBRACE stmts RBRACE}  \\
 \text{expr} &\rightarrow \text{orcond}  \\
 \text{orcond} &\rightarrow \text{orcond OR andcond}  \\
 \text{orcond} &\rightarrow \text{andcond}  \\

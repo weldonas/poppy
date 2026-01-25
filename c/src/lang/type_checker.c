@@ -340,7 +340,7 @@ const struct type * find_uncond_type(struct parse_tree *tree, struct OUTER_TYPE_
 
         if (tree->children->len == 1){
                 if (tree->children->head->data->data.type == SYMBOL_CALL){
-                        // uncond -> call
+                        // uncond -> call 
                         return find_parse_tree_type(tree->children->head->data, outer_map, NULL);
                 }
 
@@ -432,12 +432,6 @@ const struct type * find_orcond_type(struct parse_tree *tree, struct OUTER_TYPE_
 
 const struct type * find_expr_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_EXPR);
-        // expr -> addexpr
-        if (tree->children->head->data->data.type == SYMBOL_ADDEXPR){
-                return find_parse_tree_type(tree->children->head->data, outer_map, NULL);
-        }
-
-        // expr -> orcond
         return find_parse_tree_type(tree->children->head->data, outer_map, NULL);
 }
 
@@ -449,13 +443,8 @@ const struct type * find_semistmt_type(struct parse_tree *tree, struct OUTER_TYP
                         // semistmt -> ASM LPAREN STRINGLIT RPAREN
                         return void_type();
                 case SYMBOL_VARDEC:
-                        // semistmt -> vardec
-                        return find_parse_tree_type(child, outer_map, scope_map);
                 case SYMBOL_VARASST:
-                        // semistmt -> varasst
-                        return find_parse_tree_type(child, outer_map, scope_map);
                 case SYMBOL_RET:
-                        // semistmt -> ret
                         return find_parse_tree_type(child, outer_map, scope_map);
                 case SYMBOL_EXPR:
                         // semistmt -> expr
@@ -465,8 +454,8 @@ const struct type * find_semistmt_type(struct parse_tree *tree, struct OUTER_TYP
         }
 }
 
-const struct type * find_if_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_STMT);
+const struct type * find_ifstmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
+        verify_type(tree, SYMBOL_IFSTMT);
         // stmt -> IF LPAREN cond RPAREN LBRACE stmts RBRACE optelse
         struct parse_tree *if_stmts; load_child_at(if_stmts, tree, 5);
         struct MAP(string, type) *if_map = new_inner_map();
@@ -495,8 +484,8 @@ const struct type * find_if_type(struct parse_tree *tree, struct OUTER_TYPE_MAP 
         return if_type;
 }
 
-const struct type * find_while_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_STMT);
+const struct type * find_whilestmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
+        verify_type(tree, SYMBOL_WHILESTMT);
         struct parse_tree *cond; load_child_at(cond, tree, 2);
         const struct type *cond_type = find_parse_tree_type(cond, outer_map, NULL);
         if ((cond_type == NULL) || (!equals_type(cond_type, bool_type()))){
@@ -509,8 +498,8 @@ const struct type * find_while_type(struct parse_tree *tree, struct OUTER_TYPE_M
         return find_parse_tree_type(body, outer_map, body_map);
 }
 
-const struct type * find_for_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_STMT);
+const struct type * find_forstmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
+        verify_type(tree, SYMBOL_FORSTMT);
         struct MAP(string, type) *scope_map = new_inner_map();
         update_map(outer_map, tree, scope_map, parse_tree, MAP(string, type));
 
@@ -539,16 +528,13 @@ const struct type * find_for_type(struct parse_tree *tree, struct OUTER_TYPE_MAP
 
 const struct type * find_stmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         verify_type(tree, SYMBOL_STMT);
-        switch(tree->children->head->data->data.type){
+        struct parse_tree *child = tree->children->head->data;
+        switch(child->data.type){
                 case SYMBOL_SEMISTMT:
-                        // stmt -> semistmt SEMICOLON
-                        return find_parse_tree_type(tree->children->head->data, outer_map, scope_map);
-                case SYMBOL_IF:
-                        return find_if_type(tree, outer_map);
-                case SYMBOL_WHILE:
-                        return find_while_type(tree, outer_map);
-                case SYMBOL_FOR:
-                        return find_for_type(tree, outer_map);
+                case SYMBOL_IFSTMT:
+                case SYMBOL_WHILESTMT:
+                case SYMBOL_FORSTMT:
+                        return find_parse_tree_type(child, outer_map, scope_map);
                 default:
                         return NULL;
         }
@@ -613,12 +599,12 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                 case SYMBOL_SEMISTMT:
                         assert(scope_map != NULL);
                         return find_semistmt_type(tree, outer_map, scope_map);
-                case SYMBOL_IF:
-                        return find_if_type(tree, outer_map);
-                case SYMBOL_WHILE:
-                        return find_while_type(tree, outer_map);
-                case SYMBOL_FOR:
-                        return find_for_type(tree, outer_map);
+                case SYMBOL_IFSTMT:
+                        return find_ifstmt_type(tree, outer_map);
+                case SYMBOL_WHILESTMT:
+                        return find_whilestmt_type(tree, outer_map);
+                case SYMBOL_FORSTMT:
+                        return find_forstmt_type(tree, outer_map);
                 case SYMBOL_STMT:
                         assert(scope_map != NULL);
                         return find_stmt_type(tree, outer_map, scope_map);
