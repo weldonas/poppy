@@ -4,6 +4,7 @@
 #include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
+#include "lang/type_checker.h"
 
 #define MAX_CONDITION_COUNT 16
 
@@ -32,7 +33,11 @@ struct type_rule_condition {
 struct type_rule {
         const struct type_rule_condition *conditions[MAX_CONDITION_COUNT];
         size_t conditions_len;
-        const struct type *output_type;
+        bool has_output_type;
+        union {
+                const struct type *output_type;
+                size_t output_index;
+        };
 };
 
 struct type_system {
@@ -46,11 +51,12 @@ const struct type_rule_condition *const new_symbol_at_condition(size_t index, en
 const struct type_rule_condition *const new_type_at_condition(size_t index, bool (*is_valid)(const struct type *));
 
 const struct type_rule *const new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type);
+const struct type_rule *const new_index_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t output_index);
 void free_type_rule(const struct type_rule *type_rule);
 
 const struct type_system *const new_type_system(const struct type_rule **rules, size_t rules_len);
 void free_type_system(const struct type_system *type_system);
 
-const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree);
+const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
 
 #endif

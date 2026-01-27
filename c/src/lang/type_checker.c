@@ -542,8 +542,7 @@ const struct type * find_stmts_type(struct parse_tree *tree, struct OUTER_TYPE_M
 
 const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         const struct type_system *const system = get_poppy_type_system();
-        const struct type *const type = find_type(system, tree);
-
+        const struct type *const type = find_type(system, tree, outer_map, scope_map);
         if (type){
                 return type;
         }

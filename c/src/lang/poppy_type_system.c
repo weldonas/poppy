@@ -8,6 +8,10 @@
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
 
+bool is_bool_type(const struct type *const type){
+        return type && equals_type(type, bool_type());
+}
+
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
                 return poppy_type_system;
@@ -52,4 +56,9 @@ const struct type_system *const get_poppy_type_system(){
         return poppy_type_system;
 }
 
-void free_poppy_type_system();
+void free_poppy_type_system(){
+        if (poppy_type_system != NULL){
+                free_type_system(poppy_type_system);
+                poppy_type_system = NULL;
+        }
+}
