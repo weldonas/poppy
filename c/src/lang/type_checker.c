@@ -5,7 +5,9 @@
 #include <string.h>
 
 #include "data/map.h"
+#include "lang/poppy_type_system.h"
 #include "lang/type.h"
+#include "lang/type_system.h"
 
 #define OUTER_TYPE_MAP_ENTRY parse_tree_string_type_map_map_entry
 
@@ -51,24 +53,7 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
 
 const struct type * find_type_type(struct parse_tree *tree){
         verify_type(tree, SYMBOL_TYPE);
-        // type -> INT
-        // type -> VOID
-        // type -> CHAR
-        // type -> BOOL
-        struct parse_tree *child = tree->children->head->data;
-
-        switch (child->data.type){
-                case SYMBOL_INT:
-                        return int_type();
-                case SYMBOL_VOID:
-                        return void_type();
-                case SYMBOL_CHAR:
-                        return char_type();
-                case SYMBOL_BOOL:
-                        return bool_type();
-                default:
-                        return NULL;
-        }
+        return find_parse_tree_type(tree->children->head->data, NULL, NULL);
 }
 
 const struct type * find_symbol_type(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *outer_map){
@@ -529,15 +514,7 @@ const struct type * find_forstmt_type(struct parse_tree *tree, struct OUTER_TYPE
 const struct type * find_stmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         verify_type(tree, SYMBOL_STMT);
         struct parse_tree *child = tree->children->head->data;
-        switch(child->data.type){
-                case SYMBOL_SEMISTMT:
-                case SYMBOL_IFSTMT:
-                case SYMBOL_WHILESTMT:
-                case SYMBOL_FORSTMT:
-                        return find_parse_tree_type(child, outer_map, scope_map);
-                default:
-                        return NULL;
-        }
+        return find_parse_tree_type(child, outer_map, scope_map);
 }
 
 const struct type * find_stmts_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
@@ -564,6 +541,13 @@ const struct type * find_stmts_type(struct parse_tree *tree, struct OUTER_TYPE_M
 }
 
 const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
+        const struct type_system *const system = get_poppy_type_system();
+        const struct type *const type = find_type(system, tree);
+
+        if (type){
+                return type;
+        }
+        
         switch (tree->data.type) {
                 case SYMBOL_STMTS:
                         assert(scope_map != NULL);
