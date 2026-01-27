@@ -1,4 +1,6 @@
 #include "lang/type_system.h"
+#include "lang/symbol.h"
+#include "lang/type_checker.h"
 #include <stddef.h>
 
 #define load_child_at(var, tree, n)                                        \
@@ -34,7 +36,7 @@ const struct type_rule_condition *const new_symbol_at_condition(size_t index, en
 
 const struct type_rule_condition *const new_type_at_condition(size_t index, bool (*is_valid)(const struct type *)){
         struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_SYMBOL_AT;
+        ptr->type = CONDITION_TYPE_AT;
         ptr->index = index;
         ptr->is_valid = is_valid;
         return ptr; 
@@ -95,7 +97,6 @@ bool applies_condition(const struct type_rule_condition *const condition, const 
                         load_child_at(child, tree, condition->index);
                         return child->data.type == condition->symbol;
                 case CONDITION_TYPE_AT:
-                        // TODO fill this in
                         load_child_at(child, tree, condition->index);
                         const struct type *const child_type = find_type(system, child, outer_map, scope_map);
                         return condition->is_valid(child_type);
@@ -122,6 +123,13 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
 }
 
 const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
+        if (tree->data.type == SYMBOL_IDENTIFIER){
+                return find_symbol_type(tree, outer_map);
+        }
+        else if (tree->data.type == SYMBOL_CALL){
+                return find_call_type(tree, outer_map);
+        }
+
         for (size_t i = 0; i < system->rules_len; ++i){
                 const struct type *const output = apply(system->rules[i], system, tree, outer_map, scope_map);
                 if (output){

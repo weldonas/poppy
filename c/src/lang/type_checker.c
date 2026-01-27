@@ -236,11 +236,6 @@ const struct type * find_unexpr_type(struct parse_tree *tree, struct OUTER_TYPE_
         struct parse_tree *head = tree->children->head->data;
 
         switch (head->data.type){
-                case SYMBOL_MINUS:
-                        // unexpr -> MINUS UNEXPR
-                        struct parse_tree *unexpr; load_child_at(unexpr, tree, 1);
-                        const struct type *type = find_parse_tree_type(unexpr, outer_map, NULL);
-                        return type && equals_type(type, int_type()) ? int_type() : NULL;
                 case SYMBOL_LPAREN:
                         // unexpr -> LPAREN expr RPAREN
                         struct parse_tree *expr; load_child_at(expr, tree, 1);
@@ -252,20 +247,6 @@ const struct type * find_unexpr_type(struct parse_tree *tree, struct OUTER_TYPE_
                         struct parse_tree *id; load_child_at(id, tree, 1);
                         const struct type *id_type = find_symbol_type(id, outer_map);
                         return id_type && is_assignable(id_type) ? id_type : NULL;
-                case SYMBOL_IDENTIFIER:
-                        // unexpr -> IDENTIFIER
-                        return find_symbol_type(head, outer_map);
-                case SYMBOL_CALL:
-                        // unexpr -> call
-                        return find_parse_tree_type(head, outer_map, NULL);
-
-                case SYMBOL_CONSTANT:
-                        // unexpr -> CONSTANT
-                        return int_type();
-                
-                case SYMBOL_CHARLIT:
-                        // unexpr -> CHARLIT
-                        return char_type();
                 default:
                         return NULL;
         }
