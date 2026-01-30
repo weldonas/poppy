@@ -1,4 +1,5 @@
 #include "lang/type_system.h"
+#include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type_checker.h"
 #include <stddef.h>
@@ -119,7 +120,32 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
 
         struct parse_tree *child; load_child_at(child, tree, type_rule->output_index);
         // FIXME: this may result in evaluating the same tree twice
-        return find_type(system, child, outer_map, scope_map);
+
+
+        if (tree->data.type == SYMBOL_UNEXPR && tree->children->head->data->data.type == SYMBOL_LPAREN){
+                printf("HERE!\n");
+        }
+        printf("%s   ", symbol_name(child->data.type));
+        if (child->children){
+                for (struct parse_tree_list_node *n = child->children->head; n != NULL; n = n->next){
+                        printf("%s ", symbol_name(n->data->data.type));
+                }
+                printf("(%d)", child->children->len);
+        }
+        printf("\n");
+
+        const struct type *const type = find_type(system, child, outer_map, scope_map);
+        if (!type){
+                printf("X ");
+                if (child->children){
+                        for (struct parse_tree_list_node *n = child->children->head; n != NULL; n = n->next){
+                                printf("%s ", symbol_name(n->data->data.type));
+                        }
+                        printf("(%d)", child->children->len);
+                }
+                printf("\n");
+        }
+        return type;
 }
 
 const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
@@ -133,6 +159,7 @@ const struct type *const find_type(const struct type_system *const system, struc
         for (size_t i = 0; i < system->rules_len; ++i){
                 const struct type *const output = apply(system->rules[i], system, tree, outer_map, scope_map);
                 if (output){
+                        printf("\n");
                         return output;
                 }
         }
