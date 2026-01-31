@@ -154,24 +154,6 @@ const struct type * find_vardec_type(struct parse_tree *tree, struct OUTER_TYPE_
         return void_type();
 }
 
-const struct type * find_varasst_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_VARASST);
-        // varasst -> IDENTIFIER ASSIGN expr
-        struct parse_tree *id = tree->children->head->data;
-        const struct type *var_type = find_symbol_type(id, outer_map);
-        if (var_type == NULL){
-                return NULL;
-        }
-
-        struct parse_tree *expr; load_child_at(expr, tree, 2);
-        const struct type *expr_type = find_parse_tree_type(expr, outer_map, NULL);
-        if ((expr_type == NULL) || !equals_type(var_type, expr_type)){
-                return NULL;
-        }
-
-        return void_type();
-}
-
 const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_CALL);
         // call -> IDENTIFIER LPAREN optargs RPAREN
@@ -353,8 +335,6 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                 case SYMBOL_VARDEC:
                         assert(scope_map != NULL);
                         return find_vardec_type(tree, outer_map, scope_map);
-                case SYMBOL_VARASST:
-                        return find_varasst_type(tree, outer_map);
                 case SYMBOL_SEMISTMT:
                         assert(scope_map != NULL);
                         return find_semistmt_type(tree, outer_map, scope_map);

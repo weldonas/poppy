@@ -1,6 +1,7 @@
 #include "lang/type_system.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
+#include "lang/type.h"
 #include "lang/type_checker.h"
 #include <stddef.h>
 
@@ -43,6 +44,13 @@ const struct type_rule_condition *const new_type_at_condition(size_t index, bool
         ptr->index = index;
         ptr->is_valid = is_valid;
         return ptr; 
+}
+const struct type_rule_condition *const new_types_equal_at_condition(size_t index1, size_t index2){
+        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
+        ptr->type = CONDITION_TYPES_EQUAL_AT;
+        ptr->index1 = index1;
+        ptr->index2 = index2;
+        return ptr;  
 }
 
 const struct type_rule *const new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type){
@@ -112,11 +120,24 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                         case CONDITION_TYPE_AT:
                                 load_child_at(child, tree, condition->index);
                                 if (!child_type_computed[condition->index]) {
-                                        child_types[condition->index] =
-                                        find_type(system, child, outer_map, scope_map);
+                                        child_types[condition->index] = find_type(system, child, outer_map, scope_map);
                                         child_type_computed[condition->index] = true;
                                 }
                                 satisfied = condition->is_valid(child_types[condition->index]);
+                                break;
+                        case CONDITION_TYPES_EQUAL_AT:
+                                struct parse_tree *child1; load_child_at(child1, tree, condition->index1);
+                                struct parse_tree *child2; load_child_at(child2, tree, condition->index2);
+                                if (!child_type_computed[condition->index1]) {
+                                        child_types[condition->index1] = find_type(system, child1, outer_map, scope_map);
+                                        child_type_computed[condition->index1] = true;
+                                }
+                                if (!child_type_computed[condition->index2]) {
+                                        child_types[condition->index2] = find_type(system, child2, outer_map, scope_map);
+                                        child_type_computed[condition->index2] = true;
+                                }
+                                satisfied = child_types[condition->index1] && child_types[condition->index2] && equals_type(child_types[condition->index1], child_types[condition->index2]);
+                                break;
                 }
 
                 if (!satisfied) {

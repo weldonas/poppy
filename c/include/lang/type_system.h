@@ -12,7 +12,8 @@ enum type_rule_condition_type {
         CONDITION_LENGTH,
         CONDITION_PARENT_SYMBOL,
         CONDITION_SYMBOL_AT,
-        CONDITION_TYPE_AT
+        CONDITION_TYPE_AT,
+        CONDITION_TYPES_EQUAL_AT
 };
 
 struct type_rule_condition {
@@ -26,6 +27,10 @@ struct type_rule_condition {
                                 enum symbol symbol;
                                 bool (*is_valid)(const struct type *);
                         };
+                };
+                struct {
+                        size_t index1;
+                        size_t index2;
                 };
         };
 };
@@ -49,6 +54,7 @@ const struct type_rule_condition *const new_length_condition(size_t length);
 const struct type_rule_condition *const new_parent_symbol_condition(enum symbol parent_symbol);
 const struct type_rule_condition *const new_symbol_at_condition(size_t index, enum symbol symbol);
 const struct type_rule_condition *const new_type_at_condition(size_t index, bool (*is_valid)(const struct type *));
+const struct type_rule_condition *const new_types_equal_at_condition(size_t index1, size_t index2);
 
 const struct type_rule *const new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type);
 const struct type_rule *const new_index_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t output_index);
