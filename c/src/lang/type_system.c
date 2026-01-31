@@ -4,6 +4,8 @@
 #include "lang/type_checker.h"
 #include <stddef.h>
 
+#define MAX_CHILDREN 16
+
 #define load_child_at(var, tree, n)                                        \
         do {                                                               \
                 struct LIST_NODE(parse_tree) *node = tree->children->head; \
@@ -87,65 +89,54 @@ void free_type_system(const struct type_system *type_system){
         free((void*) type_system);
 }
 
-bool applies_condition(const struct type_rule_condition *const condition, const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        struct parse_tree *child;
-        switch(condition->type){
-                case CONDITION_LENGTH:
-                        return tree->children->len == condition->length;
-                case CONDITION_PARENT_SYMBOL:
-                        return tree->data.type == condition->parent_symbol;
-                case CONDITION_SYMBOL_AT:
-                        load_child_at(child, tree, condition->index);
-                        return child->data.type == condition->symbol;
-                case CONDITION_TYPE_AT:
-                        load_child_at(child, tree, condition->index);
-                        const struct type *const child_type = find_type(system, child, outer_map, scope_map);
-                        return condition->is_valid(child_type);
-        }
-
-        return false;
-}
-
 const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        for (size_t i = 0; i < type_rule->conditions_len; ++i){
+        const struct type *child_types[MAX_CHILDREN] = {0};
+        bool child_type_computed[MAX_CHILDREN] = {0};
+
+        for (size_t i = 0; i < type_rule->conditions_len; ++i) {
                 const struct type_rule_condition *condition = type_rule->conditions[i];
-                if (!applies_condition(condition, system, tree, outer_map, scope_map)){
+                struct parse_tree *child = NULL;
+                bool satisfied = false;
+
+                switch (condition->type) {
+                        case CONDITION_LENGTH:
+                                satisfied = tree->children->len == condition->length;
+                                break;
+                        case CONDITION_PARENT_SYMBOL:
+                                satisfied = tree->data.type == condition->parent_symbol;
+                                break;
+                        case CONDITION_SYMBOL_AT:
+                                load_child_at(child, tree, condition->index);
+                                satisfied = child->data.type == condition->symbol;
+                                break;
+                        case CONDITION_TYPE_AT:
+                                load_child_at(child, tree, condition->index);
+                                if (!child_type_computed[condition->index]) {
+                                        child_types[condition->index] =
+                                        find_type(system, child, outer_map, scope_map);
+                                        child_type_computed[condition->index] = true;
+                                }
+                                satisfied = condition->is_valid(child_types[condition->index]);
+                }
+
+                if (!satisfied) {
                         return NULL;
                 }
         }
 
-        if (type_rule->has_output_type){
+        if (type_rule->has_output_type) {
                 return type_rule->output_type;
         }
 
-        struct parse_tree *child; load_child_at(child, tree, type_rule->output_index);
-        // FIXME: this may result in evaluating the same tree twice
+        size_t out = type_rule->output_index;
 
+        if (!child_type_computed[out]) {
+                struct parse_tree *child;
+                load_child_at(child, tree, out);
+                child_types[out] = find_type(system, child, outer_map, scope_map);
+        }
 
-        if (tree->data.type == SYMBOL_UNEXPR && tree->children->head->data->data.type == SYMBOL_LPAREN){
-                printf("HERE!\n");
-        }
-        printf("%s   ", symbol_name(child->data.type));
-        if (child->children){
-                for (struct parse_tree_list_node *n = child->children->head; n != NULL; n = n->next){
-                        printf("%s ", symbol_name(n->data->data.type));
-                }
-                printf("(%d)", child->children->len);
-        }
-        printf("\n");
-
-        const struct type *const type = find_type(system, child, outer_map, scope_map);
-        if (!type){
-                printf("X ");
-                if (child->children){
-                        for (struct parse_tree_list_node *n = child->children->head; n != NULL; n = n->next){
-                                printf("%s ", symbol_name(n->data->data.type));
-                        }
-                        printf("(%d)", child->children->len);
-                }
-                printf("\n");
-        }
-        return type;
+        return child_types[out];
 }
 
 const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
@@ -159,7 +150,6 @@ const struct type *const find_type(const struct type_system *const system, struc
         for (size_t i = 0; i < system->rules_len; ++i){
                 const struct type *const output = apply(system->rules[i], system, tree, outer_map, scope_map);
                 if (output){
-                        printf("\n");
                         return output;
                 }
         }
