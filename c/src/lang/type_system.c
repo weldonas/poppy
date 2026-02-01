@@ -53,12 +53,21 @@ const struct type_rule_condition *const new_types_equal_at_condition(size_t inde
         return ptr;  
 }
 
+const struct type_rule_side_effect *const new_add_symbol_side_effect(size_t name_index, size_t type_index){
+        struct type_rule_side_effect *ptr = (struct type_rule_side_effect*) malloc(sizeof(struct type_rule_side_effect));
+        ptr->type = SIDE_EFFECT_ADD_SYMBOL;
+        ptr->name_index = name_index;
+        ptr->type_index = type_index;
+        return ptr;
+}
+
 const struct type_rule *const new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type){
         struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
                 ptr->conditions[i] = conditions[i];
         }
         ptr->conditions_len = conditions_len;
+        ptr->side_effects_len = 0;
         ptr->has_output_type = true;
         ptr->output_type = output_type;
         return ptr;
@@ -70,14 +79,49 @@ const struct type_rule *const new_index_type_rule(const struct type_rule_conditi
                 ptr->conditions[i] = conditions[i];
         }
         ptr->conditions_len = conditions_len;
+        ptr->side_effects_len = 0;
         ptr->has_output_type = false;
         ptr->output_index = output_index;
         return ptr;
 }
 
+const struct type_rule *const new_side_effect_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type_rule_side_effect *side_effects[MAX_CONDITION_COUNT], size_t side_effects_len, const struct type *const output_type){
+        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        for (size_t i = 0; i < conditions_len; ++i){
+                ptr->conditions[i] = conditions[i];
+        }
+        ptr->conditions_len = conditions_len;
+        for (size_t i = 0; i < side_effects_len; ++i){
+                ptr->side_effects[i] = side_effects[i];
+        }
+        ptr->side_effects_len = side_effects_len;
+        ptr->has_output_type = true;
+        ptr->output_type = output_type;
+        return ptr;  
+}
+
+const struct type_rule *const new_index_side_effect_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type_rule_side_effect *side_effects[MAX_CONDITION_COUNT], size_t side_effects_len, size_t output_index){
+        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        for (size_t i = 0; i < conditions_len; ++i){
+                ptr->conditions[i] = conditions[i];
+        }
+        ptr->conditions_len = conditions_len;
+        for (size_t i = 0; i < side_effects_len; ++i){
+                ptr->side_effects[i] = side_effects[i];
+        }
+        ptr->side_effects_len = side_effects_len;
+        ptr->has_output_type = false;
+        ptr->output_index = output_index;
+        return ptr;  
+}
+
 void free_type_rule(const struct type_rule *type_rule){
         for (size_t i = 0; i < type_rule->conditions_len; ++i){
                 free((void*) type_rule->conditions[i]);
+        }
+
+        for (size_t i = 0; i < type_rule->side_effects_len; ++i){
+                free((void*) type_rule->side_effects[i]);
         }
 
         free((void*) type_rule);
@@ -108,7 +152,7 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
 
                 switch (condition->type) {
                         case CONDITION_LENGTH:
-                                satisfied = tree->children->len == condition->length;
+                                satisfied = (!tree->children && (condition->length == 0)) || (tree->children->len == condition->length);
                                 break;
                         case CONDITION_PARENT_SYMBOL:
                                 satisfied = tree->data.type == condition->parent_symbol;
@@ -142,6 +186,28 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
 
                 if (!satisfied) {
                         return NULL;
+                }
+        }
+
+        for (size_t i = 0; i < type_rule->side_effects_len; ++i){
+                const struct type_rule_side_effect *side_effect = type_rule->side_effects[i];
+                switch (side_effect->type){
+                        case SIDE_EFFECT_ADD_SYMBOL:
+                                struct parse_tree *child; load_child_at(child, tree, side_effect->name_index);
+                                struct string *str = (struct string*) malloc(sizeof(struct string));
+                                str->data = child->data.value;
+                                const struct type *t; query_map(scope_map, str, t, string, type);
+                                if (t != NULL){
+                                        free(str);
+                                        return NULL;
+                                }
+                                if (!child_type_computed[side_effect->type_index]) {
+                                        load_child_at(child, tree, side_effect->type_index);
+                                        child_types[side_effect->type_index] = find_type(system, child, outer_map, scope_map);
+                                        child_type_computed[side_effect->type_index] = true;
+                                }
+                                update_map(scope_map, str, child_types[side_effect->type_index], string, type);
+                                break;
                 }
         }
 

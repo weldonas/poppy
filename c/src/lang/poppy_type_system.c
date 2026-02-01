@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 33
+#define RULE_COUNT 40
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -24,12 +24,21 @@ bool is_non_null_bool_type(const struct type *const type){
         return type && equals_type(type, bool_type());
 }
 
+bool is_non_null_assignable_type(const struct type *const type){
+        return type && is_assignable(type);
+}
+
+bool is_non_null_type(const struct type *const type){
+        return type;
+}
+
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
                 return poppy_type_system;
         }
 
         const struct type_rule_condition *conditions[MAX_CONDITION_COUNT];
+        const struct type_rule_side_effect *side_effects[MAX_SIDE_EFFECT_COUNT];
         size_t i = 0;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
@@ -213,6 +222,47 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_types_equal_at_condition(0, 2);
         rules[i] = new_type_rule(conditions, 2, void_type());
         ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
+        side_effects[0] = new_add_symbol_side_effect(2, 1);
+        rules[i] = new_side_effect_type_rule(conditions, 3, side_effects, 1, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
+        conditions[1] = new_length_condition(5);
+        conditions[2] = new_types_equal_at_condition(1, 4);
+        side_effects[0] = new_add_symbol_side_effect(2, 1);
+        rules[i] = new_side_effect_type_rule(conditions, 3, side_effects, 1, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_ASM);
+        rules[i] = new_type_rule(conditions, 2, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_VARDEC);
+        rules[i] = new_index_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_VARASST);
+        rules[i] = new_index_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_RET);
+        rules[i] = new_index_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_EXPR);
+        conditions[2] = new_type_at_condition(0, is_non_null_type);
+        rules[i] = new_type_rule(conditions, 3, void_type());
+        ++i;
+
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
         return poppy_type_system;

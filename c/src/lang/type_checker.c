@@ -123,37 +123,6 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
         return function_type(ret, params_array, param_count);
 }
 
-const struct type * find_vardec_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        verify_type(tree, SYMBOL_VARDEC);
-        // vardec -> LET type IDENTIFIER ASSIGN expr
-        // vardec -> LET type IDENTIFIER
-        struct parse_tree *type; load_child_at(type, tree, 1);
-        const struct type *type_type = find_parse_tree_type(type, NULL, NULL);
-        if (type_type == NULL){
-                return NULL;
-        }
-
-        if (tree->children->len == 5){
-                struct parse_tree *expr; load_child_at(expr, tree, 4);
-                const struct type *expr_type = find_parse_tree_type(expr, outer_map, scope_map);
-                if ((expr_type == NULL) || (!equals_type(type_type, expr_type))){
-                        return NULL;
-                }
-        }
-
-        struct parse_tree *id; load_child_at(id, tree, 2);
-        struct string *str = (struct string*) malloc(sizeof(struct string));
-        str->data = id->data.value;
-        const struct type *t; query_map(scope_map, str, t, string, type);
-        if (t != NULL){
-                free(str);
-                return NULL;
-        }
-
-        update_map(scope_map, str, type_type, string, type);
-        return void_type();
-}
-
 const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_CALL);
         // call -> IDENTIFIER LPAREN optargs RPAREN
@@ -190,25 +159,6 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
                 return NULL;
         }
         return return_type(ftype);
-}
-
-const struct type * find_semistmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        verify_type(tree, SYMBOL_SEMISTMT);
-        struct parse_tree *child = tree->children->head->data;
-        switch (child->data.type){
-                case SYMBOL_ASM:
-                        // semistmt -> ASM LPAREN STRINGLIT RPAREN
-                        return void_type();
-                case SYMBOL_VARDEC:
-                case SYMBOL_VARASST:
-                case SYMBOL_RET:
-                        return find_parse_tree_type(child, outer_map, scope_map);
-                case SYMBOL_EXPR:
-                        // semistmt -> expr
-                        return find_parse_tree_type(child, outer_map, scope_map) ? void_type() : NULL;
-                default:
-                        return NULL;
-        }
 }
 
 const struct type * find_ifstmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
@@ -332,12 +282,6 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                 case SYMBOL_DEFN:
                         assert(scope_map != NULL);
                         return find_defn_type(tree, scope_map);
-                case SYMBOL_VARDEC:
-                        assert(scope_map != NULL);
-                        return find_vardec_type(tree, outer_map, scope_map);
-                case SYMBOL_SEMISTMT:
-                        assert(scope_map != NULL);
-                        return find_semistmt_type(tree, outer_map, scope_map);
                 case SYMBOL_IFSTMT:
                         return find_ifstmt_type(tree, outer_map);
                 case SYMBOL_WHILESTMT:
