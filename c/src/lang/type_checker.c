@@ -284,6 +284,8 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                         return find_defn_type(tree, scope_map);
                 case SYMBOL_IFSTMT:
                         return find_ifstmt_type(tree, outer_map);
+                case SYMBOL_IFBODY:
+                        return find_parse_tree_type(tree->children->head->data, outer_map, scope_map);
                 case SYMBOL_WHILESTMT:
                         return find_whilestmt_type(tree, outer_map);
                 case SYMBOL_FORSTMT:

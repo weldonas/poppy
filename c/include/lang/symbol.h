@@ -75,6 +75,7 @@ enum symbol {
         SYMBOL_IFSTMT,
         SYMBOL_WHILESTMT,
         SYMBOL_FORSTMT,
+        SYMBOL_IFBODY,
         SYMBOL_COUNT
 };
 

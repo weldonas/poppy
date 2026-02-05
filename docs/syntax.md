@@ -36,7 +36,8 @@ $$\begin{align*}
 \text{ret} &\rightarrow \text{HOP} {type} \\
 \text{semistmt} &\rightarrow \text{expr} \\
 \text{stmt} &\rightarrow \text{ifstmt}  \\
-\text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE stmts RBRACE optelse}  \\
+\text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE ifbody RBRACE optelse}  \\
+\text{ifbody} &\rightarrow \text{stmts}  \\
 \text{optelse} &\rightarrow \varnothing  \\
 \text{optelse} &\rightarrow \text{ELSE LBRACE stmts RBRACE}  \\
 \text{stmt} &\rightarrow \text{whilestmt}  \\

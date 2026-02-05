@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 72
+#define RULE_COUNT 73
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -61,7 +61,8 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_RET, {SYMBOL_HOP COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMT, {SYMBOL_IFSTMT}, i, poppy_grammar); ++i;
-        populate(SYMBOL_IFSTMT, {SYMBOL_IF COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN COMMA SYMBOL_LBRACE COMMA SYMBOL_STMTS COMMA SYMBOL_RBRACE COMMA SYMBOL_OPTELSE }, i, poppy_grammar); ++i;
+        populate(SYMBOL_IFSTMT, {SYMBOL_IF COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN COMMA SYMBOL_LBRACE COMMA SYMBOL_IFBODY COMMA SYMBOL_RBRACE COMMA SYMBOL_OPTELSE }, i, poppy_grammar); ++i;
+        populate(SYMBOL_IFBODY, {SYMBOL_STMTS}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTELSE, {}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTELSE, {SYMBOL_ELSE COMMA SYMBOL_LBRACE COMMA SYMBOL_STMTS COMMA SYMBOL_RBRACE}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMT, {SYMBOL_WHILESTMT}, i, poppy_grammar); ++i;
