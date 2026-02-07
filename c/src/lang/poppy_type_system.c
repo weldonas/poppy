@@ -42,7 +42,6 @@ const struct type_system *const get_poppy_type_system(){
         }
 
         const struct type_rule_condition *conditions[MAX_CONDITION_COUNT];
-        const struct type_rule_side_effect *side_effects[MAX_SIDE_EFFECT_COUNT];
         size_t i = 0;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
@@ -230,15 +229,15 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
-        side_effects[0] = new_add_symbol_side_effect(2, 1);
-        rules[i] = new_side_effect_type_rule(conditions, 3, side_effects, 1, void_type());
+        conditions[3] = new_add_symbol_side_effect(2, 1);
+        rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
-        side_effects[0] = new_add_symbol_side_effect(2, 1);
-        rules[i] = new_side_effect_type_rule(conditions, 3, side_effects, 1, void_type());
+        conditions[3] = new_add_symbol_side_effect(2, 1);
+        rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
@@ -268,8 +267,8 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_IFBODY);
-        side_effects[0] = new_add_scope_side_effect();
-        rules[i] = new_index_side_effect_type_rule(conditions, 1, side_effects, 1, 0);
+        conditions[1] = new_add_scope_side_effect();
+        rules[i] = new_index_type_rule(conditions, 2, 0);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTELSE);
@@ -279,8 +278,8 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTELSE);
         conditions[1] = new_length_condition(4);
-        side_effects[0] = new_add_scope_side_effect();
-        rules[i] = new_index_side_effect_type_rule(conditions, 2, side_effects, 1, 2);
+        conditions[2] = new_add_scope_side_effect();
+        rules[i] = new_index_type_rule(conditions, 3, 2);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_IFSTMT);
@@ -300,7 +299,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_IFSTMT);
         conditions[1] = new_type_at_condition(2, is_non_null_bool_type);
         conditions[2] = new_types_equal_at_condition(5, 7);
-        rules[i] = new_index_type_rule(conditions, 4, 5);
+        rules[i] = new_index_type_rule(conditions, 3, 5);
         ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
