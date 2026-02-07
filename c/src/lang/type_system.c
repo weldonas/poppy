@@ -1,8 +1,10 @@
 #include "lang/type_system.h"
+#include "data/map.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 #include "lang/type_checker.h"
+
 #include <stddef.h>
 
 #define MAX_CHILDREN 16
@@ -58,6 +60,12 @@ const struct type_rule_side_effect *const new_add_symbol_side_effect(size_t name
         ptr->type = SIDE_EFFECT_ADD_SYMBOL;
         ptr->name_index = name_index;
         ptr->type_index = type_index;
+        return ptr;
+}
+
+const struct type_rule_side_effect *const new_add_scope_side_effect(){
+        struct type_rule_side_effect *ptr = (struct type_rule_side_effect*) malloc(sizeof(struct type_rule_side_effect));
+        ptr->type = SIDE_EFFECT_ADD_SCOPE;
         return ptr;
 }
 
@@ -208,6 +216,8 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                 }
                                 update_map(scope_map, str, child_types[side_effect->type_index], string, type);
                                 break;
+                        default:
+                                break;
                 }
         }
 
@@ -232,6 +242,9 @@ const struct type *const find_type(const struct type_system *const system, struc
         }
         else if (tree->data.type == SYMBOL_CALL){
                 return find_call_type(tree, outer_map);
+        }
+        else if (tree->data.type == SYMBOL_STMTS){
+                return find_stmts_type(tree, outer_map, scope_map);
         }
 
         for (size_t i = 0; i < system->rules_len; ++i){

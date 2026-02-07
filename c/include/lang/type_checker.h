@@ -16,9 +16,11 @@ DEFINE_LIST(string)
 DEFINE_MAP(string, type);
 DEFINE_MAP(parse_tree, MAP(string, type));
 
+struct MAP(string, type) * new_inner_map();
 struct OUTER_TYPE_MAP *find_types(const struct parse_tree *tree);
 const struct type *find_symbol_type(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *outer_map);
 const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map);
+const struct type * find_stmts_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
 struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
 struct LIST(string) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
 #endif

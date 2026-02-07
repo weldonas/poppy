@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 40
+#define RULE_COUNT 46
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -30,6 +30,10 @@ bool is_non_null_assignable_type(const struct type *const type){
 
 bool is_non_null_type(const struct type *const type){
         return type;
+}
+
+bool is_non_null_void_type(const struct type *const type){
+        return type && equals_type(type, void_type());
 }
 
 const struct type_system *const get_poppy_type_system(){
@@ -263,6 +267,41 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_type_rule(conditions, 3, void_type());
         ++i;
 
+        conditions[0] = new_parent_symbol_condition(SYMBOL_IFBODY);
+        side_effects[0] = new_add_scope_side_effect();
+        rules[i] = new_index_side_effect_type_rule(conditions, 1, side_effects, 1, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_OPTELSE);
+        conditions[1] = new_length_condition(0);
+        rules[i] = new_type_rule(conditions, 2, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_OPTELSE);
+        conditions[1] = new_length_condition(4);
+        side_effects[0] = new_add_scope_side_effect();
+        rules[i] = new_index_side_effect_type_rule(conditions, 2, side_effects, 1, 2);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_IFSTMT);
+        conditions[1] = new_type_at_condition(2, is_non_null_bool_type);
+        conditions[2] = new_type_at_condition(5, is_non_null_type);
+        conditions[3] = new_type_at_condition(7, is_non_null_void_type);
+        rules[i] = new_type_rule(conditions, 4, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_IFSTMT);
+        conditions[1] = new_type_at_condition(2, is_non_null_bool_type);
+        conditions[2] = new_type_at_condition(5, is_non_null_void_type);
+        conditions[3] = new_type_at_condition(7, is_non_null_type);
+        rules[i] = new_type_rule(conditions, 4, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_IFSTMT);
+        conditions[1] = new_type_at_condition(2, is_non_null_bool_type);
+        conditions[2] = new_types_equal_at_condition(5, 7);
+        rules[i] = new_index_type_rule(conditions, 4, 5);
+        ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
         return poppy_type_system;
