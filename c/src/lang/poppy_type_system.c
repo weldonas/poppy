@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 46
+#define RULE_COUNT 48
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -266,7 +266,7 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_type_rule(conditions, 3, void_type());
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_IFBODY);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BODY);
         conditions[1] = new_add_scope_side_effect();
         rules[i] = new_index_type_rule(conditions, 2, 0);
         ++i;
@@ -300,6 +300,21 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_type_at_condition(2, is_non_null_bool_type);
         conditions[2] = new_types_equal_at_condition(5, 7);
         rules[i] = new_index_type_rule(conditions, 3, 5);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_WHILESTMT);
+        conditions[1] = new_type_at_condition(2, is_non_null_bool_type);
+        conditions[2] = new_type_at_condition(5, is_non_null_type);
+        rules[i] = new_type_rule(conditions, 3, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_FORSTMT);
+        conditions[1] = new_type_at_condition(2, is_non_null_void_type);
+        conditions[2] = new_type_at_condition(4, is_non_null_bool_type);
+        conditions[3] = new_type_at_condition(6, is_non_null_void_type);
+        conditions[4] = new_type_at_condition(9, is_non_null_type);
+        conditions[5] = new_add_scope_side_effect();
+        rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);

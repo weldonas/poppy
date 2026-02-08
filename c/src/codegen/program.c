@@ -305,7 +305,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 char *ret = call_function(f, args_code);
                 free(args_code);
                 return ret;
-        } else if (symbol == SYMBOL_IFBODY){
+        } else if (symbol == SYMBOL_BODY){
                 return generate_from_tree(tree->children->head->data, functions, within);
         }
 

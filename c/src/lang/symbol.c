@@ -76,7 +76,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_IFSTMT: return "IFSTMT";
                 case SYMBOL_FORSTMT: return "FORSTMT";
                 case SYMBOL_WHILESTMT: return "WHILESTMT";
-                case SYMBOL_IFBODY: return "IFBODY";
+                case SYMBOL_BODY: return "BODY";
         }
         return 0;
 }

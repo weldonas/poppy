@@ -161,48 +161,6 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
         return return_type(ftype);
 }
 
-const struct type * find_whilestmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_WHILESTMT);
-        struct parse_tree *cond; load_child_at(cond, tree, 2);
-        const struct type *cond_type = find_parse_tree_type(cond, outer_map, NULL);
-        if ((cond_type == NULL) || (!equals_type(cond_type, bool_type()))){
-                return NULL;
-        }
-
-        struct parse_tree *body; load_child_at(body, tree, 5);
-        struct MAP(string, type) *body_map = new_inner_map();
-        update_map(outer_map, body, body_map, parse_tree, MAP(string, type));
-        return find_parse_tree_type(body, outer_map, body_map);
-}
-
-const struct type * find_forstmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_FORSTMT);
-        struct MAP(string, type) *scope_map = new_inner_map();
-        update_map(outer_map, tree, scope_map, parse_tree, MAP(string, type));
-
-        struct parse_tree *init; load_child_at(init, tree, 2);
-        const struct type *init_type = find_parse_tree_type(init, outer_map, scope_map);
-        if (init_type == NULL){
-                return NULL;
-        }
-
-        struct parse_tree *cond; load_child_at(cond, tree, 4);
-        const struct type *cond_type = find_parse_tree_type(cond, outer_map, NULL);
-        if ((cond_type == NULL) || (!equals_type(cond_type, bool_type()))){
-                return NULL;
-        }
-
-        struct parse_tree *post; load_child_at(post, tree, 6);
-        const struct type *post_type = find_parse_tree_type(post, outer_map, scope_map);
-        if (post_type == NULL){
-                return NULL;
-        }
-
-        struct parse_tree *body; load_child_at(body, tree, 9);
-        const struct type *body_type = find_parse_tree_type(body, outer_map, scope_map);
-        return body_type;
-}
-
 const struct type * find_stmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         verify_type(tree, SYMBOL_STMT);
         struct parse_tree *child = tree->children->head->data;
@@ -246,10 +204,6 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                 case SYMBOL_DEFN:
                         assert(scope_map != NULL);
                         return find_defn_type(tree, scope_map);
-                case SYMBOL_WHILESTMT:
-                        return find_whilestmt_type(tree, outer_map);
-                case SYMBOL_FORSTMT:
-                        return find_forstmt_type(tree, outer_map);
                 case SYMBOL_STMT:
                         assert(scope_map != NULL);
                         return find_stmt_type(tree, outer_map, scope_map);

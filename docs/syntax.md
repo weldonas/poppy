@@ -36,12 +36,12 @@ $$\begin{align*}
 \text{ret} &\rightarrow \text{HOP} {type} \\
 \text{semistmt} &\rightarrow \text{expr} \\
 \text{stmt} &\rightarrow \text{ifstmt}  \\
-\text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE ifbody RBRACE optelse}  \\
-\text{ifbody} &\rightarrow \text{stmts}  \\
+\text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE body RBRACE optelse}  \\
+\text{body} &\rightarrow \text{stmts}  \\
 \text{optelse} &\rightarrow \varnothing  \\
 \text{optelse} &\rightarrow \text{ELSE LBRACE stmts RBRACE}  \\
 \text{stmt} &\rightarrow \text{whilestmt}  \\
-\text{whilestmt} &\rightarrow \text{WHILE LPAREN expr RPAREN LBRACE stmts RBRACE}  \\
+\text{whilestmt} &\rightarrow \text{WHILE LPAREN expr RPAREN LBRACE body RBRACE}  \\
 \text{stmt} &\rightarrow \text{forstmt}  \\
 \text{forstmt} &\rightarrow \text{FOR LPAREN semistmt SEMICOLON expr SEMICOLON semistmt RPAREN LBRACE stmts RBRACE}  \\
 \text{expr} &\rightarrow \text{orcond}  \\
