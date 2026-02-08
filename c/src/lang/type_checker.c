@@ -161,42 +161,6 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
         return return_type(ftype);
 }
 
-const struct type * find_ifstmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
-        verify_type(tree, SYMBOL_IFSTMT);
-        // stmt -> IF LPAREN cond RPAREN LBRACE stmts RBRACE optelse
-        struct parse_tree *cond; load_child_at(cond, tree, 2);
-        const struct type *cond_type = find_parse_tree_type(cond, outer_map, NULL);
-        if ((cond_type == NULL) || (!equals_type(cond_type, bool_type()))){
-                return NULL;
-        }
-
-        struct parse_tree *if_stmts; load_child_at(if_stmts, tree, 5);
-        struct MAP(string, type) *if_map = new_inner_map();
-        update_map(outer_map, if_stmts, if_map, parse_tree, MAP(string, type));
-
-        const struct type *if_type = find_parse_tree_type(if_stmts, outer_map, if_map);
-        if (if_type == NULL){
-                return NULL;
-        }
-
-        struct parse_tree *optelse; load_child_at(optelse, tree, 7);
-        // optelse ->
-        if ((optelse->children == NULL) || (optelse->children->len == 0)) {
-                return void_type();
-        }
-
-        // optelse -> ELSE LBRACE stmts RBRACE
-        struct parse_tree *else_stmts; load_child_at(else_stmts, optelse, 2);
-        struct MAP(string, type) *else_map = new_inner_map();
-        update_map(outer_map, else_stmts, else_map, parse_tree, MAP(string, type));
-        const struct type *else_type = find_parse_tree_type(else_stmts, outer_map, else_map);
-
-        if ((else_type == NULL) || (!equals_type(if_type, else_type))){
-                return NULL;
-        }
-        return if_type;
-}
-
 const struct type * find_whilestmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_WHILESTMT);
         struct parse_tree *cond; load_child_at(cond, tree, 2);
@@ -282,10 +246,6 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                 case SYMBOL_DEFN:
                         assert(scope_map != NULL);
                         return find_defn_type(tree, scope_map);
-                case SYMBOL_IFSTMT:
-                        return find_ifstmt_type(tree, outer_map);
-                case SYMBOL_IFBODY:
-                        return find_parse_tree_type(tree->children->head->data, outer_map, scope_map);
                 case SYMBOL_WHILESTMT:
                         return find_whilestmt_type(tree, outer_map);
                 case SYMBOL_FORSTMT:
