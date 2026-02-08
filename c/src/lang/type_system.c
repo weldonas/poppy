@@ -251,9 +251,6 @@ const struct type *const find_type(const struct type_system *const system, struc
         else if (tree->data.type == SYMBOL_CALL){
                 return find_call_type(tree, outer_map);
         }
-        else if (tree->data.type == SYMBOL_STMTS){
-                return find_stmts_type(tree, outer_map, scope_map);
-        }
 
         for (size_t i = 0; i < system->rules_len; ++i){
                 const struct type *const output = apply(system->rules[i], system, tree, outer_map, scope_map);

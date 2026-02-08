@@ -161,35 +161,6 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
         return return_type(ftype);
 }
 
-const struct type * find_stmt_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        verify_type(tree, SYMBOL_STMT);
-        struct parse_tree *child = tree->children->head->data;
-        return find_parse_tree_type(child, outer_map, scope_map);
-}
-
-const struct type * find_stmts_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        verify_type(tree, SYMBOL_STMTS);
-        struct parse_tree *stmts = tree;
-
-        while (1) {
-                // stmts -> stmt stmts
-                // stmts -> stmt
-                struct parse_tree *stmt = stmts->children->head->data;
-                const struct type *stmt_type = find_parse_tree_type(stmt, outer_map, scope_map);
-
-                if (stmt_type == NULL){
-                        return NULL;
-                }
-
-                if (stmts->children->len == 2){
-                        load_child_at(stmts, stmts, 1);
-                } else {
-                        return stmt_type;
-                }
-        }
-  
-}
-
 const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         const struct type_system *const system = get_poppy_type_system();
         const struct type *const type = find_type(system, tree, outer_map, scope_map);
@@ -198,15 +169,9 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
         }
         
         switch (tree->data.type) {
-                case SYMBOL_STMTS:
-                        assert(scope_map != NULL);
-                        return find_stmts_type(tree, outer_map, scope_map);
                 case SYMBOL_DEFN:
                         assert(scope_map != NULL);
                         return find_defn_type(tree, scope_map);
-                case SYMBOL_STMT:
-                        assert(scope_map != NULL);
-                        return find_stmt_type(tree, outer_map, scope_map);
                 default:
                         assert(false);
                         return NULL;
