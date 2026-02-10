@@ -1,7 +1,5 @@
 #include "lang/type.h"
 
-#include <string.h>
-
 #include "data/list.h"
 
 #define INT_CHAR 'i'
@@ -72,23 +70,39 @@ const struct type* const char_type(){
         return char_ptr;
 }
 
-const struct type* const function_type(const struct type *ret, const struct type *params[MAX_PARAM_COUNT], size_t params_len){
+const struct type* const function_type(const struct type *ret, const struct type *params){
         if (!is_returnable(ret)){
                 return NULL;
         }
 
-        for (size_t i = 0; i < params_len; ++i){
-                if (!is_assignable(params[i])){
+        for (const struct type *param = params; param != NULL; param = param->previous){
+                if (!is_assignable(param->current_type)){
                         return NULL;
                 }
         }
 
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_FUNCTION;
-        new->params_len = params_len;
         new->ret_type = ret;
-        new->params = (struct type**) malloc(params_len * sizeof(struct type*));
-        memcpy(new->params, params, params_len * sizeof(struct type*));
+        new->params_type = params;
+        add_type(new);
+        return new;
+}
+
+
+const struct type* const param_type(const struct type *current, const struct type *previous){
+        if (!is_returnable(current)){
+                return NULL;
+        }
+
+        if (previous && (previous->category != CATEGORY_PARAMS)){
+                return NULL;
+        }
+
+        struct type *new = (struct type*) malloc(sizeof(struct type));
+        new->category = CATEGORY_PARAMS;
+        new->current_type = current;
+        new->previous = previous;
         add_type(new);
         return new;
 }
@@ -111,34 +125,26 @@ bool equals_type(const struct type *t1, const struct type *t2){
         }
 
         else if (t1->category == CATEGORY_FUNCTION){
-                if (t1->params_len != t2->params_len){
+                if ((t1->params_type == NULL) != (t2->params_type == NULL)){
                         return false;
                 }
 
-                for (size_t i = 0; i < t1->params_len; ++i){
-                        if (!equals_type(t1->params[i], t2->params[i])){
-                                return false;
-                        }
+                if (t1->params_type){
+                        return equals_type(t1->params_type, t2->params_type) && equals_type(t1->ret_type, t2->ret_type);
                 }
 
                 return equals_type(t1->ret_type, t2->ret_type);
         }
 
-        return false;
-}
-
-bool equals_arg_types(const struct type *args[MAX_PARAM_COUNT], size_t args_len, const struct type *type){
-        if (type->params_len != args_len){
-                return false;
-        }
-
-        for (size_t i = 0; i < args_len; ++i){
-                if (!equals_type(type->params[i], args[i])){
-                        return false;
+        else if (t1->category == CATEGORY_PARAMS){
+                if ((!t1->previous) || (!t2->previous)){
+                        return (!t1->previous) && (!t2->previous); // if either doesn't have previous, return true iff both don't
                 }
+
+                return equals_type(t1->current_type, t2->current_type) && equals_type(t1->previous, t2->previous);
         }
 
-        return true;
+        return false;
 }
 
 bool is_numeric(const struct type *type){
@@ -154,9 +160,6 @@ bool is_returnable(const struct type *type){
 }
 
 void free_type(const struct type *type){
-        if (type->category == CATEGORY_FUNCTION){
-                free(type->params);
-        }
         free((void*) type);
 }
 

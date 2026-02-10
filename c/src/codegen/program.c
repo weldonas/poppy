@@ -9,7 +9,6 @@
 #include "codegen/function.h"
 #include "codegen/ops.h"
 #include "lang/symbol.h"
-#include "lang/type.h"
 #include "lang/type_checker.h"
 
 #define load_child_at(var, tree, n)                                        \
@@ -271,8 +270,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
         } else if (symbol == SYMBOL_CALL){
                 char *id = tree->children->head->data->data.value;
-
-                char **args_code = (char**) malloc(MAX_PARAM_COUNT * sizeof(char*));
+                struct string s;
+                s.data = id;
+                const struct function *f; query_map(functions, (&s), f, string, function);
+                char **args_code = (char**) malloc(num_params(f) * sizeof(char*));
 
                 size_t i = 0;
                 
@@ -292,10 +293,6 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 }
                         };
                 }
-
-                struct string s;
-                s.data = id;
-                const struct function *f; query_map(functions, (&s), f, string, function);
 
                 if (num_params(f) == 0){
                         free(args_code);

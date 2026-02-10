@@ -23,8 +23,6 @@
 
 #define verify_type(tree, st) assert(tree->data.type == st);
 
-const struct type * params_array[MAX_PARAM_COUNT];
-
 bool equals_string(const struct string *s1, const struct string *s2) {
         return strcmp(s1->data, s2->data) == 0;
 }
@@ -83,12 +81,12 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
         struct parse_tree *optparams; load_child_at(optparams, tree, 3);
         if ((optparams->children == NULL) || (optparams->children->len == 0)){
                 // optparams ->
-                return function_type(ret, params_array, 0);
+                return function_type(ret, NULL);
         }
 
         // optparams -> params
         struct parse_tree *params = optparams->children->head->data;
-        size_t param_count = 0;
+        const struct type *params_type = NULL;
 
         while (1) {
                 // params -> param COMMA params
@@ -96,7 +94,8 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
                 struct parse_tree *param = params->children->head->data;
 
                 // param -> type IDENTIFIER
-                params_array[param_count] = find_parse_tree_type(param->children->head->data, NULL, NULL);
+                const struct type *current_type = find_parse_tree_type(param->children->head->data, NULL, NULL);
+                params_type = param_type(current_type, params_type);
                 struct string *s = (struct string*) malloc(sizeof(struct string));
                 s->data = param->children->head->next->data->data.value;
                 const struct type *t; query_map(scope_map, s, t, string, type);
@@ -105,9 +104,7 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
                         return NULL;
                 }
 
-                update_map(scope_map, s, params_array[param_count], string, type)
-                ++param_count;
-
+                update_map(scope_map, s, current_type, string, type);
 
                 if (params->children->len == 3){
                         load_child_at(params, params, 2);
@@ -116,20 +113,17 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
                 }
         };
 
-        if (param_count > MAX_PARAM_COUNT){
-                return NULL;
-        }
-        
-        return function_type(ret, params_array, param_count);
+        return function_type(ret, params_type);
 }
 
 const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_CALL);
         // call -> IDENTIFIER LPAREN optargs RPAREN
         struct parse_tree *optargs; load_child_at(optargs, tree, 2);
+        
+        const struct type *args_type = NULL;
 
         // optargs ->
-        size_t param_count = 0;
         if ((optargs->children != NULL) && (optargs->children->len > 0)){
                 // optargs -> args
                 struct parse_tree *args = optargs->children->head->data;
@@ -138,12 +132,13 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
                         // args -> expr
                         struct parse_tree *expr = args->children->head->data;
 
-                        params_array[param_count] = find_parse_tree_type(expr, outer_map, NULL);
-                        if (params_array[param_count] == NULL){
+                        const struct type *expr_type = find_parse_tree_type(expr, outer_map, NULL);
+
+                        if (expr_type == NULL){
                                 return NULL;
                         }
 
-                        ++param_count;
+                        args_type = param_type(expr_type, args_type);
 
                         if (args->children->len == 3){
                                 load_child_at(args, args, 2);
@@ -155,9 +150,18 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
 
         const struct type *ftype = find_symbol_type(tree->children->head->data, outer_map);
 
-        if ((ftype == NULL) || !equals_arg_types(params_array, param_count, ftype)){
+        if (ftype == NULL){
                 return NULL;
         }
+
+        if ((args_type == NULL) != (ftype->params_type == NULL)){
+                return NULL;
+        }
+
+        if (args_type && !equals_type(args_type, ftype->params_type)){
+                return NULL;
+        }
+
         return return_type(ftype);
 }
 
