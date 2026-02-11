@@ -45,13 +45,23 @@ struct type_rule_condition {
         };
 };
 
+enum type_rule_type {
+        TYPE_RULE_PRIMITIVE,
+        TYPE_RULE_INDEX,
+        TYPE_RULE_PARAM
+};
+
 struct type_rule {
         const struct type_rule_condition *conditions[MAX_CONDITION_COUNT];
         size_t conditions_len;
-        bool has_output_type;
+        enum type_rule_type type;
         union {
                 const struct type *output_type;
                 size_t output_index;
+                struct {
+                        size_t current_index;
+                        int next_index;
+                };
         };
 };
 
@@ -71,6 +81,8 @@ const struct type_rule_condition *const new_add_scope_side_effect();
 
 const struct type_rule *const new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type);
 const struct type_rule *const new_index_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t output_index);
+const struct type_rule *const new_param_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t current_index, int next_index); // -ive value for next_index makes it NULL 
+
 void free_type_rule(const struct type_rule *type_rule);
 
 const struct type_system *const new_type_system(const struct type_rule **rules, size_t rules_len);

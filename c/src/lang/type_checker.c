@@ -86,33 +86,7 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
 
         // optparams -> params
         struct parse_tree *params = optparams->children->head->data;
-        const struct type *params_type = NULL;
-
-        while (1) {
-                // params -> param COMMA params
-                // params -> param
-                struct parse_tree *param = params->children->head->data;
-
-                // param -> type IDENTIFIER
-                const struct type *current_type = find_parse_tree_type(param->children->head->data, NULL, NULL);
-                params_type = param_type(current_type, params_type);
-                struct string *s = (struct string*) malloc(sizeof(struct string));
-                s->data = param->children->head->next->data->data.value;
-                const struct type *t; query_map(scope_map, s, t, string, type);
-                if (t != NULL){
-                        free(s);
-                        return NULL;
-                }
-
-                update_map(scope_map, s, current_type, string, type);
-
-                if (params->children->len == 3){
-                        load_child_at(params, params, 2);
-                } else {
-                        break;
-                }
-        };
-
+        const struct type *params_type = find_parse_tree_type(params, NULL, scope_map);
         return function_type(ret, params_type);
 }
 
@@ -121,33 +95,7 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
         // call -> IDENTIFIER LPAREN optargs RPAREN
         struct parse_tree *optargs; load_child_at(optargs, tree, 2);
         
-        const struct type *args_type = NULL;
-
-        // optargs ->
-        if ((optargs->children != NULL) && (optargs->children->len > 0)){
-                // optargs -> args
-                struct parse_tree *args = optargs->children->head->data;
-                while (1) {
-                        // args -> expr COMMA args
-                        // args -> expr
-                        struct parse_tree *expr = args->children->head->data;
-
-                        const struct type *expr_type = find_parse_tree_type(expr, outer_map, NULL);
-
-                        if (expr_type == NULL){
-                                return NULL;
-                        }
-
-                        args_type = param_type(expr_type, args_type);
-
-                        if (args->children->len == 3){
-                                load_child_at(args, args, 2);
-                        } else {
-                                break;
-                        }
-                };
-        }
-
+        const struct type *args_type = find_parse_tree_type(optargs, outer_map, NULL);
         const struct type *ftype = find_symbol_type(tree->children->head->data, outer_map);
 
         if (ftype == NULL){
@@ -168,7 +116,7 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
 const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         const struct type_system *const system = get_poppy_type_system();
         const struct type *const type = find_type(system, tree, outer_map, scope_map);
-        if (type){
+        if (type || (tree->data.type == SYMBOL_OPTARGS) || (tree->data.type == SYMBOL_OPTPARAMS)){ // need this since we return NULL for empty type
                 return type;
         }
         

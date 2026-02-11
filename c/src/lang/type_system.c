@@ -93,7 +93,7 @@ const struct type_rule *const new_type_rule(const struct type_rule_condition *co
                 ptr->conditions[i] = conditions[i];
         }
         ptr->conditions_len = conditions_len;
-        ptr->has_output_type = true;
+        ptr->type = TYPE_RULE_PRIMITIVE;
         ptr->output_type = output_type;
         return ptr;
 }
@@ -104,9 +104,21 @@ const struct type_rule *const new_index_type_rule(const struct type_rule_conditi
                 ptr->conditions[i] = conditions[i];
         }
         ptr->conditions_len = conditions_len;
-        ptr->has_output_type = false;
+        ptr->type = TYPE_RULE_INDEX;
         ptr->output_index = output_index;
         return ptr;
+}
+
+const struct type_rule *const new_param_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t current_index, int next_index){
+        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        for (size_t i = 0; i < conditions_len; ++i){
+                ptr->conditions[i] = conditions[i];
+        }
+        ptr->conditions_len = conditions_len;
+        ptr->type = TYPE_RULE_PARAM;
+        ptr->current_index = current_index;
+        ptr->next_index = next_index;
+        return ptr;       
 }
 
 void free_type_rule(const struct type_rule *type_rule){
@@ -150,7 +162,12 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
 
                         switch (condition->type) {
                                 case CONDITION_LENGTH:
-                                        satisfied = (!tree->children && (condition->length == 0)) || (tree->children->len == condition->length);
+                                        if (tree->children){
+                                                satisfied = tree->children->len == condition->length;
+                                        }
+                                        else {
+                                                satisfied = condition->length == 0;
+                                        }
                                         break;
                                 case CONDITION_PARENT_SYMBOL:
                                         satisfied = tree->data.type == condition->parent_symbol;
@@ -215,33 +232,64 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 }
         }
 
-        if (type_rule->has_output_type) {
-                if (!type_rule->output_type){
+        if (type_rule->type == TYPE_RULE_PRIMITIVE) {
+                // if (!type_rule->output_type){
+                //         if (map_to_use != scope_map){
+                //                 free_map(map_to_use, string, type);
+                //                 free(map_to_use);
+                //         }
+                // }
+
+                return type_rule->output_type;
+        }
+        else if (type_rule->type == TYPE_RULE_INDEX){
+                size_t out = type_rule->output_index;
+
+                if (!child_type_computed[out]) {
+                        struct parse_tree *child;
+                        load_child_at(child, tree, out);
+                        child_types[out] = find_type(system, child, outer_map, map_to_use);
+                }
+
+                if (!child_types[out]){
                         if (map_to_use != scope_map){
                                 free_map(map_to_use, string, type);
                                 free(map_to_use);
                         }
                 }
 
-                return type_rule->output_type;
+                return child_types[out];
         }
+        else if (type_rule->type == TYPE_RULE_PARAM){
+                size_t current = type_rule->current_index;
+                int next = type_rule->next_index;
 
-        size_t out = type_rule->output_index;
-
-        if (!child_type_computed[out]) {
-                struct parse_tree *child;
-                load_child_at(child, tree, out);
-                child_types[out] = find_type(system, child, outer_map, map_to_use);
-        }
-
-        if (!child_types[out]){
-                if (map_to_use != scope_map){
-                        free_map(map_to_use, string, type);
-                        free(map_to_use);
+                if (!child_type_computed[current]) {
+                        struct parse_tree *child;
+                        load_child_at(child, tree, current);
+                        child_types[current] = find_type(system, child, outer_map, map_to_use);
                 }
+
+                if (next < 0){
+                        child_types[next] = NULL;
+                }
+                else if (!child_type_computed[next]) {
+                        struct parse_tree *child;
+                        load_child_at(child, tree, next);
+                        child_types[next] = find_type(system, child, outer_map, map_to_use);
+                }
+
+                if (!child_types[current] || (!child_types[next] && (next >= 0))){
+                        if (map_to_use != scope_map){
+                                free_map(map_to_use, string, type);
+                                free(map_to_use);
+                        }
+                }
+
+                return param_type(child_types[current], child_types[next]);            
         }
 
-        return child_types[out];
+        return NULL;
 }
 
 const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){

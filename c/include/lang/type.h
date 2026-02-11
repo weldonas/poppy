@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-// #define MAX_PARAM_COUNT 29
-// #define MAX_TYPE_STRING_LEN MAX_PARAM_COUNT + 3
-// + 1 for space, + 1 for return type, + 1 for null-termination
-
 enum category {
     CATEGORY_PRIMITIVE,
     CATEGORY_FUNCTION,
