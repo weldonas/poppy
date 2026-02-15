@@ -2,7 +2,7 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, call}\}$
+Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body}\}$
 
 Start symbol: $\text{program}$
 
@@ -33,13 +33,17 @@ $$\begin{align*}
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
-\text{ret} &\rightarrow \text{HOP} {type} \\
+\text{ret} &\rightarrow \text{HOP type} \\
 \text{semistmt} &\rightarrow \text{expr} \\
-\text{stmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE stmts RBRACE optelse}  \\
+\text{stmt} &\rightarrow \text{ifstmt}  \\
+\text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE body RBRACE optelse}  \\
+\text{body} &\rightarrow \text{stmts}  \\
 \text{optelse} &\rightarrow \varnothing  \\
 \text{optelse} &\rightarrow \text{ELSE LBRACE stmts RBRACE}  \\
-\text{stmt} &\rightarrow \text{WHILE LPAREN expr RPAREN LBRACE stmts RBRACE}  \\
-\text{stmt} &\rightarrow \text{FOR LPAREN semistmt SEMICOLON expr SEMICOLON semistmt RPAREN LBRACE stmts RBRACE}  \\
+\text{stmt} &\rightarrow \text{whilestmt}  \\
+\text{whilestmt} &\rightarrow \text{WHILE LPAREN expr RPAREN LBRACE body RBRACE}  \\
+\text{stmt} &\rightarrow \text{forstmt}  \\
+\text{forstmt} &\rightarrow \text{FOR LPAREN semistmt SEMICOLON expr SEMICOLON semistmt RPAREN LBRACE stmts RBRACE}  \\
 \text{expr} &\rightarrow \text{orcond}  \\
 \text{orcond} &\rightarrow \text{orcond OR andcond}  \\
 \text{orcond} &\rightarrow \text{andcond}  \\

@@ -73,6 +73,10 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_CALL: return "CALL";
                 case SYMBOL_STRINGLIT: return "STRINGLIT";
                 case SYMBOL_ASM: return "asm";
+                case SYMBOL_IFSTMT: return "IFSTMT";
+                case SYMBOL_FORSTMT: return "FORSTMT";
+                case SYMBOL_WHILESTMT: return "WHILESTMT";
+                case SYMBOL_BODY: return "BODY";
         }
         return 0;
 }

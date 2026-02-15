@@ -72,6 +72,10 @@ enum symbol {
         SYMBOL_VARASST,
         SYMBOL_RET,
         SYMBOL_CALL,
+        SYMBOL_IFSTMT,
+        SYMBOL_WHILESTMT,
+        SYMBOL_FORSTMT,
+        SYMBOL_BODY,
         SYMBOL_COUNT
 };
 
