@@ -2,7 +2,7 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, call}\}$
+Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body}\}$
 
 Start symbol: $\text{program}$
 
