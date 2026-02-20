@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "data/map.h"
+#include "lang/parser.h"
 #include "lang/poppy_type_system.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
@@ -69,16 +70,19 @@ const struct type * find_symbol_type(const struct parse_tree *tree, const struct
 }
 
 char * find_defn_name(struct parse_tree *tree){
-        struct parse_tree *identifier; load_child_at(identifier, tree, 1);
+        struct parse_tree *signature = tree->children->head->data;
+        struct parse_tree *identifier; load_child_at(identifier, signature, 1);
         return identifier->data.value;
 }
 
 const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, type) *scope_map){
         verify_type(tree, SYMBOL_DEFN);
-        // defn -> type IDENTIFIER LPAREN optparams RPAREN LBRACE stmts RBRACE
-        const struct type * ret = find_parse_tree_type(tree->children->head->data, NULL, NULL);
+        // defn -> signature LBRACE stmts RBRACE
+        // signature -> type IDENTIFIER LPAREN optparams RPAREN 
+        struct parse_tree *signature = tree->children->head->data;
+        const struct type * ret = find_parse_tree_type(signature->children->head->data, NULL, NULL);
 
-        struct parse_tree *optparams; load_child_at(optparams, tree, 3);
+        struct parse_tree *optparams; load_child_at(optparams, signature, 3);
         if ((optparams->children == NULL) || (optparams->children->len == 0)){
                 // optparams ->
                 return function_type(ret, NULL);
@@ -167,14 +171,16 @@ struct OUTER_TYPE_MAP * find_types(const struct parse_tree *tree){
                 // defns -> defn
                 struct parse_tree *defn = defns->children->head->data;
 
-                // defn -> type IDENTIFIER LPAREN optparams RPAREN LBRACE stmts RBRACE
-                struct parse_tree *stmts; load_child_at(stmts, defn, 6);
+                // defn -> signature LBRACE stmts RBRACE
+                struct parse_tree *stmts; load_child_at(stmts, defn, 2);
+                verify_type(stmts, SYMBOL_STMTS);
 
                 struct MAP(string, type) *stmts_map = new_inner_map(); 
                 update_map(outer_map, stmts, stmts_map, parse_tree, MAP(string, type));
                 // cast to non-const here because map assumes we can't modify values
                 const struct type *stmts_type = find_parse_tree_type(stmts, outer_map, stmts_map);
-                const struct type *ftype = find_symbol_type(defn->children->head->next->data, outer_map);
+                struct parse_tree *signature = defn->children->head->data;
+                const struct type *ftype = find_symbol_type(signature->children->head->next->data, outer_map);
 
                 if ((stmts_type == NULL) || (ftype == NULL) || !equals_type(stmts_type, return_type(ftype))){
                         free_map(outer_map, parse_tree, MAP(string, type));
@@ -209,8 +215,8 @@ void get_variables_recursive(const struct parse_tree *tree, struct LIST(string) 
 }
 
 struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols){
-        // defn -> type IDENTIFIER LPAREN optparams RPAREN LBRACE stmts RBRACE
-        const struct parse_tree *stmts; load_child_at(stmts, tree, 6);
+        // defn -> signature LBRACE stmts RBRACE
+        const struct parse_tree *stmts; load_child_at(stmts, tree, 2);
         struct LIST(string) list;
         init_list((&list))
         get_variables_recursive(stmts, &list, symbols);
@@ -218,7 +224,8 @@ struct LIST(string) get_local_variables(const struct parse_tree *tree, const str
 }
 
 struct LIST(string) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols){
-        // defn -> type IDENTIFIER LPAREN optparams RPAREN LBRACE stmts RBRACE
+        // defn -> signature LBRACE stmts RBRACE
+        // signature -> type IDENTIFIER LPAREN optparams RPAREN
         const struct MAP(string, type) *inner_map; query_map(symbols, tree, inner_map, parse_tree, MAP(string, type))
         struct LIST(string) list;
         init_list((&list))
