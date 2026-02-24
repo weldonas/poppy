@@ -2,7 +2,7 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body}\}$
+Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature}\}$
 
 Start symbol: $\text{program}$
 
@@ -11,7 +11,8 @@ $$\begin{align*}
 \text{program} &\rightarrow \text{defns END}\\
 \text{defns} &\rightarrow \text{defn}\\
 \text{defns} &\rightarrow \text{defn defns}\\
-\text{defn} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN LBRACE stmts RBRACE}\\
+\text{defn} &\rightarrow \text{signature LBRACE body RBRACE}\\
+\text{signature} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN}\\
 \text{type} &\rightarrow \text{INT}\\
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\
@@ -21,6 +22,7 @@ $$\begin{align*}
 \text{params} &\rightarrow \text{param COMMA params}  \\
 \text{params} &\rightarrow \text{param}  \\
 \text{param} &\rightarrow \text{type IDENTIFIER}  \\
+\text{body} &\rightarrow \text{stmts}  \\
 \text{stmts} &\rightarrow \text{stmt}  \\
 \text{stmts} &\rightarrow \text{stmt stmts}  \\
 \text{stmt} &\rightarrow \text{semistmt SEMICOLON}  \\
@@ -37,7 +39,6 @@ $$\begin{align*}
 \text{semistmt} &\rightarrow \text{expr} \\
 \text{stmt} &\rightarrow \text{ifstmt}  \\
 \text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE body RBRACE optelse}  \\
-\text{body} &\rightarrow \text{stmts}  \\
 \text{optelse} &\rightarrow \varnothing  \\
 \text{optelse} &\rightarrow \text{ELSE LBRACE stmts RBRACE}  \\
 \text{stmt} &\rightarrow \text{whilestmt}  \\

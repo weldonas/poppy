@@ -8,6 +8,7 @@
 #include "codegen/control.h"
 #include "codegen/function.h"
 #include "codegen/ops.h"
+#include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type_checker.h"
 
@@ -356,7 +357,8 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                 }
 
                 struct string *s = (struct string*) malloc(sizeof(struct string));
-                s->data = defn->children->head->next->data->data.value;
+                struct parse_tree *signature = defn->children->head->data;
+                s->data = signature->children->head->next->data->data.value;
                 bool is_main = strcmp("main", s->data) == 0;
 
                 struct function *fn = new_function(params, params_list.len, locals, locals_list.len, is_main);
@@ -378,10 +380,12 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                 // defns -> defn defns
                 // defns -> defn
                 struct parse_tree *defn = defns->children->head->data;
+                struct parse_tree *signature = defn->children->head->data;
                 struct string s;
-                s.data = defn->children->head->next->data->data.value;;
+                s.data = signature->children->head->next->data->data.value;;
                 const struct function *fn; query_map((&functions), (&s), fn, string, function);
-                struct parse_tree *stmts; load_child_at(stmts, defn, 6);
+
+                struct parse_tree *stmts; load_child_at(stmts, defn, 2);
                 set_body((struct function*) fn, generate_from_tree(stmts, &functions, fn));
 
                 if (defns->children->len == 2){

@@ -21,6 +21,25 @@ void free_parse_tree(const struct parse_tree *tree){
         free((void *) tree);
 }
 
+void print_parse_tree_rec(const struct parse_tree *tree){
+        if (is_terminal(tree->data.type)){
+                printf("%s ", tree->data.value);
+        }
+
+        if (tree->children){
+                for(struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                        print_parse_tree_rec(node->data);
+                }
+        }
+
+}
+
+
+void print_parse_tree(const struct parse_tree *tree){
+        print_parse_tree_rec(tree);
+        printf("\n");
+}
+
 struct parse_tree * copy_tree(struct parse_tree *tree){
         struct parse_tree *ptr = (struct parse_tree*) malloc(sizeof(struct parse_tree));
         ptr->data = tree->data;
