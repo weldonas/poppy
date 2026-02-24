@@ -174,7 +174,7 @@ void free_type_system(const struct type_system *type_system){
         free((void*) type_system);
 }
 
-const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
+const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         const struct type *child_types[MAX_CHILDREN] = {0};
         bool child_type_computed[MAX_CHILDREN] = {0};
 
@@ -356,7 +356,7 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         return NULL;
 }
 
-const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
+const struct type *const find_type(const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         if (tree->data.type == SYMBOL_IDENTIFIER){
                 return find_symbol_type(tree, outer_map);
         }

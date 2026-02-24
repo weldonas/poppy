@@ -49,7 +49,7 @@ struct MAP(string, type) * new_inner_map() {
         return ptr;
 }
 
-const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
+const struct type *find_parse_tree_type(const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
 
 const struct type * find_symbol_type(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *outer_map){
         struct string string;
@@ -69,7 +69,7 @@ const struct type * find_symbol_type(const struct parse_tree *tree, const struct
         return NULL;
 }
 
-const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
+const struct type * find_call_type(const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_CALL);
         // call -> IDENTIFIER LPAREN optargs RPAREN
         struct parse_tree *optargs; load_child_at(optargs, tree, 2);
@@ -92,14 +92,10 @@ const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MA
         return return_type(ftype);
 }
 
-const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
+const struct type *find_parse_tree_type(const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
         const struct type_system *const system = get_poppy_type_system();
         const struct type *const type = find_type(system, tree, outer_map, scope_map);
-        if (type || (tree->data.type == SYMBOL_OPTARGS) || (tree->data.type == SYMBOL_OPTPARAMS)){ // need this since we return NULL for empty type
-                return type;
-        }
-        
-        return NULL;
+        return type;
 }
 
 struct OUTER_TYPE_MAP * find_types(const struct parse_tree *tree){
@@ -109,27 +105,12 @@ struct OUTER_TYPE_MAP * find_types(const struct parse_tree *tree){
         init_map(outer_map, equals_parse_tree, free_typer_entry, parse_tree, MAP(string, type));
         update_map(outer_map, tree, inner_map, parse_tree, MAP(string, type));
 
-        // program -> defns END
-        struct parse_tree *defns = tree->children->head->data;
-        
-        defns = tree->children->head->data;
-        while (1) {
-                // defns -> defn defns
-                // defns -> defn
-                struct parse_tree *defn = defns->children->head->data;
-                const struct type *ftype = find_parse_tree_type(defn, outer_map, inner_map);
+        const struct type *defns_type = find_parse_tree_type(tree, outer_map, inner_map);
 
-                if (ftype == NULL){
-                        free_map(outer_map, parse_tree, MAP(string, type));
-                        free(outer_map);
-                        return NULL;
-                }
-
-                if (defns->children->len == 2){
-                        load_child_at(defns, defns, 1);
-                } else {
-                        break;
-                }
+        if (defns_type == NULL){
+                free_map(outer_map, parse_tree, MAP(string, type));
+                free(outer_map);
+                return NULL;
         }
 
         return outer_map;

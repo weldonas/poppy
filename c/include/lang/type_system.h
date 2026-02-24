@@ -105,6 +105,6 @@ void free_type_rule(const struct type_rule *type_rule);
 const struct type_system *const new_type_system(const struct type_rule **rules, size_t rules_len);
 void free_type_system(const struct type_system *type_system);
 
-const struct type *const find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
+const struct type *const find_type(const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
 
 #endif
