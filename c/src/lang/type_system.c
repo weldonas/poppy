@@ -286,23 +286,12 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                         }
 
                         if (!satisfied) {
-                                if (map_to_use != scope_map){
-                                        free_map(map_to_use, string, type);
-                                        free(map_to_use);
-                                }
                                 return NULL;
                         }
                 }
         }
 
         if (type_rule->type == TYPE_RULE_PRIMITIVE) {
-                // if (!type_rule->output_type){
-                //         if (map_to_use != scope_map){
-                //                 free_map(map_to_use, string, type);
-                //                 free(map_to_use);
-                //         }
-                // }
-
                 return type_rule->output_type;
         }
         else if (type_rule->type == TYPE_RULE_INDEX){
@@ -312,13 +301,6 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                         struct parse_tree *child;
                         load_child_at(child, tree, out);
                         child_types[out] = find_type(system, child, outer_map, map_to_use);
-                }
-
-                if (!child_types[out]){
-                        if (map_to_use != scope_map){
-                                free_map(map_to_use, string, type);
-                                free(map_to_use);
-                        }
                 }
 
                 return child_types[out];
@@ -343,10 +325,7 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 }
 
                 if (!child_types[current] || (!child_types[next] && (next >= 0))){
-                        if (map_to_use != scope_map){
-                                free_map(map_to_use, string, type);
-                                free(map_to_use);
-                        }
+                        return NULL;
                 }
 
                 return param_type(child_types[current], child_types[next]);            
@@ -368,10 +347,7 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 }
 
                 if (!child_types[ret]){
-                        if (map_to_use != scope_map){
-                                free_map(map_to_use, string, type);
-                                free(map_to_use);
-                        }
+                        return NULL;
                 }
 
                 return function_type(child_types[ret], child_types[param]);          

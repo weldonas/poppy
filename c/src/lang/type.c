@@ -137,11 +137,15 @@ bool equals_type(const struct type *t1, const struct type *t2){
         }
 
         else if (t1->category == CATEGORY_PARAMS){
+                if (!equals_type(t1->current_type, t2->current_type)){
+                        return false;
+                }
+
                 if ((!t1->previous) || (!t2->previous)){
                         return (!t1->previous) && (!t2->previous); // if either doesn't have previous, return true iff both don't
                 }
 
-                return equals_type(t1->current_type, t2->current_type) && equals_type(t1->previous, t2->previous);
+                return equals_type(t1->previous, t2->previous);
         }
 
         return false;
