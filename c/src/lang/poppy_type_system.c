@@ -390,7 +390,8 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFN);
         conditions[1] = new_add_symbol_name_function_side_effect(find_signature_name, 0);
         conditions[2] = new_add_scope_side_effect();
-        rules[i] = new_index_type_rule(conditions, 3, 0);
+        conditions[3] = new_return_type_at_condition(2, 0);
+        rules[i] = new_index_type_rule(conditions, 4, 0);
         ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);

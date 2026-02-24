@@ -16,6 +16,7 @@ enum type_rule_condition_type {
         CONDITION_SYMBOL_AT,
         CONDITION_TYPE_AT,
         CONDITION_TYPES_EQUAL_AT,
+        CONDITION_RETURN_TYPE_AT,
         SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX,
         SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION,
         SIDE_EFFECT_ADD_SCOPE
@@ -45,6 +46,10 @@ struct type_rule_condition {
                                 char *(*find_name)(const struct parse_tree *);
                         };
                         size_t type_index;
+                };
+                struct {
+                        size_t return_index;
+                        size_t function_index;
                 };
         };
 };
@@ -84,6 +89,7 @@ const struct type_rule_condition *const new_parent_symbol_condition(enum symbol 
 const struct type_rule_condition *const new_symbol_at_condition(size_t index, enum symbol symbol);
 const struct type_rule_condition *const new_type_at_condition(size_t index, bool (*is_valid)(const struct type *));
 const struct type_rule_condition *const new_types_equal_at_condition(size_t index1, size_t index2);
+const struct type_rule_condition *const new_return_type_at_condition(size_t return_index, size_t function_index);
 
 const struct type_rule_condition *const new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index);
 const struct type_rule_condition *const new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index);

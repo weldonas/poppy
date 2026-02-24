@@ -119,12 +119,7 @@ struct OUTER_TYPE_MAP * find_types(const struct parse_tree *tree){
                 struct parse_tree *defn = defns->children->head->data;
                 const struct type *ftype = find_parse_tree_type(defn, outer_map, inner_map);
 
-                // defn -> signature LBRACE body RBRACE
-                struct parse_tree *body; load_child_at(body, defn, 2);
-                verify_type(body, SYMBOL_BODY);
-                const struct type *stmts_type = find_parse_tree_type(body, outer_map, inner_map);
-
-                if ((stmts_type == NULL) || (ftype == NULL) || !equals_type(stmts_type, return_type(ftype))){
+                if (ftype == NULL){
                         free_map(outer_map, parse_tree, MAP(string, type));
                         free(outer_map);
                         return NULL;

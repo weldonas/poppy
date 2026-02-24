@@ -33,6 +33,8 @@ size_t get_priority(enum type_rule_condition_type type){
                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
                 case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION:
                         return 3;
+                case CONDITION_RETURN_TYPE_AT:
+                        return 4;
         }
         assert(0);
 }
@@ -71,7 +73,15 @@ const struct type_rule_condition *const new_types_equal_at_condition(size_t inde
         ptr->type = CONDITION_TYPES_EQUAL_AT;
         ptr->index1 = index1;
         ptr->index2 = index2;
-        return ptr;  
+        return ptr;
+}
+
+const struct type_rule_condition *const new_return_type_at_condition(size_t return_index, size_t function_index){
+        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
+        ptr->type = CONDITION_RETURN_TYPE_AT;
+        ptr->return_index = return_index;
+        ptr->function_index = function_index;
+        return ptr;
 }
 
 const struct type_rule_condition *const new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index){
@@ -217,6 +227,19 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                                 child_type_computed[condition->index2] = true;
                                         }
                                         satisfied = child_types[condition->index1] && child_types[condition->index2] && equals_type(child_types[condition->index1], child_types[condition->index2]);
+                                        break;
+                                case CONDITION_RETURN_TYPE_AT:
+                                        struct parse_tree *fn; load_child_at(fn, tree, condition->function_index);
+                                        struct parse_tree *ret; load_child_at(ret, tree, condition->return_index);
+                                        if (!child_type_computed[condition->function_index]) {
+                                                child_types[condition->function_index] = find_type(system, fn, outer_map, map_to_use);
+                                                child_type_computed[condition->function_index] = true;
+                                        }
+                                        if (!child_type_computed[condition->return_index]) {
+                                                child_types[condition->return_index] = find_type(system, ret, outer_map, map_to_use);
+                                                child_type_computed[condition->return_index] = true;
+                                        }
+                                        satisfied = child_types[condition->function_index] && child_types[condition->return_index] && equals_type(return_type(child_types[condition->function_index]), child_types[condition->return_index]);
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
