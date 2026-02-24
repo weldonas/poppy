@@ -30,7 +30,8 @@ size_t get_priority(enum type_rule_condition_type type){
                 case CONDITION_TYPE_AT:
                 case CONDITION_TYPES_EQUAL_AT:
                         return 2;
-                case SIDE_EFFECT_ADD_SYMBOL:
+                case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
+                case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION:
                         return 3;
         }
         assert(0);
@@ -73,10 +74,18 @@ const struct type_rule_condition *const new_types_equal_at_condition(size_t inde
         return ptr;  
 }
 
-const struct type_rule_condition *const new_add_symbol_side_effect(size_t name_index, size_t type_index){
+const struct type_rule_condition *const new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index){
         struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = SIDE_EFFECT_ADD_SYMBOL;
+        ptr->type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX;
         ptr->name_index = name_index;
+        ptr->type_index = type_index;
+        return ptr;
+}
+
+const struct type_rule_condition *const new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index){
+        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
+        ptr->type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION;
+        ptr->find_name = find_name;
         ptr->type_index = type_index;
         return ptr;
 }
@@ -209,11 +218,11 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         }
                                         satisfied = child_types[condition->index1] && child_types[condition->index2] && equals_type(child_types[condition->index1], child_types[condition->index2]);
                                         break;
-                                case SIDE_EFFECT_ADD_SYMBOL:
+                                case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
-                                        const struct type *t; query_map(map_to_use, str, t, string, type);
+                                        const struct type *t; query_map(scope_map, str, t, string, type);
                                         if (t != NULL){
                                                 free(str);
                                                 return NULL;
@@ -223,7 +232,26 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                                 child_types[condition->type_index] = find_type(system, child, outer_map, map_to_use);
                                                 child_type_computed[condition->type_index] = true;
                                         }
-                                        update_map(map_to_use, str, child_types[condition->type_index], string, type);
+                                        // NOTE: this adds to the enclosing scope, not any new scope created
+                                        update_map(scope_map, str, child_types[condition->type_index], string, type);
+                                        satisfied = true;
+                                        break;
+                                case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
+                                        struct string *str = (struct string*) malloc(sizeof(struct string));
+                                        str->data = condition->find_name(tree);
+                                        const struct type *t; query_map(scope_map, str, t, string, type);
+                                        if (t != NULL){
+                                                free(str);
+                                                return NULL;
+                                        }
+                                        if (!child_type_computed[condition->type_index]) {
+                                                load_child_at(child, tree, condition->type_index);
+                                                child_types[condition->type_index] = find_type(system, child, outer_map, map_to_use);
+                                                child_type_computed[condition->type_index] = true;
+                                        }
+                                        // NOTE: this adds to the enclosing scope, not any new scope created
+                                        update_map(scope_map, str, child_types[condition->type_index], string, type);
+                                }
                                         satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SCOPE:

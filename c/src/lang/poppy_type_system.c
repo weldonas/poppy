@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 61
+#define RULE_COUNT 62
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -34,6 +34,12 @@ bool is_non_null_type(const struct type *const type){
 
 bool is_non_null_void_type(const struct type *const type){
         return type && equals_type(type, void_type());
+}
+
+char *find_signature_name(const struct parse_tree *defn){
+        const struct parse_tree *signature = defn->children->head->data;
+        const struct parse_tree *id = signature->children->head->next->data;
+        return id->data.value;
 }
 
 const struct type_system *const get_poppy_type_system(){
@@ -229,14 +235,14 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
-        conditions[3] = new_add_symbol_side_effect(2, 1);
+        conditions[3] = new_add_symbol_name_index_side_effect(2, 1);
         rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
-        conditions[3] = new_add_symbol_side_effect(2, 1);
+        conditions[3] = new_add_symbol_name_index_side_effect(2, 1);
         rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
@@ -353,7 +359,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i; 
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAM);
-        conditions[1] = new_add_symbol_side_effect(1, 0);
+        conditions[1] = new_add_symbol_name_index_side_effect(1, 0);
         rules[i] = new_index_type_rule(conditions, 2, 0);
         ++i;
 
@@ -381,6 +387,11 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_function_type_rule(conditions, 1, 0, 3);
         ++i;
 
+        conditions[0] = new_parent_symbol_condition(SYMBOL_DEFN);
+        conditions[1] = new_add_symbol_name_function_side_effect(find_signature_name, 0);
+        conditions[2] = new_add_scope_side_effect();
+        rules[i] = new_index_type_rule(conditions, 3, 0);
+        ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
         return poppy_type_system;

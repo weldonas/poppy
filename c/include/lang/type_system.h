@@ -16,7 +16,8 @@ enum type_rule_condition_type {
         CONDITION_SYMBOL_AT,
         CONDITION_TYPE_AT,
         CONDITION_TYPES_EQUAL_AT,
-        SIDE_EFFECT_ADD_SYMBOL,
+        SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX,
+        SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION,
         SIDE_EFFECT_ADD_SCOPE
 };
 
@@ -39,7 +40,10 @@ struct type_rule_condition {
                         size_t index2;
                 };
                 struct {
-                        size_t name_index;
+                        union {
+                                size_t name_index;
+                                char *(*find_name)(const struct parse_tree *);
+                        };
                         size_t type_index;
                 };
         };
@@ -81,7 +85,8 @@ const struct type_rule_condition *const new_symbol_at_condition(size_t index, en
 const struct type_rule_condition *const new_type_at_condition(size_t index, bool (*is_valid)(const struct type *));
 const struct type_rule_condition *const new_types_equal_at_condition(size_t index1, size_t index2);
 
-const struct type_rule_condition *const new_add_symbol_side_effect(size_t name_index, size_t type_index);
+const struct type_rule_condition *const new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index);
+const struct type_rule_condition *const new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index);
 const struct type_rule_condition *const new_add_scope_side_effect();
 
 const struct type_rule *const new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type);

@@ -69,20 +69,6 @@ const struct type * find_symbol_type(const struct parse_tree *tree, const struct
         return NULL;
 }
 
-char * find_defn_name(struct parse_tree *tree){
-        struct parse_tree *signature = tree->children->head->data;
-        struct parse_tree *identifier; load_child_at(identifier, signature, 1);
-        return identifier->data.value;
-}
-
-const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, type) *scope_map){
-        verify_type(tree, SYMBOL_DEFN);
-        // defn -> signature LBRACE stmts RBRACE
-        // signature -> type IDENTIFIER LPAREN optparams RPAREN 
-        struct parse_tree *signature = tree->children->head->data;
-        return find_parse_tree_type(signature, NULL, scope_map);
-}
-
 const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         verify_type(tree, SYMBOL_CALL);
         // call -> IDENTIFIER LPAREN optargs RPAREN
@@ -113,14 +99,7 @@ const struct type *find_parse_tree_type(struct parse_tree *tree, struct OUTER_TY
                 return type;
         }
         
-        switch (tree->data.type) {
-                case SYMBOL_DEFN:
-                        assert(scope_map != NULL);
-                        return find_defn_type(tree, scope_map);
-                default:
-                        assert(false);
-                        return NULL;
-        }
+        return NULL;
 }
 
 struct OUTER_TYPE_MAP * find_types(const struct parse_tree *tree){
@@ -132,33 +111,13 @@ struct OUTER_TYPE_MAP * find_types(const struct parse_tree *tree){
 
         // program -> defns END
         struct parse_tree *defns = tree->children->head->data;
-
-        while (1) {
-                // defns -> defn defns
-                // defns -> defn
-                struct parse_tree *defn = defns->children->head->data;
-
-                struct MAP(string, type) *defn_map = new_inner_map();
-                update_map(outer_map, defn, defn_map, parse_tree, MAP(string, type));
-
-                const struct type *defn_type = find_parse_tree_type(defn, NULL, defn_map);
-                struct string *id = (struct string*) malloc(sizeof(struct string));
-                id->data = find_defn_name(defn);
-
-                update_map(inner_map, id, defn_type, string, type);
-
-                if (defns->children->len == 2){
-                        load_child_at(defns, defns, 1);
-                } else {
-                        break;
-                }
-        }
         
         defns = tree->children->head->data;
         while (1) {
                 // defns -> defn defns
                 // defns -> defn
                 struct parse_tree *defn = defns->children->head->data;
+                find_parse_tree_type(defn, outer_map, inner_map);
 
                 // defn -> signature LBRACE stmts RBRACE
                 struct parse_tree *stmts; load_child_at(stmts, defn, 2);
