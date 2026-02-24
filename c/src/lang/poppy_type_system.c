@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 60
+#define RULE_COUNT 61
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -376,6 +376,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(3);
         rules[i] = new_param_type_rule(conditions, 2, 0, 2);
         ++i; 
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_SIGNATURE);
+        rules[i] = new_function_type_rule(conditions, 1, 0, 3);
+        ++i;
+
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
         return poppy_type_system;

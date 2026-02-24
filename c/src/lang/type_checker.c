@@ -80,18 +80,7 @@ const struct type * find_defn_type(struct parse_tree *tree, struct MAP(string, t
         // defn -> signature LBRACE stmts RBRACE
         // signature -> type IDENTIFIER LPAREN optparams RPAREN 
         struct parse_tree *signature = tree->children->head->data;
-        const struct type * ret = find_parse_tree_type(signature->children->head->data, NULL, NULL);
-
-        struct parse_tree *optparams; load_child_at(optparams, signature, 3);
-        if ((optparams->children == NULL) || (optparams->children->len == 0)){
-                // optparams ->
-                return function_type(ret, NULL);
-        }
-
-        // optparams -> params
-        struct parse_tree *params = optparams->children->head->data;
-        const struct type *params_type = find_parse_tree_type(params, NULL, scope_map);
-        return function_type(ret, params_type);
+        return find_parse_tree_type(signature, NULL, scope_map);
 }
 
 const struct type * find_call_type(struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){

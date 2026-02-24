@@ -15,5 +15,6 @@ struct parse_tree {
 
 const struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *head);
 void free_parse_tree(const struct parse_tree *tree);
+void print_parse_tree(const struct parse_tree *tree);
 
 #endif

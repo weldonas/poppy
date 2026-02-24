@@ -121,6 +121,18 @@ const struct type_rule *const new_param_type_rule(const struct type_rule_conditi
         return ptr;       
 }
 
+const struct type_rule *const new_function_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t ret_index, size_t param_index){
+        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        for (size_t i = 0; i < conditions_len; ++i){
+                ptr->conditions[i] = conditions[i];
+        }
+        ptr->conditions_len = conditions_len;
+        ptr->type = TYPE_RULE_FUNCTION;
+        ptr->ret_index = ret_index;
+        ptr->param_index = param_index;
+        return ptr;
+}
+
 void free_type_rule(const struct type_rule *type_rule){
         for (size_t i = 0; i < type_rule->conditions_len; ++i){
                 free((void*) type_rule->conditions[i]);
@@ -287,6 +299,31 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 }
 
                 return param_type(child_types[current], child_types[next]);            
+        }
+        else if (type_rule->type == TYPE_RULE_FUNCTION){
+                size_t ret = type_rule->ret_index;
+                size_t param = type_rule->param_index;
+
+                if (!child_type_computed[ret]) {
+                        struct parse_tree *child;
+                        load_child_at(child, tree, ret);
+                        child_types[ret] = find_type(system, child, outer_map, map_to_use);
+                }
+
+                if (!child_type_computed[param]) {
+                        struct parse_tree *child;
+                        load_child_at(child, tree, param);
+                        child_types[param] = find_type(system, child, outer_map, map_to_use);
+                }
+
+                if (!child_types[ret]){
+                        if (map_to_use != scope_map){
+                                free_map(map_to_use, string, type);
+                                free(map_to_use);
+                        }
+                }
+
+                return function_type(child_types[ret], child_types[param]);          
         }
 
         return NULL;
