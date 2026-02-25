@@ -174,12 +174,32 @@ void free_type_system(const struct type_system *type_system){
         free((void*) type_system);
 }
 
-const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
-        const struct type *child_types[MAX_CHILDREN] = {0};
-        bool child_type_computed[MAX_CHILDREN] = {0};
+struct application_data {
+        const struct type *child_types[MAX_CHILDREN];
+        bool child_type_computed[MAX_CHILDREN];
+        const struct type_system *system;
+        const struct parse_tree *tree;
+        struct OUTER_TYPE_MAP *outer_map;
+        struct MAP(string, type) *scope_map;
+};
 
-        struct MAP(string, type) *map_to_use = scope_map;
+const struct type *get_child_type(struct application_data *data, size_t index){
+        const struct parse_tree *child; load_child_at(child, data->tree, index);
+        if (!data->child_type_computed[index]){
+                data->child_types[index] = find_type(data->system, child, data->outer_map, data->scope_map);
+                data->child_type_computed[index] = true;
+        }
 
+        return data->child_types[index];
+}
+
+const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map){
+        struct application_data data = {0};
+        data.system = system;
+        data.tree = tree;
+        data.outer_map = outer_map;
+        data.scope_map = scope_map;
+        
         for (size_t priority = 0; priority <= MAX_PRIORITY; ++priority){
                 for (size_t i = 0; i < type_rule->conditions_len; ++i) {
                         const struct type_rule_condition *condition = type_rule->conditions[i];
@@ -209,37 +229,17 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         break;
                                 case CONDITION_TYPE_AT:
                                         load_child_at(child, tree, condition->index);
-                                        if (!child_type_computed[condition->index]) {
-                                                child_types[condition->index] = find_type(system, child, outer_map, map_to_use);
-                                                child_type_computed[condition->index] = true;
-                                        }
-                                        satisfied = condition->is_valid(child_types[condition->index]);
+                                        satisfied = condition->is_valid(get_child_type(&data, condition->index));
                                         break;
                                 case CONDITION_TYPES_EQUAL_AT:
-                                        struct parse_tree *child1; load_child_at(child1, tree, condition->index1);
-                                        struct parse_tree *child2; load_child_at(child2, tree, condition->index2);
-                                        if (!child_type_computed[condition->index1]) {
-                                                child_types[condition->index1] = find_type(system, child1, outer_map, map_to_use);
-                                                child_type_computed[condition->index1] = true;
-                                        }
-                                        if (!child_type_computed[condition->index2]) {
-                                                child_types[condition->index2] = find_type(system, child2, outer_map, map_to_use);
-                                                child_type_computed[condition->index2] = true;
-                                        }
-                                        satisfied = child_types[condition->index1] && child_types[condition->index2] && equals_type(child_types[condition->index1], child_types[condition->index2]);
+                                        const struct type *child_type1 = get_child_type(&data, condition->index1);
+                                        const struct type *child_type2 = get_child_type(&data, condition->index2);
+                                        satisfied = child_type1 && child_type2 && equals_type(child_type1, child_type2);
                                         break;
                                 case CONDITION_RETURN_TYPE_AT:
-                                        struct parse_tree *fn; load_child_at(fn, tree, condition->function_index);
-                                        struct parse_tree *ret; load_child_at(ret, tree, condition->return_index);
-                                        if (!child_type_computed[condition->function_index]) {
-                                                child_types[condition->function_index] = find_type(system, fn, outer_map, map_to_use);
-                                                child_type_computed[condition->function_index] = true;
-                                        }
-                                        if (!child_type_computed[condition->return_index]) {
-                                                child_types[condition->return_index] = find_type(system, ret, outer_map, map_to_use);
-                                                child_type_computed[condition->return_index] = true;
-                                        }
-                                        satisfied = child_types[condition->function_index] && child_types[condition->return_index] && equals_type(return_type(child_types[condition->function_index]), child_types[condition->return_index]);
+                                        const struct type *fn_type = get_child_type(&data, condition->function_index);
+                                        const struct type *ret_type = get_child_type(&data, condition->return_index);
+                                        satisfied = fn_type && ret_type && equals_type(return_type(fn_type), ret_type);
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
@@ -250,13 +250,8 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                                 free(str);
                                                 return NULL;
                                         }
-                                        if (!child_type_computed[condition->type_index]) {
-                                                load_child_at(child, tree, condition->type_index);
-                                                child_types[condition->type_index] = find_type(system, child, outer_map, map_to_use);
-                                                child_type_computed[condition->type_index] = true;
-                                        }
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        update_map(scope_map, str, child_types[condition->type_index], string, type);
+                                        update_map(scope_map, str, get_child_type(&data, condition->type_index), string, type);
                                         satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
@@ -267,20 +262,15 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                                 free(str);
                                                 return NULL;
                                         }
-                                        if (!child_type_computed[condition->type_index]) {
-                                                load_child_at(child, tree, condition->type_index);
-                                                child_types[condition->type_index] = find_type(system, child, outer_map, map_to_use);
-                                                child_type_computed[condition->type_index] = true;
-                                        }
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        update_map(scope_map, str, child_types[condition->type_index], string, type);
+                                        update_map(scope_map, str, get_child_type(&data, condition->type_index), string, type);
                                 }
                                         satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SCOPE:
                                         struct MAP(string, type) *new_map = new_inner_map();
                                         update_map(outer_map, tree, new_map, parse_tree, MAP(string, type));
-                                        map_to_use = new_map;
+                                        data.scope_map = new_map;
                                         satisfied = true;
                                         break;
                         }
@@ -295,62 +285,32 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 return type_rule->output_type;
         }
         else if (type_rule->type == TYPE_RULE_INDEX){
-                size_t out = type_rule->output_index;
-
-                if (!child_type_computed[out]) {
-                        struct parse_tree *child;
-                        load_child_at(child, tree, out);
-                        child_types[out] = find_type(system, child, outer_map, map_to_use);
-                }
-
-                return child_types[out];
+                return get_child_type(&data, type_rule->output_index);
         }
         else if (type_rule->type == TYPE_RULE_PARAM){
                 size_t current = type_rule->current_index;
                 int next = type_rule->next_index;
+                const struct type *next_type;
 
-                if (!child_type_computed[current]) {
-                        struct parse_tree *child;
-                        load_child_at(child, tree, current);
-                        child_types[current] = find_type(system, child, outer_map, map_to_use);
-                }
-
+                get_child_type(&data, current);
                 if (next < 0){
-                        child_types[next] = NULL;
+                        next_type = NULL;
                 }
-                else if (!child_type_computed[next]) {
-                        struct parse_tree *child;
-                        load_child_at(child, tree, next);
-                        child_types[next] = find_type(system, child, outer_map, map_to_use);
+                else {
+                        next_type = get_child_type(&data, next);
                 }
 
-                if (!child_types[current] || (!child_types[next] && (next >= 0))){
+                if (!get_child_type(&data, current) || (!next_type && (next >= 0))){
                         return NULL;
                 }
 
-                return param_type(child_types[current], child_types[next]);            
+                return param_type(get_child_type(&data, current), next_type);            
         }
         else if (type_rule->type == TYPE_RULE_FUNCTION){
-                size_t ret = type_rule->ret_index;
-                size_t param = type_rule->param_index;
-
-                if (!child_type_computed[ret]) {
-                        struct parse_tree *child;
-                        load_child_at(child, tree, ret);
-                        child_types[ret] = find_type(system, child, outer_map, map_to_use);
-                }
-
-                if (!child_type_computed[param]) {
-                        struct parse_tree *child;
-                        load_child_at(child, tree, param);
-                        child_types[param] = find_type(system, child, outer_map, map_to_use);
-                }
-
-                if (!child_types[ret]){
+                if (!get_child_type(&data, type_rule->ret_index)){
                         return NULL;
                 }
-
-                return function_type(child_types[ret], child_types[param]);          
+                return function_type(get_child_type(&data, type_rule->ret_index), get_child_type(&data, type_rule->param_index));          
         }
 
         return NULL;
