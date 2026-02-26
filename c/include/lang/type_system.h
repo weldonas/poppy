@@ -1,10 +1,31 @@
 #ifndef TYPE_SYSTEM_H
 #define TYPE_SYSTEM_H
 
+#include "data/map.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
-#include "lang/type_checker.h"
+
+#define OUTER_TYPE_MAP parse_tree_string_type_map_map
+
+struct string {
+        char *data;
+};
+bool equals_string(const struct string *s1, const struct string *s2);
+
+DEFINE_LIST(string)
+
+DEFINE_MAP(string, type);
+DEFINE_MAP(parse_tree, MAP(string, type));
+
+struct type_system {
+        const struct type_rule **rules;
+        size_t rules_len;
+};
+
+struct OUTER_TYPE_MAP * find_types(const struct type_system *const system, const struct parse_tree *tree);
+struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct LIST(string) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
 
 #define MAX_CONDITION_COUNT 16
 #define MAX_SIDE_EFFECT_COUNT 16
@@ -79,11 +100,6 @@ struct type_rule {
         };
 };
 
-struct type_system {
-        const struct type_rule **rules;
-        size_t rules_len;
-};
-
 const struct type_rule_condition *const new_length_condition(size_t length);
 const struct type_rule_condition *const new_parent_symbol_condition(enum symbol parent_symbol);
 const struct type_rule_condition *const new_symbol_at_condition(size_t index, enum symbol symbol);
@@ -104,7 +120,5 @@ void free_type_rule(const struct type_rule *type_rule);
 
 const struct type_system *const new_type_system(const struct type_rule **rules, size_t rules_len);
 void free_type_system(const struct type_system *type_system);
-
-const struct type *const find_type(const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, type) *scope_map);
 
 #endif
