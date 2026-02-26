@@ -18,10 +18,9 @@ DEFINE_LIST(string)
 DEFINE_MAP(string, type);
 DEFINE_MAP(parse_tree, MAP(string, type));
 
-struct type_system {
-        const struct type_rule **rules;
-        size_t rules_len;
-};
+struct type_rule;
+struct type_rule_condition;
+struct type_system;
 
 struct OUTER_TYPE_MAP * find_types(const struct type_system *const system, const struct parse_tree *tree);
 struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
@@ -29,76 +28,6 @@ struct LIST(string) get_parameters(const struct parse_tree *tree, const struct O
 
 #define MAX_CONDITION_COUNT 16
 #define MAX_SIDE_EFFECT_COUNT 16
-#define MAX_PRIORITY 7
-
-enum type_rule_condition_type {
-        CONDITION_LENGTH,
-        CONDITION_PARENT_SYMBOL,
-        CONDITION_SYMBOL_AT,
-        CONDITION_TYPE_AT,
-        CONDITION_TYPES_EQUAL_AT,
-        CONDITION_RETURN_TYPE_AT,
-        SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX,
-        SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION,
-        SIDE_EFFECT_ADD_SCOPE
-};
-
-size_t get_priority(enum type_rule_condition_type type);
-
-struct type_rule_condition {
-        enum type_rule_condition_type type;
-        union {
-                size_t length;
-                enum symbol parent_symbol;
-                struct {
-                        size_t index;
-                        union {
-                                enum symbol symbol;
-                                bool (*is_valid)(const struct type *);
-                        };
-                };
-                struct {
-                        size_t index1;
-                        size_t index2;
-                };
-                struct {
-                        union {
-                                size_t name_index;
-                                char *(*find_name)(const struct parse_tree *);
-                        };
-                        size_t type_index;
-                };
-                struct {
-                        size_t return_index;
-                        size_t function_index;
-                };
-        };
-};
-
-enum type_rule_type {
-        TYPE_RULE_PRIMITIVE,
-        TYPE_RULE_INDEX,
-        TYPE_RULE_PARAM,
-        TYPE_RULE_FUNCTION
-};
-
-struct type_rule {
-        const struct type_rule_condition *conditions[MAX_CONDITION_COUNT];
-        size_t conditions_len;
-        enum type_rule_type type;
-        union {
-                const struct type *output_type;
-                size_t output_index;
-                struct {
-                        size_t current_index;
-                        int next_index;
-                };
-                struct {
-                        size_t ret_index;
-                        size_t param_index;
-                };
-        };
-};
 
 const struct type_rule_condition *const new_length_condition(size_t length);
 const struct type_rule_condition *const new_parent_symbol_condition(enum symbol parent_symbol);
