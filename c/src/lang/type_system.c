@@ -245,72 +245,46 @@ size_t get_priority(enum type_rule_condition_type type){
         assert(0);
 }
 
+const struct type_rule_condition *new_type_rule_condition(struct type_rule_condition cond){
+        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
+        *ptr = cond;
+        return ptr;
+}
+
 const struct type_rule_condition *new_length_condition(size_t length){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_LENGTH;
-        ptr->length = length;
-        return ptr;
+        return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_LENGTH, .length = length});
 }
 
-const struct type_rule_condition *new_parent_symbol_condition(enum symbol parent_symbol){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_PARENT_SYMBOL;
-        ptr->parent_symbol = parent_symbol;
-        return ptr;
+const struct type_rule_condition *new_parent_symbol_condition(enum symbol parent_symbol) {
+        return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_PARENT_SYMBOL, .parent_symbol = parent_symbol});
 }
 
-const struct type_rule_condition *new_symbol_at_condition(size_t index, enum symbol symbol){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_SYMBOL_AT;
-        ptr->index = index;
-        ptr->symbol = symbol;
-        return ptr;
+const struct type_rule_condition *new_symbol_at_condition(size_t index, enum symbol symbol) {
+        return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_SYMBOL_AT, .index = index, .symbol = symbol});
 }
 
-const struct type_rule_condition *new_type_at_condition(size_t index, bool (*is_valid)(const struct type *)){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_TYPE_AT;
-        ptr->index = index;
-        ptr->is_valid = is_valid;
-        return ptr; 
+const struct type_rule_condition *new_type_at_condition(size_t index, bool (*is_valid)(const struct type *)) {
+        return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_TYPE_AT, .index = index, .is_valid = is_valid});
 }
 
-const struct type_rule_condition *new_types_equal_at_condition(size_t index1, size_t index2){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_TYPES_EQUAL_AT;
-        ptr->index1 = index1;
-        ptr->index2 = index2;
-        return ptr;
+const struct type_rule_condition *new_types_equal_at_condition(size_t index1, size_t index2) {
+        return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_TYPES_EQUAL_AT, .index1 = index1, .index2 = index2});
 }
 
-const struct type_rule_condition *new_return_type_at_condition(size_t return_index, size_t function_index){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = CONDITION_RETURN_TYPE_AT;
-        ptr->return_index = return_index;
-        ptr->function_index = function_index;
-        return ptr;
+const struct type_rule_condition *new_return_type_at_condition(size_t return_index, size_t function_index) {
+        return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_RETURN_TYPE_AT, .return_index = return_index, .function_index = function_index});
 }
 
-const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX;
-        ptr->name_index = name_index;
-        ptr->type_index = type_index;
-        return ptr;
+const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index) {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index});
 }
 
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION;
-        ptr->find_name = find_name;
-        ptr->type_index = type_index;
-        return ptr;
+const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index) {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name = find_name, .type_index = type_index});
 }
 
-const struct type_rule_condition *new_add_scope_side_effect(){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
-        ptr->type = SIDE_EFFECT_ADD_SCOPE;
-        return ptr;
+const struct type_rule_condition *new_add_scope_side_effect() {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SCOPE});
 }
 
 const struct type_rule *new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type){
