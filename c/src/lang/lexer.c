@@ -1,4 +1,5 @@
 #include "lang/lexer.h"
+#include "lang/symbol.h"
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -83,6 +84,8 @@ struct lex_data find_alphanumeric_value (FILE* file, char *val){
                 ret.type = SYMBOL_BOOL;
         } else if ((ret.val_len == 4) && (strncmp(val, "char", 4) == 0)){
                 ret.type = SYMBOL_CHAR;
+        } else if ((ret.val_len == 7) && (strncmp(val, "declare", 7) == 0)){
+                ret.type = SYMBOL_DECLARE;
         } else if ((ret.val_len == 4) && (strncmp(val, "else", 4) == 0)){
                 ret.type = SYMBOL_ELSE;
         } else if ((ret.val_len == 5) && (strncmp(val, "false", 5) == 0)){

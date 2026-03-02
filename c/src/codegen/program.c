@@ -312,13 +312,14 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
 char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tree *tree){
         struct MAP(string, function) functions; init_map((&functions), equals_string, free_string_function_entry, string, function);
-        // program -> defns END
-        struct parse_tree *defns = tree->children->head->data;
+        // program -> defndecls END
+        struct parse_tree *defndecls = tree->children->head->data;
 
         while (1) {
-                // defns -> defn defns
-                // defns -> defn
-                struct parse_tree *defn = defns->children->head->data;
+                // defndecls -> defndecl defndecls
+                // defndecls -> defndecl
+                struct parse_tree *defndecl = defndecls->children->head->data;
+                struct parse_tree *defn = defndecl->children->head->data;
 
                 struct LIST(string) params_list = get_parameters(defn, type_map);
                 struct LIST(string) locals_list = get_local_variables(defn, type_map);
@@ -367,18 +368,19 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
 
                 update_map((&functions), s, fn, string, function);
 
-                if (defns->children->len == 2){
-                        load_child_at(defns, defns, 1);
+                if (defndecls->children->len == 2){
+                        load_child_at(defndecls, defndecls, 1);
                 } else {
                         break;
                 }
         }
 
-        defns = tree->children->head->data;
+        defndecls = tree->children->head->data;
         while (1) {
-                // defns -> defn defns
-                // defns -> defn
-                struct parse_tree *defn = defns->children->head->data;
+                // defndecls -> defndecl defndecls
+                // defndecls -> defndecl
+                struct parse_tree *defndecl = defndecls->children->head->data;
+                struct parse_tree *defn = defndecl->children->head->data;
                 struct parse_tree *signature = defn->children->head->data;
                 struct string s;
                 s.data = signature->children->head->next->data->data.value;;
@@ -387,8 +389,8 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                 struct parse_tree *stmts; load_child_at(stmts, defn, 2);
                 set_body((struct function*) fn, generate_from_tree(stmts, &functions, fn));
 
-                if (defns->children->len == 2){
-                        load_child_at(defns, defns, 1);
+                if (defndecls->children->len == 2){
+                        load_child_at(defndecls, defndecls, 1);
                 } else {
                         break;
                 }

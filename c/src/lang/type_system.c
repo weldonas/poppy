@@ -166,9 +166,9 @@ struct OUTER_TYPE_MAP * find_types(const struct type_system *const system, const
         init_map(outer_map, equals_parse_tree, free_typer_entry, parse_tree, MAP(string, type));
         update_map(outer_map, tree, inner_map, parse_tree, MAP(string, type));
 
-        const struct type *defns_type = find_type(system, tree, outer_map, inner_map);
+        const struct type *defndecls_type = find_type(system, tree, outer_map, inner_map);
 
-        if (defns_type == NULL){
+        if (defndecls_type == NULL){
                 free_map(outer_map, parse_tree, MAP(string, type));
                 free(outer_map);
                 return NULL;

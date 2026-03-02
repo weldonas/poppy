@@ -46,10 +46,11 @@ enum symbol {
         SYMBOL_CONSTANT,
         SYMBOL_CHARLIT,
         SYMBOL_STRINGLIT,
+        SYMBOL_DECLARE,
         SYMBOL_END,         // end of input
         // non-terminal symbols
         SYMBOL_PROGRAM,
-        SYMBOL_DEFNS,
+        SYMBOL_DEFNDECLS,
         SYMBOL_DEFN,
         SYMBOL_TYPE,
         SYMBOL_OPTPARAMS,
@@ -77,6 +78,8 @@ enum symbol {
         SYMBOL_FORSTMT,
         SYMBOL_BODY,
         SYMBOL_SIGNATURE,
+        SYMBOL_DECL,
+        SYMBOL_DEFNDECL,
         SYMBOL_COUNT
 };
 
