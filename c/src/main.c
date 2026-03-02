@@ -9,7 +9,7 @@
 #include "lang/poppy_type_system.h"
 #include "lang/preprocess.h"
 #include "lang/type.h"
-#include "lang/type_checker.h"
+#include "lang/type_system.h"
 
 char *intermediate_file = "inter.prog";
 
@@ -44,7 +44,8 @@ int main(int argc, char *argv[]){
 
         printf("parsed\n");
 
-        const struct OUTER_TYPE_MAP *types = find_types(pt);
+        const struct type_system *const system = get_poppy_type_system();
+        const struct OUTER_TYPE_MAP *types = find_types(system, pt);
         if (types != NULL){
                 printf("typed\n");
                 char *code = generate_code(types, pt);

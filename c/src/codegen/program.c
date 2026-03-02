@@ -10,7 +10,6 @@
 #include "codegen/ops.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
-#include "lang/type_checker.h"
 
 #define load_child_at(var, tree, n)                                        \
         do {                                                               \
