@@ -6,17 +6,23 @@
 #include "lang/symbol.h"
 #include "lang/type.h"
 
-#define OUTER_TYPE_MAP parse_tree_string_type_map_map
+#define OUTER_TYPE_MAP parse_tree_string_symbol_table_value_map_map
 
 struct string {
         char *data;
 };
+
 bool equals_string(const struct string *s1, const struct string *s2);
+
+struct symbol_table_value {
+        const struct type *type;
+        bool is_defined;
+};
 
 DEFINE_LIST(string)
 
-DEFINE_MAP(string, type);
-DEFINE_MAP(parse_tree, MAP(string, type));
+DEFINE_MAP(string, symbol_table_value);
+DEFINE_MAP(parse_tree, MAP(string, symbol_table_value));
 
 struct type_rule;
 struct type_rule_condition;

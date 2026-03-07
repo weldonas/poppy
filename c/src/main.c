@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
         free_parse_tree(pt);
 
         if (types != NULL){
-                free_map(types, parse_tree, MAP(string, type));
+                free_map(types, parse_tree, MAP(string, symbol_table_value));
                 free((void*) types);
         }
 
