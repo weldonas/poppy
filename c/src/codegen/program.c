@@ -321,6 +321,15 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                 struct parse_tree *defndecl = defndecls->children->head->data;
                 struct parse_tree *defn = defndecl->children->head->data;
 
+                if (defn->data.type != SYMBOL_DEFN){
+                        if (defndecls->children->len == 2){
+                                load_child_at(defndecls, defndecls, 1);
+                                continue;
+                        } else {
+                                break;
+                        }
+                }
+
                 struct LIST(string) params_list = get_parameters(defn, type_map);
                 struct LIST(string) locals_list = get_local_variables(defn, type_map);
 
@@ -381,6 +390,16 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                 // defndecls -> defndecl
                 struct parse_tree *defndecl = defndecls->children->head->data;
                 struct parse_tree *defn = defndecl->children->head->data;
+
+                if (defn->data.type != SYMBOL_DEFN){
+                        if (defndecls->children->len == 2){
+                                load_child_at(defndecls, defndecls, 1);
+                                continue;
+                        } else {
+                                break;
+                        }
+                }
+
                 struct parse_tree *signature = defn->children->head->data;
                 struct string s;
                 s.data = signature->children->head->next->data->data.value;;

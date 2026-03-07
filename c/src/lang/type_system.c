@@ -59,6 +59,7 @@ struct type_rule_condition {
                                 char *(*find_name)(const struct parse_tree *);
                         };
                         size_t type_index;
+                        bool is_defined;
                 };
                 struct {
                         size_t return_index;
@@ -276,12 +277,12 @@ const struct type_rule_condition *new_return_type_at_condition(size_t return_ind
         return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_RETURN_TYPE_AT, .return_index = return_index, .function_index = function_index});
 }
 
-const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index});
+const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index, bool is_defined) {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index, .is_defined = is_defined});
 }
 
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name = find_name, .type_index = type_index});
+const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index, bool is_defined) {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name = find_name, .type_index = type_index, .is_defined = is_defined});
 }
 
 const struct type_rule_condition *new_add_scope_side_effect() {
@@ -434,13 +435,13 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
-                                        const struct symbol_table_value *t; query_map(scope_map, str, t, string, symbol_table_value);
-                                        if (t != NULL){
+                                        const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
+                                        if ((v != NULL) && (v->is_defined)){
                                                 free(str);
                                                 return NULL;
                                         }
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), true);
+                                        const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
                                         update_map(scope_map, str, new_value, string, symbol_table_value);
                                         satisfied = true;
                                         break;
@@ -448,12 +449,12 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = condition->find_name(tree);
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        if (v != NULL){
+                                        if ((v != NULL) && (v->is_defined)){
                                                 free(str);
                                                 return NULL;
                                         }
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), true);
+                                        const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
                                         update_map(scope_map, str, new_value, string, symbol_table_value);
                                 }
                                         satisfied = true;

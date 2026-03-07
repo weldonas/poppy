@@ -1,9 +1,10 @@
 #include "lang/poppy_type_system.h"
+#include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 66
+#define RULE_COUNT 67
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -36,11 +37,18 @@ bool is_non_null_void_type(const struct type *const type){
         return type && equals_type(type, void_type());
 }
 
-char *find_signature_name(const struct parse_tree *defn){
+char *find_defn_signature_name(const struct parse_tree *defn){
         const struct parse_tree *signature = defn->children->head->data;
         const struct parse_tree *id = signature->children->head->next->data;
         return id->data.value;
 }
+
+char *find_decl_signature_name(const struct parse_tree *decl){
+        const struct parse_tree *signature = decl->children->head->next->data;
+        const struct parse_tree *id = signature->children->head->next->data;
+        return id->data.value;
+}
+
 
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
@@ -235,14 +243,14 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
-        conditions[3] = new_add_symbol_name_index_side_effect(2, 1);
+        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
         rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
-        conditions[3] = new_add_symbol_name_index_side_effect(2, 1);
+        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
         rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
@@ -359,7 +367,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i; 
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAM);
-        conditions[1] = new_add_symbol_name_index_side_effect(1, 0);
+        conditions[1] = new_add_symbol_name_index_side_effect(1, 0, true);
         rules[i] = new_index_type_rule(conditions, 2, 0);
         ++i;
 
@@ -388,10 +396,16 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFN);
-        conditions[1] = new_add_symbol_name_function_side_effect(find_signature_name, 0);
+        conditions[1] = new_add_symbol_name_function_side_effect(find_defn_signature_name, 0, true);
         conditions[2] = new_add_scope_side_effect();
         conditions[3] = new_return_type_at_condition(2, 0);
         rules[i] = new_index_type_rule(conditions, 4, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_DECL);
+        conditions[1] = new_add_symbol_name_function_side_effect(find_decl_signature_name, 1, false);
+        conditions[2] = new_add_scope_side_effect(); // this ensures params dont get added to the global scope
+        rules[i] = new_type_rule(conditions, 3, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECLS);
