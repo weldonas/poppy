@@ -444,12 +444,14 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        if ((v != NULL) && (v->is_defined)){
-                                                free(str);
-                                                return NULL;
-                                        }
                                         // NOTE: this adds to the enclosing scope, not any new scope created
                                         const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
+
+                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
+                                                free(str);
+                                                free((void*) new_value);
+                                                return NULL;
+                                        }
                                         update_map(scope_map, str, new_value, string, symbol_table_value);
                                         satisfied = true;
                                         break;
@@ -457,12 +459,14 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = condition->find_name(tree);
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        if ((v != NULL) && (v->is_defined)){
-                                                free(str);
-                                                return NULL;
-                                        }
                                         // NOTE: this adds to the enclosing scope, not any new scope created
                                         const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
+
+                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
+                                                free(str);
+                                                free((void*) new_value);
+                                                return NULL;
+                                        }
                                         update_map(scope_map, str, new_value, string, symbol_table_value);
                                 }
                                         satisfied = true;
