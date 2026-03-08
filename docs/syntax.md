@@ -2,16 +2,19 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defns, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature}\}$
+Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl}\}$
 
 Start symbol: $\text{program}$
 
 Generation rules:
 $$\begin{align*}
-\text{program} &\rightarrow \text{defns END}\\
-\text{defns} &\rightarrow \text{defn}\\
-\text{defns} &\rightarrow \text{defn defns}\\
+\text{program} &\rightarrow \text{defndecls END}\\
+\text{defndecls} &\rightarrow \text{defndecl}\\
+\text{defndecls} &\rightarrow \text{defndecl defndecls}\\
+\text{defndecl} &\rightarrow \text{defn}\\
+\text{defndecl} &\rightarrow \text{decl}\\
 \text{defn} &\rightarrow \text{signature LBRACE body RBRACE}\\
+\text{decl} &\rightarrow \text{DECLARE signature}\\
 \text{signature} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN}\\
 \text{type} &\rightarrow \text{INT}\\
 \text{type} &\rightarrow \text{VOID}\\

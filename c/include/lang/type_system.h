@@ -6,17 +6,23 @@
 #include "lang/symbol.h"
 #include "lang/type.h"
 
-#define OUTER_TYPE_MAP parse_tree_string_type_map_map
+#define OUTER_TYPE_MAP parse_tree_string_symbol_table_value_map_map
 
 struct string {
         char *data;
 };
+
 bool equals_string(const struct string *s1, const struct string *s2);
+
+struct symbol_table_value {
+        const struct type *type;
+        bool is_defined;
+};
 
 DEFINE_LIST(string)
 
-DEFINE_MAP(string, type);
-DEFINE_MAP(parse_tree, MAP(string, type));
+DEFINE_MAP(string, symbol_table_value);
+DEFINE_MAP(parse_tree, MAP(string, symbol_table_value));
 
 struct type_rule;
 struct type_rule_condition;
@@ -36,8 +42,8 @@ const struct type_rule_condition *new_type_at_condition(size_t index, bool (*is_
 const struct type_rule_condition *new_types_equal_at_condition(size_t index1, size_t index2);
 const struct type_rule_condition *new_return_type_at_condition(size_t return_index, size_t function_index);
 
-const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index);
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index);
+const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index, bool is_defined);
+const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index, bool is_defined);
 const struct type_rule_condition *new_add_scope_side_effect();
 
 const struct type_rule *new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type);

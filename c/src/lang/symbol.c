@@ -42,7 +42,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_CONSTANT: return "CONST";
                 case SYMBOL_END: return "END";
                 case SYMBOL_PROGRAM: return "PROGRAM";
-                case SYMBOL_DEFNS: return "DEFNS";
+                case SYMBOL_DEFNDECLS: return "DEFNDECLS";
                 case SYMBOL_DEFN: return "DEFN";
                 case SYMBOL_TYPE: return "TYPE";
                 case SYMBOL_OPTPARAMS: return "OPTPARAMS";
@@ -78,6 +78,9 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_WHILESTMT: return "WHILESTMT";
                 case SYMBOL_BODY: return "BODY";
                 case SYMBOL_SIGNATURE: return "SIGNATURE";
+                case SYMBOL_DECLARE: return "declare";
+                case SYMBOL_DECL: return "DECL";
+                case SYMBOL_DEFNDECL: return "DEFNDECL";
         }
         return 0;
 }
