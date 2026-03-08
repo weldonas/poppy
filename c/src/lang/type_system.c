@@ -168,12 +168,20 @@ struct OUTER_TYPE_MAP * find_types(const struct type_system *const system, const
         init_map(outer_map, equals_parse_tree, free_typer_entry, parse_tree, MAP(string, symbol_table_value));
         update_map(outer_map, tree, inner_map, parse_tree, MAP(string, symbol_table_value));
 
-        const struct type *defndecls_type = find_type(system, tree, outer_map, inner_map);
+        const struct type *program_type = find_type(system, tree, outer_map, inner_map);
 
-        if (defndecls_type == NULL){
+        if (program_type == NULL){
                 free_map(outer_map, parse_tree, MAP(string, symbol_table_value));
                 free(outer_map);
                 return NULL;
+        }
+
+        for (struct string_symbol_table_value_map_entry_list_node *map_node = inner_map->list->head; map_node != NULL; map_node = map_node->next){
+                if (!map_node->data->value->is_defined){
+                        free_map(outer_map, parse_tree, MAP(string, symbol_table_value));
+                        free(outer_map);
+                        return NULL;
+                }
         }
 
         return outer_map;
