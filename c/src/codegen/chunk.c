@@ -1,6 +1,6 @@
 #include "codegen/chunk.h"
 
-#include <stddef.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -46,7 +46,7 @@ void free_chunk(struct chunk *chunk){
         free(chunk);
 }
 
-void add_variable(struct chunk *chunk, char *var){
+void add_variable(struct chunk *chunk, char *var, size_t words){
         struct varname *v = (struct varname*) malloc(sizeof(struct varname));
         v->data = var;
         struct index *i = (struct index*) malloc(sizeof(struct index));
@@ -60,7 +60,16 @@ void add_variable(struct chunk *chunk, char *var){
                 chunk->size += 16;
         }
 
-        chunk->next_offset += 8;
+        // chunk->next_offset holds the next available offset, which is also the size of the chunk
+        chunk->next_offset += words * 8;
+
+        if ((chunk->next_offset % 16) == 0){
+                chunk->size = chunk->next_offset;
+        }
+        else {
+                chunk->size = chunk->next_offset + 8;
+        }
+        assert(!(chunk->size % 16));
 }
 
 bool has_variable(struct chunk *chunk, char *var){

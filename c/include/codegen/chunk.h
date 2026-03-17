@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "codegen/register.h"
 
@@ -10,7 +11,7 @@ struct chunk;
 struct chunk *new_chunk();
 void free_chunk(struct chunk *chunk);
 
-void add_variable(struct chunk *chunk, char *var);
+void add_variable(struct chunk *chunk, char *var, size_t words);
 bool has_variable(struct chunk *chunk, char *var);
 
 char *push_chunk(struct chunk *chunk);

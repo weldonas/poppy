@@ -5,7 +5,6 @@
 #include "codegen/assem.h"
 #include "codegen/chunk.h"
 #include "codegen/control.h"
-#include "data/list.h"
 
 #define CALLER_FRAME_PTR "!cfp"
 #define SAVED_LINK "!sl"
@@ -27,16 +26,16 @@ struct function *new_function(char **params, size_t params_len, char **vars, siz
         struct chunk *param_chunk = new_chunk();
 
         for (size_t i = 0; i < params_len; ++i){
-                add_variable(param_chunk, params[i]);
+                add_variable(param_chunk, params[i], 1);
         }
 
         for(size_t i = 0; i < vars_len; ++i){
-                add_variable(frame, vars[i]);
+                add_variable(frame, vars[i], 1);
         }
 
-        add_variable(frame, CALLER_FRAME_PTR);
-        add_variable(frame, SAVED_LINK);
-        add_variable(frame, ARG_CHUNK_PTR);
+        add_variable(frame, CALLER_FRAME_PTR, 1);
+        add_variable(frame, SAVED_LINK, 1);
+        add_variable(frame, ARG_CHUNK_PTR, 1);
 
         struct function *ptr = (struct function*) malloc(sizeof(struct function));
         ptr->body = NULL;
