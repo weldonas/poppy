@@ -34,10 +34,6 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
         free((void*) entry);
 }
 
-void free_string(const struct string *str){
-        // free((void*) str);
-}
-
 char *generate_head(struct parse_tree *tree){
         char *head = (char*) malloc(6 * sizeof(char));
         strcpy(head, ".text");
@@ -353,27 +349,13 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                         }
                 }
 
-                char **params = (char**) malloc(params_list.len * sizeof(char*));
-                size_t i = 0;
-                for (struct LIST_NODE(string) *node = params_list.head; node != NULL; node = node->next){
-                        params[i++] = node->data->data;
-                }
-
-                char **locals = (char**) malloc(locals_list.len * sizeof(char*));
-                i = 0;
-                for (struct LIST_NODE(string) *node = locals_list.head; node != NULL; node = node->next){
-                        locals[i++] = node->data->data;
-                }
-
                 struct string *s = (struct string*) malloc(sizeof(struct string));
                 struct parse_tree *signature = defn->children->head->data;
                 s->data = signature->children->head->next->data->data.value;
                 bool is_main = strcmp("main", s->data) == 0;
 
-                struct function *fn = new_function(params, params_list.len, locals, locals_list.len, is_main);
-                free_list((&params_list), free_string, string);
+                struct function *fn = new_function(params_list, locals_list, is_main);
                 free_list((&locals_list), free_string, string);
-                free(locals);
 
                 update_map((&functions), s, fn, string, function);
 

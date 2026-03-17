@@ -12,6 +12,8 @@ struct string {
         char *data;
 };
 
+void free_string(struct string *s);
+
 bool equals_string(const struct string *s1, const struct string *s2);
 
 struct symbol_table_value {

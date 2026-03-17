@@ -537,3 +537,5 @@ const struct type *find_type(const struct type_system *const system, const struc
 
         return NULL;
 }
+
+void free_string(struct string *s){}
