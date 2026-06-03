@@ -66,29 +66,29 @@ size_t num_params(const struct function *function){
         return function->params.len;
 }
 
-char *read_function_variable(const struct function *function, enum reg reg, char *varname){
-        if (has_variable(function->frame, varname)){
+char *read_function_variable(const struct function *function, enum reg reg, char *string){
+        if (has_variable(function->frame, string)){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return read_variable(function->frame, reg, varname, REG_FP);
+                return read_variable(function->frame, reg, string, REG_FP);
         }
 
         // read from arg chunk pointer
         return concat(2, 
                 read_variable(function->frame, REG_SCRATCH, ARG_CHUNK_PTR, REG_FP),
-                read_variable(function->param_chunk, reg, varname, REG_SCRATCH)
+                read_variable(function->param_chunk, reg, string, REG_SCRATCH)
         );
 }
 
-char *write_function_variable(const struct function *function, char *varname, enum reg reg){
-        if (has_variable(function->frame, varname)){
+char *write_function_variable(const struct function *function, char *string, enum reg reg){
+        if (has_variable(function->frame, string)){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return write_variable(function->frame, varname, reg, REG_FP);
+                return write_variable(function->frame, string, reg, REG_FP);
         }
 
         // read from arg chunk pointer
         return concat(2, 
                 read_variable(function->frame, REG_SCRATCH, ARG_CHUNK_PTR, REG_FP),
-                write_variable(function->param_chunk, varname, reg, REG_SCRATCH)
+                write_variable(function->param_chunk, string, reg, REG_SCRATCH)
         );
 }
 

@@ -9,7 +9,7 @@
 #define OUTER_TYPE_MAP parse_tree_string_symbol_table_value_map_map
 
 struct string {
-        char *data;
+        const char *data;
 };
 
 void free_string(struct string *s);
