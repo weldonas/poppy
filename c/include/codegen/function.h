@@ -10,7 +10,7 @@
 
 struct function;
 
-struct function *new_function(struct LIST(string) params, struct LIST(string) vars, bool is_main);
+struct function *new_function(struct LIST(variable) params, struct LIST(variable) vars, bool is_main);
 void free_function(const struct function* function);
 
 size_t num_params(const struct function *function);

@@ -6,6 +6,7 @@
 #define VOID_CHAR 'v'
 #define BOOL_CHAR 'b'
 #define CHAR_CHAR 'c'
+#define UNASSIGNABLE -1
 
 DEFINE_LIST(type);
 
@@ -31,6 +32,7 @@ const struct type* const int_type(){
                 int_ptr = (struct type*) malloc(sizeof(struct type));
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
+                int_ptr->word_count = 1;
                 add_type(int_ptr);
         }
 
@@ -42,6 +44,7 @@ const struct type* const bool_type(){
                 bool_ptr = (struct type*) malloc(sizeof(struct type));
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
+                bool_ptr->word_count = 1;
                 add_type(bool_ptr);
         }
 
@@ -53,6 +56,7 @@ const struct type* const void_type(){
                 void_ptr = (struct type*) malloc(sizeof(struct type));
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
+                void_ptr->word_count = UNASSIGNABLE;
                 add_type(void_ptr);
         }
 
@@ -64,6 +68,7 @@ const struct type* const char_type(){
                 char_ptr = (struct type*) malloc(sizeof(struct type));
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
+                char_ptr->word_count = 1;
                 add_type(char_ptr);
         }
 
@@ -85,6 +90,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         new->category = CATEGORY_FUNCTION;
         new->ret_type = ret;
         new->params_type = params;
+        new->word_count = UNASSIGNABLE;
         add_type(new);
         return new;
 }
@@ -103,6 +109,7 @@ const struct type* const param_type(const struct type *current, const struct typ
         new->category = CATEGORY_PARAMS;
         new->current_type = current;
         new->previous = previous;
+        new->word_count = UNASSIGNABLE;
         add_type(new);
         return new;
 }
@@ -156,7 +163,7 @@ bool is_numeric(const struct type *type){
 }
 
 bool is_assignable(const struct type *type){
-        return is_numeric(type) || ((type->category == CATEGORY_PRIMITIVE) && (type->repr == BOOL_CHAR));
+        return type->word_count != UNASSIGNABLE;
 }
 
 bool is_returnable(const struct type *type){

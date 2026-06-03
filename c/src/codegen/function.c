@@ -5,6 +5,7 @@
 #include "codegen/assem.h"
 #include "codegen/chunk.h"
 #include "codegen/control.h"
+#include "lang/type.h"
 
 #define CALLER_FRAME_PTR "!cfp"
 #define SAVED_LINK "!sl"
@@ -12,7 +13,7 @@
 
 struct function {
         char *body;
-        struct LIST(string) params;
+        struct LIST(variable) params;
         struct label *start_label;
         struct label *after_body_label;
         struct chunk *frame;
@@ -20,21 +21,25 @@ struct function {
         bool is_main;
 };
 
-struct function *new_function(struct LIST(string) params, struct LIST(string) vars, bool is_main){
+struct function *new_function(struct LIST(variable) params, struct LIST(variable) vars, bool is_main){
         struct chunk *frame = new_chunk();
         struct chunk *param_chunk = new_chunk();
 
-        for (struct LIST_NODE(string) *param = params.head; param != NULL; param = param->next){
-                add_variable(param_chunk, param->data->data, 1);
+        for (struct LIST_NODE(variable) *param = params.head; param != NULL; param = param->next){
+                add_variable(param_chunk, *param->data);
         }
 
-        for (struct LIST_NODE(string) *var = vars.head; var != NULL; var = var->next){
-                add_variable(frame, var->data->data, 1);
+        for (struct LIST_NODE(variable) *var = vars.head; var != NULL; var = var->next){
+                add_variable(frame, *var->data);
         }
 
-        add_variable(frame, CALLER_FRAME_PTR, 1);
-        add_variable(frame, SAVED_LINK, 1);
-        add_variable(frame, ARG_CHUNK_PTR, 1);
+        struct variable caller_frame_ptr = { .string = CALLER_FRAME_PTR, .type = int_type() };
+        struct variable saved_link = { .string = SAVED_LINK, .type = int_type() };
+        struct variable arg_chunk_ptr = { .string = ARG_CHUNK_PTR, .type = int_type() };
+
+        add_variable(frame, caller_frame_ptr);
+        add_variable(frame, saved_link);
+        add_variable(frame, arg_chunk_ptr);
 
         struct function *ptr = (struct function*) malloc(sizeof(struct function));
         ptr->body = NULL;
@@ -53,7 +58,7 @@ void free_function(const struct function *function){
         free_chunk(function->param_chunk);
         free_label(function->start_label);
         free_label(function->after_body_label);
-        free_list((&function->params), free_string, string);
+        free_list((&function->params), free_variable, variable);
         free((void*) function);
 }
 
@@ -118,10 +123,10 @@ char *call_function(const struct function *function, char **args){
         char *arg_evals = NULL;
 
         size_t i = 0;
-        for (struct LIST_NODE(string) *param = function->params.head; param != NULL; param = param->next, ++i) {
+        for (struct LIST_NODE(variable) *param = function->params.head; param != NULL; param = param->next, ++i) {
                 char *cur_eval = concat(2,
                         args[i],
-                        write_variable(function->param_chunk, param->data->data, REG_ARITH_RESULT, REG_SP)
+                        write_variable(function->param_chunk, param->data->string, REG_ARITH_RESULT, REG_SP)
                 );
 
                 if (arg_evals == NULL){

@@ -12,8 +12,11 @@ enum category {
 
 struct type {
     enum category category;
+    size_t word_count;
     union{
-        struct {char repr;}; // primitive
+        struct {
+            char repr;
+        }; // primitive
 
         struct {
             const struct type *params_type; // params (or NULL if no arguments)

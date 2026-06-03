@@ -21,7 +21,15 @@ struct symbol_table_value {
         bool is_defined;
 };
 
+struct variable {
+        const char *string;
+        const struct type *type;
+};
+
+void free_variable(struct variable *v);
+
 DEFINE_LIST(string)
+DEFINE_LIST(variable)
 
 DEFINE_MAP(string, symbol_table_value);
 DEFINE_MAP(parse_tree, MAP(string, symbol_table_value));
@@ -31,8 +39,8 @@ struct type_rule_condition;
 struct type_system;
 
 struct OUTER_TYPE_MAP *find_types(const struct type_system *const system, const struct parse_tree *tree);
-struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
-struct LIST(string) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct LIST(variable) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct LIST(variable) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
 
 #define MAX_CONDITION_COUNT 16
 #define MAX_SIDE_EFFECT_COUNT 16

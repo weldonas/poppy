@@ -187,12 +187,15 @@ struct OUTER_TYPE_MAP * find_types(const struct type_system *const system, const
         return outer_map;
 }
 
-void get_variables_recursive(const struct parse_tree *tree, struct LIST(string) *list, const struct OUTER_TYPE_MAP *symbols){
+void get_variables_recursive(const struct parse_tree *tree, struct LIST(variable) *list, const struct OUTER_TYPE_MAP *symbols){
         const struct MAP(string, symbol_table_value) *inner_map; query_map(symbols, tree, inner_map, parse_tree, MAP(string, symbol_table_value))
 
         if (inner_map != NULL){
                 for (struct string_symbol_table_value_map_entry_list_node *map_node = inner_map->list->head; map_node != NULL; map_node = map_node->next){
-                        append_list(list, (struct string*) map_node->data->key, string);
+                        struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                        v->string = map_node->data->key->data;
+                        v->type = map_node->data->value->type;
+                        append_list(list, v, variable);
                 }
         }
 
@@ -203,23 +206,27 @@ void get_variables_recursive(const struct parse_tree *tree, struct LIST(string) 
         }
 }
 
-struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols){
+struct LIST(variable) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols){
         // defn -> signature LBRACE stmts RBRACE
         const struct parse_tree *stmts; load_child_at(stmts, tree, 2);
-        struct LIST(string) list;
+        struct LIST(variable) list;
         init_list((&list))
         get_variables_recursive(stmts, &list, symbols);
         return list;
 }
 
-struct LIST(string) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols){
+struct LIST(variable) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols){
         // defn -> signature LBRACE stmts RBRACE
         // signature -> type IDENTIFIER LPAREN optparams RPAREN
         const struct MAP(string, symbol_table_value) *inner_map; query_map(symbols, tree, inner_map, parse_tree, MAP(string, symbol_table_value))
-        struct LIST(string) list;
+        struct LIST(variable) list;
         init_list((&list))
         for (struct string_symbol_table_value_map_entry_list_node *map_node = inner_map->list->head; map_node != NULL; map_node = map_node->next){
-                append_list((&list), (struct string*) map_node->data->key, string);
+                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                v->string = map_node->data->key->data;
+                v->type = map_node->data->value->type;
+
+                append_list((&list), v, variable);
         }
         return list;
 }
@@ -539,3 +546,7 @@ const struct type *find_type(const struct type_system *const system, const struc
 }
 
 void free_string(struct string *s){}
+
+void free_variable(struct variable *v){
+        free(v);
+}

@@ -8,7 +8,7 @@
 #include "data/map.h"
 
 struct varname {
-        char *data;
+        const char *data;
 };
 
 struct index {
@@ -46,9 +46,9 @@ void free_chunk(struct chunk *chunk){
         free(chunk);
 }
 
-void add_variable(struct chunk *chunk, char *var, size_t words){
+void add_variable(struct chunk *chunk, struct variable var){
         struct varname *v = (struct varname*) malloc(sizeof(struct varname));
-        v->data = var;
+        v->data = var.string;
         struct index *i = (struct index*) malloc(sizeof(struct index));
         i->data = chunk->next_offset;
         update_map((&chunk->offsets), v, i, varname, index);
@@ -61,7 +61,7 @@ void add_variable(struct chunk *chunk, char *var, size_t words){
         }
 
         // chunk->next_offset holds the next available offset, which is also the size of the chunk
-        chunk->next_offset += words * 8;
+        chunk->next_offset += var.type->word_count * 8;
 
         if ((chunk->next_offset % 16) == 0){
                 chunk->size = chunk->next_offset;
@@ -138,7 +138,7 @@ char *read_variable(struct chunk *chunk, enum reg into, char *var, enum reg chun
         return instr;
 }
 
-char *write_variable(struct chunk *chunk, char *var, enum reg from, enum reg chunk_address){
+char *write_variable(struct chunk *chunk, const char *var, enum reg from, enum reg chunk_address){
         char *instr = (char*) malloc(22 * sizeof(char));
         struct varname v = {var};
         const struct index *i;

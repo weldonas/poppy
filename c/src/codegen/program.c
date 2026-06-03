@@ -10,6 +10,7 @@
 #include "codegen/ops.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
+#include "lang/type_system.h"
 
 #define load_child_at(var, tree, n)                                        \
         do {                                                               \
@@ -326,24 +327,24 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                         }
                 }
 
-                struct LIST(string) params_list = get_parameters(defn, type_map);
-                struct LIST(string) locals_list = get_local_variables(defn, type_map);
+                struct LIST(variable) params_list = get_parameters(defn, type_map);
+                struct LIST(variable) locals_list = get_local_variables(defn, type_map);
 
-                for (struct LIST_NODE(string) *l_node = locals_list.head; l_node != NULL; l_node = l_node->next){
-                        for (struct LIST_NODE(string) *successor = l_node->next; successor != NULL; successor = successor->next){
-                                if (strcmp(l_node->data->data, successor->data->data) == 0){
+                for (struct LIST_NODE(variable) *l_node = locals_list.head; l_node != NULL; l_node = l_node->next){
+                        for (struct LIST_NODE(variable) *successor = l_node->next; successor != NULL; successor = successor->next){
+                                if (strcmp(l_node->data->string, successor->data->string) == 0){
                                         free_map((&functions), string, function);
-                                        free_list((&params_list), free_string, string);
-                                        free_list((&locals_list), free_string, string);
+                                        free_list((&params_list), free_variable, variable);
+                                        free_list((&locals_list), free_variable, variable);
                                         return NULL;
                                 }
                         }
 
-                        for (struct LIST_NODE(string) *p_node = params_list.head; p_node != NULL; p_node = p_node->next){
-                                if (strcmp(l_node->data->data, p_node->data->data) == 0){
+                        for (struct LIST_NODE(variable) *p_node = params_list.head; p_node != NULL; p_node = p_node->next){
+                                if (strcmp(l_node->data->string, p_node->data->string) == 0){
                                         free_map((&functions), string, function);
-                                        free_list((&params_list), free_string, string);
-                                        free_list((&locals_list), free_string, string);
+                                        free_list((&params_list), free_variable, variable);
+                                        free_list((&locals_list), free_variable, variable);
                                         return NULL;
                                 }
                         }
@@ -355,7 +356,7 @@ char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tr
                 bool is_main = strcmp("main", s->data) == 0;
 
                 struct function *fn = new_function(params_list, locals_list, is_main);
-                free_list((&locals_list), free_string, string);
+                free_list((&locals_list), free_variable, variable);
 
                 update_map((&functions), s, fn, string, function);
 
