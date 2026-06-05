@@ -139,6 +139,12 @@ const struct type * find_symbol_type(const struct parse_tree *tree, const struct
         return NULL;
 }
 
+struct variable find_symbol_variable(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *outer_map){
+        const struct type *type = find_symbol_type(tree, outer_map);
+        struct variable var = {tree->data.value, type};
+        return var;
+}
+
 const struct type * find_call_type(const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
         // call -> IDENTIFIER LPAREN optargs RPAREN
         struct parse_tree *optargs; load_child_at(optargs, tree, 2);

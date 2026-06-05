@@ -41,6 +41,7 @@ struct type_system;
 struct OUTER_TYPE_MAP *find_types(const struct type_system *const system, const struct parse_tree *tree);
 struct LIST(variable) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
 struct LIST(variable) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct variable find_symbol_variable(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *outer_map);
 
 #define MAX_CONDITION_COUNT 16
 #define MAX_SIDE_EFFECT_COUNT 16

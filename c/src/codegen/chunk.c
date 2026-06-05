@@ -20,6 +20,11 @@ struct chunk {
         size_t size;
 };
 
+struct word {
+        struct variable variable;
+        size_t word_index;
+};
+
 void free_chunk_entry(const struct MAP_ENTRY(string, index) *entry){
         free((void*) entry->key);
         free((void*) entry->value);
@@ -65,8 +70,8 @@ void add_variable(struct chunk *chunk, struct variable var){
         assert(!(chunk->size % 16));
 }
 
-bool has_variable(struct chunk *chunk, char *var){
-        struct string v = {var};
+bool has_variable(struct chunk *chunk, struct variable var){
+        struct string v = {var.string};
         const struct index *result;
         query_map((&chunk->offsets), &v, result, string, index);
         return result != NULL;
@@ -112,14 +117,15 @@ void num_to_string(size_t num, char *ret){
         ret[len] = '\0';
 }
 
-char *read_variable(struct chunk *chunk, enum reg into, char *var, enum reg chunk_address){
+char *read_variable(struct chunk *chunk, enum reg into, struct word *word, enum reg chunk_address){
         char *instr = (char*) malloc(22 * sizeof(char));
-        struct string v = {var};
+        struct string v = {word->variable.string};
         const struct index *i;
         query_map((&chunk->offsets), &v, i, string, index);
 
+        size_t offset = i->data + word->word_index * 8;
         char numstr[16];
-        num_to_string(i->data, numstr);
+        num_to_string(offset, numstr);
 
         strcpy(instr, "ldr ");
         strcat(instr, reg_to_string(into));
@@ -131,14 +137,15 @@ char *read_variable(struct chunk *chunk, enum reg into, char *var, enum reg chun
         return instr;
 }
 
-char *write_variable(struct chunk *chunk, const char *var, enum reg from, enum reg chunk_address){
+char *write_variable(struct chunk *chunk, struct word *word, enum reg from, enum reg chunk_address){
         char *instr = (char*) malloc(22 * sizeof(char));
-        struct string v = {var};
+        struct string v = {word->variable.string};
         const struct index *i;
         query_map((&chunk->offsets), &v, i, string, index);
 
+        size_t offset = i->data + word->word_index * 8;
         char numstr[16];
-        num_to_string(i->data, numstr);
+        num_to_string(offset, numstr);
 
         strcpy(instr, "str ");
         strcat(instr, reg_to_string(from));
@@ -148,4 +155,20 @@ char *write_variable(struct chunk *chunk, const char *var, enum reg from, enum r
         strcat(instr, numstr);
         strcat(instr, "]");
         return instr;
+}
+
+struct word *new_word(struct variable variable, size_t word_index){
+        assert(word_index < variable.type->word_count);
+        struct word *word = (struct word*) malloc(sizeof(struct word));
+        word->variable = variable;
+        word->word_index = word_index;
+        return word;
+}
+
+void free_word(struct word *word){
+        free(word);
+}
+
+struct variable word_variable(struct word *word){
+        return word->variable;
 }
