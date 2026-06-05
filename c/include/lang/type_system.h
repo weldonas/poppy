@@ -9,8 +9,10 @@
 #define OUTER_TYPE_MAP parse_tree_string_symbol_table_value_map_map
 
 struct string {
-        char *data;
+        const char *data;
 };
+
+void free_string(struct string *s);
 
 bool equals_string(const struct string *s1, const struct string *s2);
 
@@ -19,7 +21,15 @@ struct symbol_table_value {
         bool is_defined;
 };
 
+struct variable {
+        const char *string;
+        const struct type *type;
+};
+
+void free_variable(struct variable *v);
+
 DEFINE_LIST(string)
+DEFINE_LIST(variable)
 
 DEFINE_MAP(string, symbol_table_value);
 DEFINE_MAP(parse_tree, MAP(string, symbol_table_value));
@@ -29,8 +39,9 @@ struct type_rule_condition;
 struct type_system;
 
 struct OUTER_TYPE_MAP *find_types(const struct type_system *const system, const struct parse_tree *tree);
-struct LIST(string) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
-struct LIST(string) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct LIST(variable) get_local_variables(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct LIST(variable) get_parameters(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *symbols);
+struct variable find_symbol_variable(const struct parse_tree *tree, const struct OUTER_TYPE_MAP *outer_map);
 
 #define MAX_CONDITION_COUNT 16
 #define MAX_SIDE_EFFECT_COUNT 16
