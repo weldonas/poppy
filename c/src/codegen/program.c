@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "codegen/assem.h"
-#include "codegen/chunk.h"
 #include "codegen/control.h"
 #include "codegen/function.h"
 #include "codegen/ops.h"
@@ -102,12 +101,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (tree->children->len == 5){
                         struct parse_tree *id; load_child_at(id, tree, 2);
                         struct variable var = find_symbol_variable(id, type_map);
-                        struct word *word = new_word(var, 0);
                         struct parse_tree *expr; load_child_at(expr, tree, 4);
                         
                         char *expr_code = generate_from_tree(expr, functions, within, type_map);
-                        char *result = concat(2, expr_code, write_function_variable(within, word, REG_ARITH_RESULT));
-                        free_word(word);
+                        char *result = concat(2, expr_code, write_function_variable(within, var, REG_ARITH_RESULT));
                         return result;
                 }
 
@@ -117,12 +114,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
         } else if (symbol == SYMBOL_VARASST){
                 struct parse_tree *id; load_child_at(id, tree, 0);
                 struct variable var = find_symbol_variable(id, type_map);
-                struct word *word = new_word(var, 0);
                 
                 struct parse_tree *expr; load_child_at(expr, tree, 2);
                 char *expr_code = generate_from_tree(expr, functions, within, type_map);
-                char *result = concat(2, expr_code, write_function_variable(within, word, REG_ARITH_RESULT));                
-                free_word(word);
+                char *result = concat(2, expr_code, write_function_variable(within, var, REG_ARITH_RESULT));                
                 return result;
         } else if (symbol == SYMBOL_RET){
                 if (tree->children->len == 1){
@@ -231,32 +226,28 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (first == SYMBOL_INC){
                         struct parse_tree *child = tree->children->head->next->data;
                         struct variable var = find_symbol_variable(child, type_map);
-                        struct word *word = new_word(var, 0);
 
                         char *result = concat(2,
                                 sum(
-                                        read_function_variable(within, REG_ARITH_RESULT, word),
+                                        read_function_variable(within, REG_ARITH_RESULT, var),
                                         movi(REG_ARITH_RESULT, 1)
                                 ),
-                                write_function_variable(within, word, REG_ARITH_RESULT)
+                                write_function_variable(within, var, REG_ARITH_RESULT)
                         );
-                        free_word(word);
                         return result;
                 }
 
                 if (first == SYMBOL_DEC){
                         struct parse_tree *child = tree->children->head->next->data;
                         struct variable var = find_symbol_variable(child, type_map);
-                        struct word *word = new_word(var, 0);
 
                         char *result = concat(2,
                                 subtract(
-                                        read_function_variable(within, REG_ARITH_RESULT, word),
+                                        read_function_variable(within, REG_ARITH_RESULT, var),
                                         movi(REG_ARITH_RESULT, 1)
                                 ),
-                                write_function_variable(within, word, REG_ARITH_RESULT)
+                                write_function_variable(within, var, REG_ARITH_RESULT)
                         );
-                        free_word(word);
                         return result;
                 }
 
@@ -278,10 +269,8 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (first == SYMBOL_IDENTIFIER){
                         struct parse_tree *child = tree->children->head->data;
                         struct variable var = find_symbol_variable(child, type_map);
-                        struct word *word = new_word(var, 0);
 
-                        char *result = read_function_variable(within, REG_ARITH_RESULT, word);
-                        free_word(word);
+                        char *result = read_function_variable(within, REG_ARITH_RESULT, var);
                         return result;
                 }
 

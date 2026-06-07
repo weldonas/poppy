@@ -21,11 +21,6 @@ struct chunk {
         size_t size;
 };
 
-struct word {
-        struct variable variable;
-        size_t word_index;
-};
-
 void free_chunk_entry(const struct MAP_ENTRY(string, index) *entry){
         free((void*) entry->key);
         free((void*) entry->value);
@@ -126,20 +121,4 @@ void num_to_string(size_t num, char *ret){
                 ret[i] = tmp[len - i - 1];
         }
         ret[len] = '\0';
-}
-
-struct word *new_word(struct variable variable, size_t word_index){
-        assert(word_index < variable.type->word_count);
-        struct word *word = (struct word*) malloc(sizeof(struct word));
-        word->variable = variable;
-        word->word_index = word_index;
-        return word;
-}
-
-void free_word(struct word *word){
-        free(word);
-}
-
-struct variable word_variable(struct word *word){
-        return word->variable;
 }
