@@ -1,6 +1,7 @@
 #include "codegen/assem.h"
 
 #include "assert.h"
+#include "codegen/register.h"
 #include "stdarg.h"
 #include "stdlib.h"
 #include "stdio.h"
@@ -219,6 +220,26 @@ char *cmpi(enum reg reg, long long imm){
         sprintf(imm_str, "%lli", imm);
         strcat(instr, imm_str);
         return instr;
+}
+
+char *ldr(enum reg dest, enum reg addr){
+        char *instr = (char*) malloc(15 * sizeof(char));
+        strcpy(instr, "ldr ");
+        strcat(instr, reg_to_string(dest));
+        strcat(instr, ", [");
+        strcat(instr, reg_to_string(addr));
+        strcat(instr, "]");
+        return instr;
+}
+
+char *str(enum reg src, enum reg addr){
+        char *instr = (char*) malloc(15 * sizeof(char));
+        strcpy(instr, "str ");
+        strcat(instr, reg_to_string(src));
+        strcat(instr, ", [");
+        strcat(instr, reg_to_string(addr));
+        strcat(instr, "]");
+        return instr;   
 }
 
 char *ret(){

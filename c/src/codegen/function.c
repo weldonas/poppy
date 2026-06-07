@@ -69,14 +69,19 @@ size_t num_params(const struct function *function){
 char *read_function_variable(const struct function *function, enum reg reg, struct word *word){
         if (has_variable(function->frame, word_variable(word))){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return read_variable(function->frame, reg, word, REG_FP);
+                return concat(2, 
+                        variable_address(function->frame, word_variable(word), REG_FP),
+                        ldr(reg, REG_ADDRESS_RESULT)
+                );
         }
 
         // read from arg chunk pointer
         struct word *arg_chunk_ptr = new_word((struct variable){.string = ARG_CHUNK_PTR, .type = int_type()}, 0);
-        char *result = concat(2, 
-                read_variable(function->frame, REG_SCRATCH, arg_chunk_ptr, REG_FP),
-                read_variable(function->param_chunk, reg, word, REG_SCRATCH)
+        char *result = concat(4,
+                variable_address(function->frame, word_variable(arg_chunk_ptr), REG_FP),
+                ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
+                variable_address(function->param_chunk, word_variable(word), REG_SCRATCH),
+                ldr(reg, REG_ADDRESS_RESULT)
         );
         free_word(arg_chunk_ptr);
         return result;
@@ -85,14 +90,19 @@ char *read_function_variable(const struct function *function, enum reg reg, stru
 char *write_function_variable(const struct function *function, struct word *word, enum reg reg){
         if (has_variable(function->frame, word_variable(word))){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return write_variable(function->frame, word, reg, REG_FP);
+                return concat(2, 
+                        variable_address(function->frame, word_variable(word), REG_FP),
+                        str(reg, REG_ADDRESS_RESULT)
+                );
         }
 
         // read from arg chunk pointer
         struct word *arg_chunk_ptr = new_word((struct variable){.string = ARG_CHUNK_PTR, .type = int_type()}, 0);
-        char *result = concat(2, 
-                read_variable(function->frame, REG_SCRATCH, arg_chunk_ptr, REG_FP),
-                write_variable(function->param_chunk, word, reg, REG_SCRATCH)
+        char *result = concat(4, 
+                variable_address(function->frame, word_variable(arg_chunk_ptr), REG_FP),
+                ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
+                variable_address(function->param_chunk, word_variable(word), REG_SCRATCH),
+                str(reg, REG_ADDRESS_RESULT)
         );
         free_word(arg_chunk_ptr);
         return result;
@@ -107,18 +117,23 @@ char *declare_function(const struct function *function){
         struct word *saved_link = new_word((struct variable){.string = SAVED_LINK, .type = int_type()}, 0);
         struct word *arg_chunk_ptr = new_word((struct variable){.string = ARG_CHUNK_PTR, .type = int_type()}, 0);
 
-        char *fn = concat(12,
+        char *fn = concat(17,
                 declare_label(function->start_label),
                 mov(REG_ARG_CHUNK_PTR, REG_SP),
                 push_chunk(function->frame),
-                write_variable(function->frame, caller_frame_ptr, REG_FP, REG_SP),
+                variable_address(function->frame, word_variable(caller_frame_ptr), REG_SP),
+                str(REG_FP, REG_ADDRESS_RESULT),
                 mov(REG_FP, REG_SP),
-                write_variable(function->frame, saved_link, REG_LR, REG_SP),
-                write_variable(function->frame, arg_chunk_ptr, REG_ARG_CHUNK_PTR, REG_SP),
+                variable_address(function->frame, word_variable(saved_link), REG_SP),
+                str(REG_LR, REG_ADDRESS_RESULT),
+                variable_address(function->frame, word_variable(arg_chunk_ptr), REG_SP),
+                str(REG_ARG_CHUNK_PTR, REG_ADDRESS_RESULT),
                 function->body,
                 declare_label(function->after_body_label),
-                read_variable(function->frame, REG_LR, saved_link, REG_SP),
-                read_variable(function->frame, REG_FP, caller_frame_ptr, REG_SP),
+                variable_address(function->frame, word_variable(saved_link), REG_SP),
+                ldr(REG_LR, REG_ADDRESS_RESULT),
+                variable_address(function->frame, word_variable(caller_frame_ptr), REG_SP),
+                ldr(REG_FP, REG_ADDRESS_RESULT),
                 pop_chunk()
         );
 
@@ -139,9 +154,10 @@ char *call_function(const struct function *function, char **args){
         size_t i = 0;
         for (struct LIST_NODE(variable) *param = function->params.head; param != NULL; param = param->next, ++i) {
                 struct word *word = new_word(*param->data, 0);
-                char *cur_eval = concat(2,
+                char *cur_eval = concat(3,
                         args[i],
-                        write_variable(function->param_chunk, word, REG_ARITH_RESULT, REG_SP)
+                        variable_address(function->param_chunk, word_variable(word), REG_SP),
+                        str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
                 );
 
                 if (arg_evals == NULL){
