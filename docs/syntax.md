@@ -2,7 +2,7 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl}\}$
+Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl, addressable}\}$
 
 Start symbol: $\text{program}$
 
@@ -34,7 +34,9 @@ $$\begin{align*}
 \text{vardec} &\rightarrow \text{LET type IDENTIFIER ASSIGN expr}  \\
 \text{vardec} &\rightarrow \text{LET type IDENTIFIER}  \\
 \text{semistmt} &\rightarrow \text{varasst}  \\
-\text{varasst} &\rightarrow \text{IDENTIFIER ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{addressable ASSIGN expr}  \\
+\text{addressable} &\rightarrow \text{IDENTIFIER}  \\
+\text{addressable} &\rightarrow \text{LPAREN addressable RPAREN}  \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
@@ -63,7 +65,7 @@ $$\begin{align*}
 \text{uncond} &\rightarrow \text{expr NE expr}  \\
 \text{uncond} &\rightarrow \text{TRUE}  \\
 \text{uncond} &\rightarrow \text{FALSE}  \\
-\text{uncond} &\rightarrow \text{call}\\
+\text{uncond} &\rightarrow \text{expr}\\
 \text{expr} &\rightarrow \text{addexpr}  \\
 \text{addexpr} &\rightarrow \text{addexpr PLUS multexpr}  \\
 \text{addexpr} &\rightarrow \text{addexpr MINUS multexpr}  \\
@@ -80,8 +82,8 @@ $$\begin{align*}
 \text{optargs} &\rightarrow \text{args} \\
 \text{args} &\rightarrow \text{expr} \\
 \text{args} &\rightarrow \text{expr COMMA args} \\
-\text{unexpr} &\rightarrow \text{INC IDENTIFIER} \\
-\text{unexpr} &\rightarrow \text{DEC IDENTIFIER} \\
+\text{unexpr} &\rightarrow \text{INC addressable} \\
+\text{unexpr} &\rightarrow \text{DEC addressable} \\
 \text{unexpr} &\rightarrow \text{IDENTIFIER}  \\
 \text{unexpr} &\rightarrow \text{CONSTANT}  \\
 \text{unexpr} &\rightarrow \text{CHARLIT}

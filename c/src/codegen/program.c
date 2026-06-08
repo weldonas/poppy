@@ -5,10 +5,10 @@
 #include <string.h>
 
 #include "codegen/assem.h"
-#include "codegen/chunk.h"
 #include "codegen/control.h"
 #include "codegen/function.h"
 #include "codegen/ops.h"
+#include "codegen/register.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type_system.h"
@@ -102,28 +102,35 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (tree->children->len == 5){
                         struct parse_tree *id; load_child_at(id, tree, 2);
                         struct variable var = find_symbol_variable(id, type_map);
-                        struct word *word = new_word(var, 0);
+                        char *find_memory_addr = function_variable_address(within, var);
                         struct parse_tree *expr; load_child_at(expr, tree, 4);
-                        
                         char *expr_code = generate_from_tree(expr, functions, within, type_map);
-                        char *result = concat(2, expr_code, write_function_variable(within, word, REG_ARITH_RESULT));
-                        free_word(word);
-                        return result;
+                        
+                        return concat(5,
+                                find_memory_addr,
+                                push(REG_ADDRESS_RESULT),
+                                expr_code,
+                                pop(REG_ADDRESS_RESULT),
+                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                        );
                 }
 
                 char *ret = (char*) malloc(sizeof(char));
                 *ret = 0;
                 return ret;
         } else if (symbol == SYMBOL_VARASST){
-                struct parse_tree *id; load_child_at(id, tree, 0);
-                struct variable var = find_symbol_variable(id, type_map);
-                struct word *word = new_word(var, 0);
-                
+                struct parse_tree *addressable; load_child_at(addressable, tree, 0);
+                char *find_memory_addr = generate_from_tree(addressable, functions, within, type_map);
                 struct parse_tree *expr; load_child_at(expr, tree, 2);
                 char *expr_code = generate_from_tree(expr, functions, within, type_map);
-                char *result = concat(2, expr_code, write_function_variable(within, word, REG_ARITH_RESULT));                
-                free_word(word);
-                return result;
+
+                return concat(5,
+                        find_memory_addr,
+                        push(REG_ADDRESS_RESULT),
+                        expr_code,
+                        pop(REG_ADDRESS_RESULT),
+                        str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                );
         } else if (symbol == SYMBOL_RET){
                 if (tree->children->len == 1){
                         return hop(within);
@@ -229,35 +236,29 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 if (first == SYMBOL_INC){
-                        struct parse_tree *child = tree->children->head->next->data;
-                        struct variable var = find_symbol_variable(child, type_map);
-                        struct word *word = new_word(var, 0);
+                        struct parse_tree *addressable; load_child_at(addressable, tree, 1);
+                        char *find_memory_addr = generate_from_tree(addressable, functions, within, type_map);
 
-                        char *result = concat(2,
-                                sum(
-                                        read_function_variable(within, REG_ARITH_RESULT, word),
-                                        movi(REG_ARITH_RESULT, 1)
-                                ),
-                                write_function_variable(within, word, REG_ARITH_RESULT)
+                        return concat(5,
+                                find_memory_addr,
+                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT),
+                                movi(REG_SCRATCH, 1),
+                                add(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
                         );
-                        free_word(word);
-                        return result;
                 }
 
                 if (first == SYMBOL_DEC){
-                        struct parse_tree *child = tree->children->head->next->data;
-                        struct variable var = find_symbol_variable(child, type_map);
-                        struct word *word = new_word(var, 0);
+                        struct parse_tree *addressable; load_child_at(addressable, tree, 1);
+                        char *find_memory_addr = generate_from_tree(addressable, functions, within, type_map);
 
-                        char *result = concat(2,
-                                subtract(
-                                        read_function_variable(within, REG_ARITH_RESULT, word),
-                                        movi(REG_ARITH_RESULT, 1)
-                                ),
-                                write_function_variable(within, word, REG_ARITH_RESULT)
+                        return concat(5,
+                                find_memory_addr,
+                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT),
+                                movi(REG_SCRATCH, 1),
+                                sub(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
                         );
-                        free_word(word);
-                        return result;
                 }
 
                 if (first == SYMBOL_LPAREN){
@@ -278,11 +279,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (first == SYMBOL_IDENTIFIER){
                         struct parse_tree *child = tree->children->head->data;
                         struct variable var = find_symbol_variable(child, type_map);
-                        struct word *word = new_word(var, 0);
-
-                        char *result = read_function_variable(within, REG_ARITH_RESULT, word);
-                        free_word(word);
-                        return result;
+                        return concat(2,
+                                function_variable_address(within, var),
+                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                        );
                 }
 
                 if (first == SYMBOL_CALL){
@@ -324,6 +324,13 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 return ret;
         } else if (symbol == SYMBOL_BODY){
                 return generate_from_tree(tree->children->head->data, functions, within, type_map);
+        } else if (symbol == SYMBOL_ADDRESSABLE){
+                if (tree->children->len == 1){
+                        struct variable var = find_symbol_variable(tree->children->head->data, type_map);
+                        return function_variable_address(within, var);
+                }
+
+                return generate_from_tree(tree->children->head->next->data, functions, within, type_map);
         }
 
         assert(0);

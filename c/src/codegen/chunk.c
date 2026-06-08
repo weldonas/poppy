@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "codegen/assem.h"
+#include "codegen/register.h"
 #include "data/map.h"
 #include "lang/type_system.h"
 
@@ -18,11 +19,6 @@ struct chunk {
         struct MAP(string, index) offsets; 
         size_t next_offset;
         size_t size;
-};
-
-struct word {
-        struct variable variable;
-        size_t word_index;
 };
 
 void free_chunk_entry(const struct MAP_ENTRY(string, index) *entry){
@@ -77,6 +73,16 @@ bool has_variable(struct chunk *chunk, struct variable var){
         return result != NULL;
 }
 
+char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_address){
+        struct string v = {var.string};
+        const struct index *result;
+        query_map((&chunk->offsets), &v, result, string, index);
+        return concat(2, 
+                movi(REG_ADDRESS_RESULT, result->data), 
+                add(REG_ADDRESS_RESULT,  chunk_address, REG_ADDRESS_RESULT)
+        );
+}
+
 char *push_chunk(struct chunk *chunk){
         char *instr = malloc(13 * sizeof(char));
         strcpy(instr, "str x9, [sp]");
@@ -115,60 +121,4 @@ void num_to_string(size_t num, char *ret){
                 ret[i] = tmp[len - i - 1];
         }
         ret[len] = '\0';
-}
-
-char *read_variable(struct chunk *chunk, enum reg into, struct word *word, enum reg chunk_address){
-        char *instr = (char*) malloc(22 * sizeof(char));
-        struct string v = {word->variable.string};
-        const struct index *i;
-        query_map((&chunk->offsets), &v, i, string, index);
-
-        size_t offset = i->data + word->word_index * 8;
-        char numstr[16];
-        num_to_string(offset, numstr);
-
-        strcpy(instr, "ldr ");
-        strcat(instr, reg_to_string(into));
-        strcat(instr, ", [");
-        strcat(instr, reg_to_string(chunk_address));
-        strcat(instr, ", #");
-        strcat(instr, numstr);
-        strcat(instr, "]");
-        return instr;
-}
-
-char *write_variable(struct chunk *chunk, struct word *word, enum reg from, enum reg chunk_address){
-        char *instr = (char*) malloc(22 * sizeof(char));
-        struct string v = {word->variable.string};
-        const struct index *i;
-        query_map((&chunk->offsets), &v, i, string, index);
-
-        size_t offset = i->data + word->word_index * 8;
-        char numstr[16];
-        num_to_string(offset, numstr);
-
-        strcpy(instr, "str ");
-        strcat(instr, reg_to_string(from));
-        strcat(instr, ", [");
-        strcat(instr, reg_to_string(chunk_address));
-        strcat(instr, ", #");
-        strcat(instr, numstr);
-        strcat(instr, "]");
-        return instr;
-}
-
-struct word *new_word(struct variable variable, size_t word_index){
-        assert(word_index < variable.type->word_count);
-        struct word *word = (struct word*) malloc(sizeof(struct word));
-        word->variable = variable;
-        word->word_index = word_index;
-        return word;
-}
-
-void free_word(struct word *word){
-        free(word);
-}
-
-struct variable word_variable(struct word *word){
-        return word->variable;
 }

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 77
+#define RULE_COUNT 79
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -58,7 +58,9 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_VARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_VARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_VARASST}, i, poppy_grammar); ++i;
-        populate(SYMBOL_VARASST, {SYMBOL_IDENTIFIER COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_ADDRESSABLE COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ADDRESSABLE, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ADDRESSABLE, {SYMBOL_LPAREN COMMA SYMBOL_ADDRESSABLE COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_RET}, i, poppy_grammar); ++i;
         populate(SYMBOL_RET, {SYMBOL_HOP COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_RET, {SYMBOL_HOP}, i, poppy_grammar); ++i;
@@ -105,8 +107,8 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_OPTARGS, {SYMBOL_ARGS}, i, poppy_grammar); ++i;
         populate(SYMBOL_ARGS, {SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_ARGS, {SYMBOL_EXPR COMMA SYMBOL_COMMA COMMA SYMBOL_ARGS}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_INC COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_INC COMMA SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CONSTANT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CHARLIT}, i, poppy_grammar); ++i;
