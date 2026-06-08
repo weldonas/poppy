@@ -5,6 +5,7 @@
 #include "codegen/assem.h"
 #include "codegen/chunk.h"
 #include "codegen/control.h"
+#include "codegen/register.h"
 #include "lang/type.h"
 
 #define CALLER_FRAME_PTR "!cfp"
@@ -102,6 +103,22 @@ char *write_function_variable(const struct function *function, struct variable v
                 ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
                 variable_address(function->param_chunk, var, REG_SCRATCH),
                 str(reg, REG_ADDRESS_RESULT)
+        );
+        return result;
+}
+
+char *function_variable_address(const struct function *function, struct variable var){
+        if (has_variable(function->frame, var)){
+                // frame is on top of the stack (otherwise we wouldn't be in this function)
+                return variable_address(function->frame, var, REG_FP);
+        }
+
+        // read from arg chunk pointer
+        struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
+        char *result = concat(3,
+                variable_address(function->frame, arg_chunk_ptr, REG_FP),
+                ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
+                variable_address(function->param_chunk, var, REG_SCRATCH)
         );
         return result;
 }

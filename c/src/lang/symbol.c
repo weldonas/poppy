@@ -81,6 +81,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_DECLARE: return "declare";
                 case SYMBOL_DECL: return "DECL";
                 case SYMBOL_DEFNDECL: return "DEFNDECL";
+                case SYMBOL_ADDRESSABLE: return "ADDRESSABLE";
         }
         return 0;
 }

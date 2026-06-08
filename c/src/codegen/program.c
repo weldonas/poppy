@@ -8,6 +8,7 @@
 #include "codegen/control.h"
 #include "codegen/function.h"
 #include "codegen/ops.h"
+#include "codegen/register.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type_system.h"
@@ -112,13 +113,18 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 *ret = 0;
                 return ret;
         } else if (symbol == SYMBOL_VARASST){
-                struct parse_tree *id; load_child_at(id, tree, 0);
-                struct variable var = find_symbol_variable(id, type_map);
-                
+                struct parse_tree *addressable; load_child_at(addressable, tree, 0);
+                char *find_memory_addr = generate_from_tree(addressable, functions, within, type_map);
                 struct parse_tree *expr; load_child_at(expr, tree, 2);
                 char *expr_code = generate_from_tree(expr, functions, within, type_map);
-                char *result = concat(2, expr_code, write_function_variable(within, var, REG_ARITH_RESULT));                
-                return result;
+
+                return concat(5,
+                        find_memory_addr,
+                        push(REG_ADDRESS_RESULT),
+                        expr_code,
+                        pop(REG_ADDRESS_RESULT),
+                        str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                );
         } else if (symbol == SYMBOL_RET){
                 if (tree->children->len == 1){
                         return hop(within);
@@ -313,6 +319,13 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 return ret;
         } else if (symbol == SYMBOL_BODY){
                 return generate_from_tree(tree->children->head->data, functions, within, type_map);
+        } else if (symbol == SYMBOL_ADDRESSABLE){
+                if (tree->children->len == 1){
+                        struct variable var = find_symbol_variable(tree->children->head->data, type_map);
+                        return function_variable_address(within, var);
+                }
+
+                return generate_from_tree(tree->children->head->next->data, functions, within, type_map);
         }
 
         assert(0);
