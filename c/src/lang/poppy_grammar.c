@@ -107,8 +107,8 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_OPTARGS, {SYMBOL_ARGS}, i, poppy_grammar); ++i;
         populate(SYMBOL_ARGS, {SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_ARGS, {SYMBOL_EXPR COMMA SYMBOL_COMMA COMMA SYMBOL_ARGS}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_INC COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_INC COMMA SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CONSTANT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CHARLIT}, i, poppy_grammar); ++i;

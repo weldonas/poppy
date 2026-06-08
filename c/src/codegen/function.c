@@ -67,46 +67,6 @@ size_t num_params(const struct function *function){
         return function->params.len;
 }
 
-char *read_function_variable(const struct function *function, enum reg reg, struct variable var){
-        if (has_variable(function->frame, var)){
-                // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return concat(2, 
-                        variable_address(function->frame, var, REG_FP),
-                        ldr(reg, REG_ADDRESS_RESULT)
-                );
-        }
-
-        // read from arg chunk pointer
-        struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
-        char *result = concat(4,
-                variable_address(function->frame, arg_chunk_ptr, REG_FP),
-                ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
-                variable_address(function->param_chunk, var, REG_SCRATCH),
-                ldr(reg, REG_ADDRESS_RESULT)
-        );
-        return result;
-}
-
-char *write_function_variable(const struct function *function, struct variable var, enum reg reg){
-        if (has_variable(function->frame, var)){
-                // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return concat(2, 
-                        variable_address(function->frame, var, REG_FP),
-                        str(reg, REG_ADDRESS_RESULT)
-                );
-        }
-
-        // read from arg chunk pointer
-        struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
-        char *result = concat(4, 
-                variable_address(function->frame, arg_chunk_ptr, REG_FP),
-                ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
-                variable_address(function->param_chunk, var, REG_SCRATCH),
-                str(reg, REG_ADDRESS_RESULT)
-        );
-        return result;
-}
-
 char *function_variable_address(const struct function *function, struct variable var){
         if (has_variable(function->frame, var)){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)

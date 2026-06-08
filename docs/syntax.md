@@ -82,8 +82,8 @@ $$\begin{align*}
 \text{optargs} &\rightarrow \text{args} \\
 \text{args} &\rightarrow \text{expr} \\
 \text{args} &\rightarrow \text{expr COMMA args} \\
-\text{unexpr} &\rightarrow \text{INC IDENTIFIER} \\
-\text{unexpr} &\rightarrow \text{DEC IDENTIFIER} \\
+\text{unexpr} &\rightarrow \text{INC addressable} \\
+\text{unexpr} &\rightarrow \text{DEC addressable} \\
 \text{unexpr} &\rightarrow \text{IDENTIFIER}  \\
 \text{unexpr} &\rightarrow \text{CONSTANT}  \\
 \text{unexpr} &\rightarrow \text{CHARLIT}
