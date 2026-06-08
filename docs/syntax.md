@@ -20,6 +20,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\
 \text{type} &\rightarrow \text{BOOL}\\
+\text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
 \text{params} &\rightarrow \text{param COMMA params}  \\
@@ -37,6 +38,7 @@ $$\begin{align*}
 \text{varasst} &\rightarrow \text{addressable ASSIGN expr}  \\
 \text{addressable} &\rightarrow \text{IDENTIFIER}  \\
 \text{addressable} &\rightarrow \text{LPAREN addressable RPAREN}  \\
+\text{addressable} &\rightarrow \text{addressable LBRACKET expr RBRACKET}  \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
@@ -75,6 +77,7 @@ $$\begin{align*}
 \text{multexpr} &\rightarrow \text{multexpr MOD unexpr}  \\
 \text{multexpr} &\rightarrow \text{unexpr}  \\
 \text{unexpr} &\rightarrow \text{MINUS UNEXPR} \\
+\text{unexpr} &\rightarrow \text{addressable LBRACKET expr RBRACKET} \\
 \text{unexpr} &\rightarrow \text{LPAREN expr RPAREN}  \\
 \text{unexpr} &\rightarrow \text{call}\\
 \text{call} &\rightarrow \text{IDENTIFIER LPAREN optargs RPAREN}  \\
