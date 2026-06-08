@@ -30,6 +30,8 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_ASSIGN: return "=";
                 case SYMBOL_COMMA: return ",";
                 case SYMBOL_SEMICOLON: return ";";
+                case SYMBOL_LBRACKET: return "[";
+                case SYMBOL_RBRACKET: return "]";
                 case SYMBOL_ELSE: return "else";
                 case SYMBOL_FOR: return "for";
                 case SYMBOL_HOP: return "hop";
