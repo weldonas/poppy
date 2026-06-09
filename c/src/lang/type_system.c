@@ -7,17 +7,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#define OUTER_TYPE_MAP_ENTRY parse_tree_string_symbol_table_value_map_map_entry
 #define MAX_PRIORITY 7
-
-#define load_child_at(var, tree, n)                                        \
-        do {                                                               \
-                struct LIST_NODE(parse_tree) *node = tree->children->head; \
-                for (int i = 0; i < n; ++i){                               \
-                        node = node->next;                                 \
-                }                                                          \
-                var = node->data;                                          \
-        } while (0);                                                       \
 
 struct type_system {
         const struct type_rule **rules;
@@ -105,12 +95,6 @@ bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt
         return pt1 == pt2;
 }
 
-void free_typer_entry(const struct OUTER_TYPE_MAP_ENTRY *entry){
-        free_map(entry->value, string, symbol_table_value);
-        free((void *) entry->value);
-        free((void *) entry);
-}
-
 const struct type * find_symbol_type(const struct parse_tree *tree){
         struct string string;
         string.data = tree->data.value;
@@ -174,60 +158,7 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
         }
 }
 
-void get_variables_recursive(const struct parse_tree *tree, struct LIST(variable) *list){
-        const struct MAP(string, symbol_table_value) *symbol_table = tree->symbol_table; 
-
-        if (symbol_table != NULL){
-                for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
-                        struct variable *v = (struct variable*) malloc(sizeof(struct variable));
-                        v->string = map_node->data->key->data;
-                        v->type = map_node->data->value->type;
-                        append_list(list, v, variable);
-                }
-        }
-
-        if (tree->children != NULL){
-                for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
-                        get_variables_recursive(node->data, list);
-                }
-        }
-}
-
-struct LIST(variable) get_local_variables(const struct parse_tree *tree){
-        // defn -> signature LBRACE stmts RBRACE
-        const struct parse_tree *stmts; load_child_at(stmts, tree, 2);
-        struct LIST(variable) list;
-        init_list((&list))
-        get_variables_recursive(stmts, &list);
-        return list;
-}
-
-struct LIST(variable) get_parameters(const struct parse_tree *tree){
-        // defn -> signature LBRACE stmts RBRACE
-        // signature -> type IDENTIFIER LPAREN optparams RPAREN
-        const struct MAP(string, symbol_table_value) *symbol_table = tree->symbol_table;
-        struct LIST(variable) list;
-        init_list((&list))
-        for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
-                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
-                v->string = map_node->data->key->data;
-                v->type = map_node->data->value->type;
-
-                append_list((&list), v, variable);
-        }
-        return list;
-}
-
 #define MAX_CHILDREN 16
-
-#define load_child_at(var, tree, n)                                        \
-        do {                                                               \
-                struct LIST_NODE(parse_tree) *node = tree->children->head; \
-                for (int i = 0; i < n; ++i){                               \
-                        node = node->next;                                 \
-                }                                                          \
-                var = node->data;                                          \
-        } while (0);   
 
 size_t get_priority(enum type_rule_condition_type type){
         switch(type){
@@ -392,7 +323,6 @@ void free_type_system(const struct type_system *type_system){
 struct application_data {
         const struct type_system *system;
         const struct parse_tree *tree;
-        struct OUTER_TYPE_MAP *outer_map;
         struct MAP(string, symbol_table_value) *scope_map;
 };
 
@@ -566,8 +496,4 @@ const struct type *find_type(const struct type_system *const system, struct pars
         }
 
         return NULL;
-}
-
-void free_variable(struct variable *v){
-        free(v);
 }

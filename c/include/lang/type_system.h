@@ -6,28 +6,11 @@
 #include "lang/symbol.h"
 #include "lang/type.h"
 
-#define OUTER_TYPE_MAP parse_tree_string_symbol_table_value_map_map
-
-struct variable {
-        const char *string;
-        const struct type *type;
-};
-
-void free_variable(struct variable *v);
-
-DEFINE_LIST(string)
-DEFINE_LIST(variable)
-
-DEFINE_MAP(parse_tree, MAP(string, symbol_table_value));
-
 struct type_rule;
 struct type_rule_condition;
 struct type_system;
 
 void find_types(const struct type_system *const system, struct parse_tree *tree);
-struct LIST(variable) get_local_variables(const struct parse_tree *tree);
-struct LIST(variable) get_parameters(const struct parse_tree *tree);
-struct variable find_symbol_variable(const struct parse_tree *tree);
 
 #define MAX_CONDITION_COUNT 16
 #define MAX_SIDE_EFFECT_COUNT 16

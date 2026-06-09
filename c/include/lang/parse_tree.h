@@ -34,4 +34,26 @@ void free_parse_tree(const struct parse_tree *tree);
 void print_parse_tree(const struct parse_tree *tree);
 struct MAP(string, symbol_table_value) *new_symbol_table();
 
+#define load_child_at(var, tree, n)                                        \
+        do {                                                               \
+                struct LIST_NODE(parse_tree) *node = tree->children->head; \
+                for (int i = 0; i < n; ++i){                               \
+                        node = node->next;                                 \
+                }                                                          \
+                var = node->data;                                          \
+        } while (0);   
+
+struct variable {
+        const char *string;
+        const struct type *type;
+};
+
+void free_variable(struct variable *v);
+
+DEFINE_LIST(variable)
+
+struct LIST(variable) get_local_variables(const struct parse_tree *tree);
+struct LIST(variable) get_parameters(const struct parse_tree *tree);
+struct variable find_symbol_variable(const struct parse_tree *tree);
+
 #endif

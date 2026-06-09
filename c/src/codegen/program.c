@@ -10,16 +10,6 @@
 #include "codegen/ops.h"
 #include "codegen/register.h"
 #include "lang/symbol.h"
-#include "lang/type_system.h"
-
-#define load_child_at(var, tree, n)                                        \
-        do {                                                               \
-                struct LIST_NODE(parse_tree) *node = tree->children->head; \
-                for (int i = 0; i < n; ++i){                               \
-                        node = node->next;                                 \
-                }                                                          \
-                var = node->data;                                          \
-        } while (0);                                                       \
 
 DEFINE_MAP(string, function);
 
