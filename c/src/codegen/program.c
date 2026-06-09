@@ -288,6 +288,24 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (first == SYMBOL_CALL){
                         return generate_from_tree(tree->children->head->data, functions, within, type_map);
                 }
+
+                if (first == SYMBOL_ADDRESSABLE){
+                        struct parse_tree *array; load_child_at(array, tree, 0);
+                        char *find_memory_address = generate_from_tree(array, functions, within, type_map);
+                        struct parse_tree *expr; load_child_at(expr, tree, 2);
+                        char *expr_code = generate_from_tree(expr, functions, within, type_map);
+                        return concat(8,
+                                find_memory_address,
+                                push(REG_ADDRESS_RESULT),
+                                expr_code,
+                                // TODO add per-type size calculation
+                                movi(REG_SCRATCH, 8),   // each word is 8 bytes
+                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                pop(REG_ADDRESS_RESULT),
+                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
+                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                        );
+                }
         } else if (symbol == SYMBOL_CALL){
                 char *id = tree->children->head->data->data.value;
                 struct string s;
@@ -328,6 +346,23 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (tree->children->len == 1){
                         struct variable var = find_symbol_variable(tree->children->head->data, type_map);
                         return function_variable_address(within, var);
+                }
+
+                if (tree->children->len == 4){
+                        struct parse_tree *array; load_child_at(array, tree, 0);
+                        char *find_memory_address = generate_from_tree(array, functions, within, type_map);
+                        struct parse_tree *expr; load_child_at(expr, tree, 2);
+                        char *expr_code = generate_from_tree(expr, functions, within, type_map);
+                        return concat(7,
+                                find_memory_address,
+                                push(REG_ADDRESS_RESULT),
+                                expr_code,
+                                // TODO add per-type size calculation
+                                movi(REG_SCRATCH, 8),   // each word is 8 bytes
+                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                pop(REG_ADDRESS_RESULT),
+                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
+                        );
                 }
 
                 return generate_from_tree(tree->children->head->next->data, functions, within, type_map);

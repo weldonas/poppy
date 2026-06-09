@@ -275,6 +275,14 @@ struct LIST(token)* lex(FILE *file){
                                 data.type = SYMBOL_SEMICOLON;
                                 data.val_len = 1;
                                 break;
+                        case '[':
+                                data.type = SYMBOL_LBRACKET;
+                                data.val_len = 1;
+                                break;
+                        case ']':
+                                data.type = SYMBOL_RBRACKET;
+                                data.val_len = 1;
+                                break;
                         case '\'':
                                 data.val_len = 1;
                                 if(lex_char_literal(file, val)){

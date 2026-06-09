@@ -1,5 +1,7 @@
 #include "lang/type.h"
 
+#include <stdlib.h>
+
 #include "data/list.h"
 
 #define INT_CHAR 'i'
@@ -110,6 +112,25 @@ const struct type* const param_type(const struct type *current, const struct typ
         new->current_type = current;
         new->previous = previous;
         new->word_count = UNASSIGNABLE;
+        add_type(new);
+        return new;
+}
+
+const struct type* const array_type(const struct type *element_type, char *length_str){
+        if (!is_assignable(element_type)){
+                return NULL;
+        }
+
+        long long length = strtoll(length_str, NULL, 10);
+        if (length < 1){
+                return NULL;
+        }
+
+        struct type *new = (struct type*) malloc(sizeof(struct type));
+        new->category = CATEGORY_ARRAY;
+        new->element_type = element_type;
+        new->length = length;
+        new->word_count = element_type->word_count * length;
         add_type(new);
         return new;
 }
