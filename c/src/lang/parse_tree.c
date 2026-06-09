@@ -26,8 +26,14 @@ struct MAP(string, symbol_table_value) *new_symbol_table() {
 void free_parse_tree(const struct parse_tree *tree){
         if (tree->children != NULL) {
                 free_list(tree->children, free_parse_tree, parse_tree);
+                free(tree->children);
         }
-        free(tree->children);
+        
+        if (tree->symbol_table != NULL){
+                free_map(tree->symbol_table, string, symbol_table_value);
+                free(tree->symbol_table);
+        }
+
         free((void *) tree);
 }
 

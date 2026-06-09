@@ -24,7 +24,7 @@ struct type_rule;
 struct type_rule_condition;
 struct type_system;
 
-struct OUTER_TYPE_MAP *find_types(const struct type_system *const system, struct parse_tree *tree);
+void find_types(const struct type_system *const system, struct parse_tree *tree);
 struct LIST(variable) get_local_variables(const struct parse_tree *tree);
 struct LIST(variable) get_parameters(const struct parse_tree *tree);
 struct variable find_symbol_variable(const struct parse_tree *tree);

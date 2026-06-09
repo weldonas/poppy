@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
         printf("lexed\n");
 
         const struct grammar *poppy_grammar = get_poppy_grammar();
-        const struct parse_tree *pt = parse(poppy_grammar, list);
+        struct parse_tree *pt = parse(poppy_grammar, list);
         free_poppy_grammar();
 
         if (pt == NULL) {
@@ -45,8 +45,8 @@ int main(int argc, char *argv[]){
         printf("parsed\n");
 
         const struct type_system *const system = get_poppy_type_system();
-        const struct OUTER_TYPE_MAP *types = find_types(system, pt);
-        if (types != NULL){
+        find_types(system, pt);
+        if (pt->type != NULL){
                 printf("typed\n");
                 char *code = generate_code(pt);
                 if (code != NULL){
@@ -61,11 +61,6 @@ int main(int argc, char *argv[]){
         free_list(list, free_token, token);
         free(list);
         free_parse_tree(pt);
-
-        if (types != NULL){
-                free_map(types, parse_tree, MAP(string, symbol_table_value));
-                free((void*) types);
-        }
 
         free_poppy_type_system();
         free_types();

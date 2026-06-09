@@ -99,7 +99,7 @@ struct type_rule {
         };
 };
 
-const struct type *find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, symbol_table_value) *scope_map);
+const struct type *find_type(const struct type_system *const system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map);
 
 bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt2){
         return pt1 == pt2;
@@ -116,9 +116,9 @@ const struct type * find_symbol_type(const struct parse_tree *tree){
         string.data = tree->data.value;
         const struct parse_tree *cur = tree;
         while (cur != NULL){
-                const struct MAP(string, symbol_table_value) *inner_map = cur->symbol_table; 
-                if (inner_map != NULL){
-                        const struct symbol_table_value *value; query_map(inner_map, &string, value, string, symbol_table_value);
+                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
+                if (symbol_table != NULL){
+                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
 
                         if (value != NULL){
                                 return value->type;
@@ -135,11 +135,11 @@ struct variable find_symbol_variable(const struct parse_tree *tree){
         return var;
 }
 
-const struct type * find_call_type(const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map){
+const struct type * find_call_type(const struct type_system *const system, const struct parse_tree *tree){
         // call -> IDENTIFIER LPAREN optargs RPAREN
         struct parse_tree *optargs; load_child_at(optargs, tree, 2);
         
-        const struct type *args_type = find_type(system, optargs, outer_map, NULL);
+        const struct type *args_type = find_type(system, optargs, NULL);
         const struct type *ftype = find_symbol_type(tree->children->head->data);
 
         if (ftype == NULL){
@@ -157,38 +157,28 @@ const struct type * find_call_type(const struct type_system *const system, const
         return return_type(ftype);
 }
 
-struct OUTER_TYPE_MAP * find_types(const struct type_system *const system, struct parse_tree *tree){
-        struct OUTER_TYPE_MAP *outer_map = (struct OUTER_TYPE_MAP*) malloc(sizeof (struct OUTER_TYPE_MAP));
-        
-        struct MAP(string, symbol_table_value) *inner_map = new_symbol_table();
-        init_map(outer_map, equals_parse_tree, free_typer_entry, parse_tree, MAP(string, symbol_table_value));
-        update_map(outer_map, tree, inner_map, parse_tree, MAP(string, symbol_table_value));
-        tree->symbol_table = inner_map;
+void find_types(const struct type_system *const system, struct parse_tree *tree){
+        struct MAP(string, symbol_table_value) *symbol_table = new_symbol_table();
+        tree->symbol_table = symbol_table;
 
-        const struct type *program_type = find_type(system, tree, outer_map, inner_map);
+        const struct type *program_type = find_type(system, tree, symbol_table);
 
         if (program_type == NULL){
-                free_map(outer_map, parse_tree, MAP(string, symbol_table_value));
-                free(outer_map);
-                return NULL;
+                return;
         }
 
-        for (struct string_symbol_table_value_map_entry_list_node *map_node = inner_map->list->head; map_node != NULL; map_node = map_node->next){
+        for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
                 if (!map_node->data->value->is_defined){
-                        free_map(outer_map, parse_tree, MAP(string, symbol_table_value));
-                        free(outer_map);
-                        return NULL;
+                        return;
                 }
         }
-
-        return outer_map;
 }
 
 void get_variables_recursive(const struct parse_tree *tree, struct LIST(variable) *list){
-        const struct MAP(string, symbol_table_value) *inner_map = tree->symbol_table; 
+        const struct MAP(string, symbol_table_value) *symbol_table = tree->symbol_table; 
 
-        if (inner_map != NULL){
-                for (struct string_symbol_table_value_map_entry_list_node *map_node = inner_map->list->head; map_node != NULL; map_node = map_node->next){
+        if (symbol_table != NULL){
+                for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
                         struct variable *v = (struct variable*) malloc(sizeof(struct variable));
                         v->string = map_node->data->key->data;
                         v->type = map_node->data->value->type;
@@ -215,10 +205,10 @@ struct LIST(variable) get_local_variables(const struct parse_tree *tree){
 struct LIST(variable) get_parameters(const struct parse_tree *tree){
         // defn -> signature LBRACE stmts RBRACE
         // signature -> type IDENTIFIER LPAREN optparams RPAREN
-        const struct MAP(string, symbol_table_value) *inner_map = tree->symbol_table;
+        const struct MAP(string, symbol_table_value) *symbol_table = tree->symbol_table;
         struct LIST(variable) list;
         init_list((&list))
-        for (struct string_symbol_table_value_map_entry_list_node *map_node = inner_map->list->head; map_node != NULL; map_node = map_node->next){
+        for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
                 struct variable *v = (struct variable*) malloc(sizeof(struct variable));
                 v->string = map_node->data->key->data;
                 v->type = map_node->data->value->type;
@@ -408,14 +398,13 @@ struct application_data {
 
 const struct type *get_child_type(struct application_data *data, size_t index){
         struct parse_tree *child; load_child_at(child, data->tree, index);
-        return find_type(data->system, child, data->outer_map, data->scope_map);
+        return find_type(data->system, child, data->scope_map);
 }
 
-const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, symbol_table_value) *scope_map){
+const struct type *const apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map){
         struct application_data data = {0};
         data.system = system;
         data.tree = tree;
-        data.outer_map = outer_map;
         data.scope_map = scope_map;
         
         for (size_t priority = 0; priority <= MAX_PRIORITY; ++priority){
@@ -493,7 +482,6 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         break;
                                 case SIDE_EFFECT_ADD_SCOPE:
                                         struct MAP(string, symbol_table_value) *new_map = new_symbol_table();
-                                        update_map(outer_map, tree, new_map, parse_tree, MAP(string, symbol_table_value));
                                         tree->symbol_table = new_map;
                                         data.scope_map = new_map;
                                         satisfied = true;
@@ -555,7 +543,7 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         return NULL;
 }
 
-const struct type *find_type(const struct type_system *const system, struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, symbol_table_value) *scope_map){
+const struct type *find_type(const struct type_system *const system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map){
         if (tree->type){
                 return tree->type;
         }
@@ -565,12 +553,12 @@ const struct type *find_type(const struct type_system *const system, struct pars
                 return tree->type;
         }
         else if (tree->data.type == SYMBOL_CALL){
-                tree->type = find_call_type(system, tree, outer_map);
+                tree->type = find_call_type(system, tree);
                 return tree->type;
         }
 
         for (size_t i = 0; i < system->rules_len; ++i){
-                const struct type *const output = apply(system->rules[i], system, tree, outer_map, scope_map);
+                const struct type *const output = apply(system->rules[i], system, tree, scope_map);
                 if (output){
                         tree->type = output;
                         return tree->type;

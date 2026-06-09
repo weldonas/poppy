@@ -6,6 +6,6 @@
 #include "lang/lexer.h"
 #include "lang/parse_tree.h"
 
-const struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *head);
+struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *head);
 
 #endif

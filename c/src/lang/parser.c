@@ -93,7 +93,7 @@ bool append_if_not_present(struct LIST(item) *state_set, struct item *new_item) 
         return true;
 }
 
-const struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *tokens) {
+struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *tokens) {
         struct LIST(item) *state_sets = (struct LIST(item)*) malloc((tokens->len + 1) * sizeof(struct LIST(item)));
 
         for (size_t i = 0; i <= tokens->len; ++i){
