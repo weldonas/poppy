@@ -48,7 +48,7 @@ int main(int argc, char *argv[]){
         const struct OUTER_TYPE_MAP *types = find_types(system, pt);
         if (types != NULL){
                 printf("typed\n");
-                char *code = generate_code(types, pt);
+                char *code = generate_code(pt);
                 if (code != NULL){
                         printf("generation successful\n");
                         FILE *out = fopen("../assembly/out.s", "w");
