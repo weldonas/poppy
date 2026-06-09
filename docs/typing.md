@@ -1,6 +1,6 @@
 # Poppy's Type System
 
-Poppy's types are defined according to the context-free grammar below. The starting symbol is $\text{type}$.
+Poppy's types are defined according to the context-free grammar below. The starting symbol is $\text{type}$ and $\text{num}$ can be substituted for any positive integer.
 $$
 \begin{align*}
 \text{type}&\rightarrow \text{returnabletype}\\
@@ -15,6 +15,7 @@ $$
 \text{param}&\rightarrow \text{int}\\
 \text{param}&\rightarrow \text{char}\\
 \text{param}&\rightarrow \text{bool}\\
+\text{type}&\rightarrow \text{param}[\text{num}]
 \end{align*}
 $$
 
@@ -41,6 +42,13 @@ $$\frac{\text{all symbol names in params, $E$ distinct} \quad \Gamma \vdash E: \
 $$\frac{\Gamma(\text{IDENTIFIER}) = \text{let } \tau \text{ IDENTIFIER}; \quad \tau \in P}{\Gamma \vdash \text{IDENTIFIER} : \tau \quad \Gamma \vdash \text{let } \tau \text{ IDENTIFIER};: \text{void}}$$
 
 $$\frac{\Gamma(\text{IDENTIFIER}) = \tau \text{ IDENTIFIER} = E; \quad \Gamma \vdash E : \tau \quad \tau \in P}{\Gamma \vdash \text{IDENTIFIER} : \tau \quad \Gamma \vdash \text{IDENTIFIER} = E; : \text{void}}$$
+
+## Arrays
+$$\frac{\Gamma(\text{IDENTIFIER}) = \text{let } \tau[n] \text{ IDENTIFIER}; \quad \tau \in P\quad n \in \mathbb N^+}{\Gamma \vdash \text{IDENTIFIER} : \tau[n] \quad \Gamma \vdash \text{let } \tau[n] \text{ IDENTIFIER};: \text{void}}$$
+
+$$\frac{\Gamma \vdash A : \tau[n] \quad \Gamma \vdash i:\text{int}\quad \Gamma \vdash E:\tau}{ \Gamma \vdash A[i] = E;: \text{void}}$$
+
+$$\frac{\Gamma \vdash A : \tau[n] \quad \Gamma \vdash i:\text{int}\quad}{ \Gamma \vdash A[i] : \tau}$$
 
 ## Statements
 
