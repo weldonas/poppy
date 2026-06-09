@@ -11,6 +11,7 @@ struct parse_tree * new_tree(struct token data){
         ptr->children = NULL;
         ptr->parent = NULL;
         ptr->type = NULL;
+        ptr->symbol_table = NULL;
         return ptr;
 }
 
@@ -18,6 +19,8 @@ struct parse_tree * copy_tree(struct parse_tree *tree){
         struct parse_tree *ptr = (struct parse_tree*) malloc(sizeof(struct parse_tree));
         ptr->data = tree->data;
         ptr->parent = tree->parent;
+        ptr->type = tree->type;
+        ptr->symbol_table = tree->symbol_table;
         if (tree->children == NULL){
                 ptr->children = NULL;
         } else {

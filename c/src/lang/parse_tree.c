@@ -11,6 +11,18 @@ bool equals_string(const struct string *s1, const struct string *s2) {
         return strcmp(s1->data, s2->data) == 0;
 }
 
+void free_string_entry(const struct MAP_ENTRY(string, symbol_table_value) *entry){
+        free((void *) entry->key);
+        free((void*) entry->value);
+        free((void *) entry);
+}
+
+struct MAP(string, symbol_table_value) *new_symbol_table() {
+        struct MAP(string, symbol_table_value) *ptr = (struct MAP(string, symbol_table_value)*) malloc(sizeof(struct MAP(string, symbol_table_value)));
+        init_map(ptr, equals_string, free_string_entry, string, symbol_table_value);
+        return ptr;
+}
+
 void free_parse_tree(const struct parse_tree *tree){
         if (tree->children != NULL) {
                 free_list(tree->children, free_parse_tree, parse_tree);

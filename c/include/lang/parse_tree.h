@@ -27,10 +27,11 @@ struct parse_tree {
         struct LIST(parse_tree) * children;
         struct parse_tree *parent;
         const struct type *type;
-        struct MAP(string, symbol_table_value) symbol_table;
+        struct MAP(string, symbol_table_value) *symbol_table;
 };
 
 void free_parse_tree(const struct parse_tree *tree);
 void print_parse_tree(const struct parse_tree *tree);
+struct MAP(string, symbol_table_value) *new_symbol_table();
 
 #endif
