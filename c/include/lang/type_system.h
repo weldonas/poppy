@@ -8,19 +8,6 @@
 
 #define OUTER_TYPE_MAP parse_tree_string_symbol_table_value_map_map
 
-struct string {
-        const char *data;
-};
-
-void free_string(struct string *s);
-
-bool equals_string(const struct string *s1, const struct string *s2);
-
-struct symbol_table_value {
-        const struct type *type;
-        bool is_defined;
-};
-
 struct variable {
         const char *string;
         const struct type *type;
@@ -31,7 +18,6 @@ void free_variable(struct variable *v);
 DEFINE_LIST(string)
 DEFINE_LIST(variable)
 
-DEFINE_MAP(string, symbol_table_value);
 DEFINE_MAP(parse_tree, MAP(string, symbol_table_value));
 
 struct type_rule;

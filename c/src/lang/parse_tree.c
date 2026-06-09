@@ -1,8 +1,15 @@
 #include "lang/parse_tree.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "data/list.h"
+
+void free_string(struct string *s){}
+
+bool equals_string(const struct string *s1, const struct string *s2) {
+        return strcmp(s1->data, s2->data) == 0;
+}
 
 void free_parse_tree(const struct parse_tree *tree){
         if (tree->children != NULL) {

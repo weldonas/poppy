@@ -10,6 +10,7 @@ struct parse_tree * new_tree(struct token data){
         ptr->data = data;
         ptr->children = NULL;
         ptr->parent = NULL;
+        ptr->type = NULL;
         return ptr;
 }
 

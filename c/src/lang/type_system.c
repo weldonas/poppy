@@ -1,6 +1,5 @@
 #include "lang/type_system.h"
 #include "data/map.h"
-#include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 
@@ -101,10 +100,6 @@ struct type_rule {
 };
 
 const struct type *find_type(const struct type_system *const system, const struct parse_tree *tree, struct OUTER_TYPE_MAP *outer_map, struct MAP(string, symbol_table_value) *scope_map);
-
-bool equals_string(const struct string *s1, const struct string *s2) {
-        return strcmp(s1->data, s2->data) == 0;
-}
 
 void free_string_entry(const struct MAP_ENTRY(string, symbol_table_value) *entry){
         free((void *) entry->key);
@@ -594,8 +589,6 @@ const struct type *find_type(const struct type_system *const system, const struc
 
         return NULL;
 }
-
-void free_string(struct string *s){}
 
 void free_variable(struct variable *v){
         free(v);
