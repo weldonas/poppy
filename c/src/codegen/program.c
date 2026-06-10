@@ -280,6 +280,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                 if (first == SYMBOL_ADDRESSABLE){
                         struct parse_tree *array; load_child_at(array, tree, 0);
+                        size_t element_size = array->type->element_type->word_count;
                         char *find_memory_address = generate_from_tree(array, functions, within);
                         struct parse_tree *expr; load_child_at(expr, tree, 2);
                         char *expr_code = generate_from_tree(expr, functions, within);
@@ -287,8 +288,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 find_memory_address,
                                 push(REG_ADDRESS_RESULT),
                                 expr_code,
-                                // TODO add per-type size calculation
-                                movi(REG_SCRATCH, 8),   // each word is 8 bytes
+                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
                                 mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
                                 pop(REG_ADDRESS_RESULT),
                                 add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
@@ -339,6 +339,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                 if (tree->children->len == 4){
                         struct parse_tree *array; load_child_at(array, tree, 0);
+                        size_t element_size = array->type->element_type->word_count;
                         char *find_memory_address = generate_from_tree(array, functions, within);
                         struct parse_tree *expr; load_child_at(expr, tree, 2);
                         char *expr_code = generate_from_tree(expr, functions, within);
@@ -346,8 +347,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 find_memory_address,
                                 push(REG_ADDRESS_RESULT),
                                 expr_code,
-                                // TODO add per-type size calculation
-                                movi(REG_SCRATCH, 8),   // each word is 8 bytes
+                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
                                 mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
                                 pop(REG_ADDRESS_RESULT),
                                 add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
