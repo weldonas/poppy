@@ -242,6 +242,24 @@ char *str(enum reg src, enum reg addr){
         return instr;   
 }
 
+char *memory_copy(enum reg src, enum reg dest, long long words){
+        char *store_lr = (char*) malloc(20 * sizeof(char));
+        strcpy(store_lr, "str lr, [sp, #-16]!");
+        char *bl = (char*) malloc(10 * sizeof(char));
+        strcpy(bl, "bl memcpy");
+        char *restore_lr = (char*) malloc(18 * sizeof(char));
+        strcpy(restore_lr, "ldr lr, [sp], #16");
+
+        return concat(6,
+                mov(REG_0, src),
+                mov(REG_1, dest),
+                movi(REG_2, words),
+                store_lr,
+                bl,
+                restore_lr
+        );
+}
+
 char *ret(){
         char *instr = (char*) malloc(4 * sizeof(char));
         strcpy(instr, "ret");

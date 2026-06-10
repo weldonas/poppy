@@ -10,6 +10,7 @@
 #include "codegen/ops.h"
 #include "codegen/register.h"
 #include "lang/symbol.h"
+#include "lang/type.h"
 
 DEFINE_MAP(string, function);
 
@@ -28,9 +29,11 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
 char *generate_head(struct parse_tree *tree){
         char *head = (char*) malloc(6 * sizeof(char));
         strcpy(head, ".text");
+        char *include_utils = (char*) malloc(19 * sizeof(char));
+        strcpy(include_utils, ".include \"utils.s\"");
         char *global_start = (char*) malloc(15 * sizeof(char));
         strcpy(global_start, ".global _start");
-        return concat(2, head, global_start);
+        return concat(3, head, include_utils, global_start);
 }
 
 char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
@@ -113,13 +116,25 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 struct parse_tree *expr; load_child_at(expr, tree, 2);
                 char *expr_code = generate_from_tree(expr, functions, within);
 
-                return concat(5,
-                        find_memory_addr,
-                        push(REG_ADDRESS_RESULT),
-                        expr_code,
-                        pop(REG_ADDRESS_RESULT),
-                        str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                );
+                if (addressable->type->category == CATEGORY_PRIMITIVE){
+                        return concat(5,
+                                find_memory_addr,
+                                push(REG_ADDRESS_RESULT),
+                                expr_code,
+                                pop(REG_ADDRESS_RESULT),
+                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                        );
+                }
+                else if (addressable->type->category == CATEGORY_ARRAY){
+                        return concat(5,
+                                find_memory_addr,
+                                push(REG_ADDRESS_RESULT),
+                                expr_code,
+                                pop(REG_ADDRESS_RESULT),
+                                memory_copy(REG_ARITH_RESULT, REG_ADDRESS_RESULT, addressable->type->word_count)
+                        );
+                }
+
         } else if (symbol == SYMBOL_RET){
                 if (tree->children->len == 1){
                         return hop(within);
@@ -268,10 +283,18 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (first == SYMBOL_IDENTIFIER){
                         struct parse_tree *child = tree->children->head->data;
                         struct variable var = find_symbol_variable(child);
-                        return concat(2,
-                                function_variable_address(within, var),
-                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                        );
+                        if (var.type->category == CATEGORY_PRIMITIVE){
+                                return concat(2,
+                                        function_variable_address(within, var),
+                                        ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                );
+                        }
+                        else if (var.type->category == CATEGORY_ARRAY){
+                                return concat(2,
+                                        function_variable_address(within, var),
+                                        mov(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                );
+                        }
                 }
 
                 if (first == SYMBOL_CALL){
@@ -284,16 +307,29 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         char *find_memory_address = generate_from_tree(array, functions, within);
                         struct parse_tree *expr; load_child_at(expr, tree, 2);
                         char *expr_code = generate_from_tree(expr, functions, within);
-                        return concat(8,
-                                find_memory_address,
-                                push(REG_ADDRESS_RESULT),
-                                expr_code,
-                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
-                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                pop(REG_ADDRESS_RESULT),
-                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
-                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                        );
+                        if (array->type->element_type->category == CATEGORY_PRIMITIVE){
+                                return concat(8,
+                                        find_memory_address,
+                                        push(REG_ADDRESS_RESULT),
+                                        expr_code,
+                                        movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
+                                        mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                        pop(REG_ADDRESS_RESULT),
+                                        add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
+                                        ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                );
+                        }
+                        else if (array->type->element_type->category == CATEGORY_ARRAY){
+                                return concat(7,
+                                        find_memory_address,
+                                        push(REG_ADDRESS_RESULT),
+                                        expr_code,
+                                        movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
+                                        mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                        pop(REG_ADDRESS_RESULT),
+                                        add(REG_ARITH_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
+                                ); 
+                        }                    
                 }
         } else if (symbol == SYMBOL_CALL){
                 char *id = tree->children->head->data->data.value;

@@ -1,5 +1,6 @@
 #include "codegen/function.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "codegen/assem.h"
@@ -124,11 +125,24 @@ char *call_function(const struct function *function, char **args){
 
         size_t i = 0;
         for (struct LIST_NODE(variable) *param = function->params.head; param != NULL; param = param->next, ++i) {
-                char *cur_eval = concat(3,
-                        args[i],
-                        variable_address(function->param_chunk, *param->data, REG_SP),
-                        str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                );
+                char *cur_eval;
+                if (param->data->type->category == CATEGORY_PRIMITIVE){
+                        cur_eval = concat(3,
+                                args[i],
+                                variable_address(function->param_chunk, *param->data, REG_SP),
+                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                        );
+                }
+                else if (param->data->type->category == CATEGORY_ARRAY) {
+                        cur_eval = concat(3,
+                                args[i],
+                                variable_address(function->param_chunk, *param->data, REG_SP),
+                                memory_copy(REG_ARITH_RESULT, REG_ADDRESS_RESULT, param->data->type->word_count)
+                        );
+                }
+                else {
+                        assert(0);
+                }
 
                 if (arg_evals == NULL){
                         arg_evals = cur_eval;
