@@ -4,6 +4,6 @@
 #include "lang/parser.h"
 #include "lang/type_system.h"
 
-char *generate_code(const struct OUTER_TYPE_MAP *type_map, const struct parse_tree *tree);
+char *generate_code(const struct parse_tree *tree);
 
 #endif
