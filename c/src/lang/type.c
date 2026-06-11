@@ -176,6 +176,14 @@ bool equals_type(const struct type *t1, const struct type *t2){
                 return equals_type(t1->previous, t2->previous);
         }
 
+        else if (t1->category == CATEGORY_ARRAY){
+                if (!equals_type(t1->element_type, t2->element_type)){
+                        return false;
+                }
+
+                return t1->length == t2->length;
+        }
+
         return false;
 }
 
@@ -200,5 +208,6 @@ void free_types(){
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;
+        char_ptr = NULL;
         initialized = false;
 }

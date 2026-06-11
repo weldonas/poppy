@@ -1,5 +1,4 @@
 #include "lang/poppy_type_system.h"
-#include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 #include "lang/type_system.h"
