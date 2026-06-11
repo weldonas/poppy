@@ -82,16 +82,23 @@ const struct type* const function_type(const struct type *ret, const struct type
                 return NULL;
         }
 
-        for (const struct type *param = params; param != NULL; param = param->previous){
-                if (!is_assignable(param->current_type)){
-                        return NULL;
+        if (!equals_type(params, void_type())){
+                for (const struct type *param = params; param != NULL; param = param->previous){
+                        if (!is_assignable(param->current_type)){
+                                return NULL;
+                        }
                 }
         }
 
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_FUNCTION;
         new->ret_type = ret;
-        new->params_type = params;
+        if (equals_type(params, void_type())){
+                new->params_type = NULL;
+        }
+        else {
+                new->params_type = params;
+        }
         new->word_count = UNASSIGNABLE;
         add_type(new);
         return new;

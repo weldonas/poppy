@@ -153,6 +153,7 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
 
         for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
                 if (!map_node->data->value->is_defined){
+                        tree->type = NULL;
                         return;
                 }
         }
@@ -383,10 +384,11 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
+                                        const struct type *t = find_symbol_type(child);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
                                         const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
 
-                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
+                                        if (((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))) || (t != NULL)){
                                                 free(str);
                                                 free((void*) new_value);
                                                 return NULL;
