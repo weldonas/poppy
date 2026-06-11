@@ -208,5 +208,6 @@ void free_types(){
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;
+        char_ptr = NULL;
         initialized = false;
 }

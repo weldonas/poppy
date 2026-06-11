@@ -8,6 +8,7 @@ $$
 \text{returnabletype}&\rightarrow \text{char}\\
 \text{returnabletype}&\rightarrow \text{bool}\\
 \text{returnabletype}&\rightarrow \text{void}\\
+\text{returnabletype}&\rightarrow \text{array}\\
 \text{type}&\rightarrow \text{(optparams) $\mapsto$ returnabletype}\\
 \text{optparams}&\rightarrow \varnothing\\
 \text{optparams}&\rightarrow \text{params}\\
@@ -15,14 +16,15 @@ $$
 \text{param}&\rightarrow \text{int}\\
 \text{param}&\rightarrow \text{char}\\
 \text{param}&\rightarrow \text{bool}\\
-\text{type}&\rightarrow \text{param}[\text{num}]
+\text{param}&\rightarrow \text{array}\\
+\text{array}&\rightarrow \text{param[num]}\\
 \end{align*}
 $$
 
 
 Poppy has the following typing inference rules. We define the sets $R$ and $P$ for the sake of convenience:
-$$R:=\{t:\text{returnabletype} \to t\}$$
-$$P:=\{t:\text{param} \to t\}$$
+$$R:=\{t:\text{returnabletype} \to^* t\}$$
+$$P:=\{t:\text{param} \to^* t\}$$
 
 ## Program
 $$\frac{\forall i \text{ } \overline{\text{defns}} \vdash \text{defns}_i}{\varnothing \vdash \overline{\text{defns}}}$$
