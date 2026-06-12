@@ -98,7 +98,9 @@ bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt
 const struct type * find_symbol_type(const struct parse_tree *tree){
         struct string string;
         string.data = tree->data.value;
+
         const struct parse_tree *cur = tree;
+        
         while (cur != NULL){
                 const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
                 if (symbol_table != NULL){
@@ -111,6 +113,32 @@ const struct type * find_symbol_type(const struct parse_tree *tree){
                 cur = cur->parent;
         }
         return NULL;
+}
+
+bool name_reused(const struct parse_tree *tree){
+        struct string string;
+        string.data = tree->data.value;
+
+        const struct parse_tree *cur = tree;
+        bool found = false;
+
+        while (cur != NULL){
+                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
+                if (symbol_table != NULL){
+                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
+
+                        if (value != NULL){
+                                if (found){
+                                        return true;
+                                }
+                                else {
+                                        found = true;
+                                }
+                        }
+                }
+                cur = cur->parent;
+        }
+        return false;
 }
 
 struct variable find_symbol_variable(const struct parse_tree *tree){
@@ -141,6 +169,22 @@ const struct type * find_call_type(const struct type_system *const system, const
         return return_type(ftype);
 }
 
+bool contains_collision(const struct parse_tree *tree){
+        if (tree->children){
+                for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                        if (contains_collision(node->data)){
+                                return true;
+                        }
+                }
+        }
+
+        if ((tree->data.type == SYMBOL_IDENTIFIER) && name_reused(tree)){
+                return true;
+        }
+
+        return false;
+}
+
 void find_types(const struct type_system *const system, struct parse_tree *tree){
         struct MAP(string, symbol_table_value) *symbol_table = new_symbol_table();
         tree->symbol_table = symbol_table;
@@ -156,6 +200,10 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
                         tree->type = NULL;
                         return;
                 }
+        }
+
+        if (contains_collision(tree)){
+                tree->type = NULL;
         }
 }
 
@@ -384,11 +432,10 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        const struct type *t = find_symbol_type(child);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
                                         const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
 
-                                        if (((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))) || (t != NULL)){
+                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
                                                 free(str);
                                                 free((void*) new_value);
                                                 return NULL;
