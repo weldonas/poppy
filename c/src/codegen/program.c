@@ -420,25 +420,6 @@ char *generate_code(const struct parse_tree *tree){
                 struct LIST(variable) params_list = get_parameters(defn);
                 struct LIST(variable) locals_list = get_local_variables(defn);
 
-                for (struct LIST_NODE(variable) *l_node = locals_list.head; l_node != NULL; l_node = l_node->next){
-                        for (struct LIST_NODE(variable) *successor = l_node->next; successor != NULL; successor = successor->next){
-                                if (strcmp(l_node->data->string, successor->data->string) == 0){
-                                        free_map((&functions), string, function);
-                                        free_list((&params_list), free_variable, variable);
-                                        free_list((&locals_list), free_variable, variable);
-                                        return NULL;
-                                }
-                        }
-
-                        for (struct LIST_NODE(variable) *p_node = params_list.head; p_node != NULL; p_node = p_node->next){
-                                if (strcmp(l_node->data->string, p_node->data->string) == 0){
-                                        free_map((&functions), string, function);
-                                        free_list((&params_list), free_variable, variable);
-                                        free_list((&locals_list), free_variable, variable);
-                                        return NULL;
-                                }
-                        }
-                }
 
                 struct string *s = (struct string*) malloc(sizeof(struct string));
                 struct parse_tree *signature = defn->children->head->data;

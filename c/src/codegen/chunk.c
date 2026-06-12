@@ -7,7 +7,6 @@
 #include "codegen/assem.h"
 #include "codegen/register.h"
 #include "data/map.h"
-#include "lang/type_system.h"
 
 struct index {
         size_t data;

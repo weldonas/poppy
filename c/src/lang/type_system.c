@@ -98,7 +98,9 @@ bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt
 const struct type * find_symbol_type(const struct parse_tree *tree){
         struct string string;
         string.data = tree->data.value;
+
         const struct parse_tree *cur = tree;
+        
         while (cur != NULL){
                 const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
                 if (symbol_table != NULL){
@@ -111,6 +113,32 @@ const struct type * find_symbol_type(const struct parse_tree *tree){
                 cur = cur->parent;
         }
         return NULL;
+}
+
+bool name_reused(const struct parse_tree *tree){
+        struct string string;
+        string.data = tree->data.value;
+
+        const struct parse_tree *cur = tree;
+        bool found = false;
+
+        while (cur != NULL){
+                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
+                if (symbol_table != NULL){
+                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
+
+                        if (value != NULL){
+                                if (found){
+                                        return true;
+                                }
+                                else {
+                                        found = true;
+                                }
+                        }
+                }
+                cur = cur->parent;
+        }
+        return false;
 }
 
 struct variable find_symbol_variable(const struct parse_tree *tree){
@@ -141,6 +169,33 @@ const struct type * find_call_type(const struct type_system *const system, const
         return return_type(ftype);
 }
 
+bool is_valid_type_tree(const struct parse_tree *tree){
+        if (tree->children){
+                for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                        if (!is_valid_type_tree(node->data)){
+                                return false;
+                        }
+                }
+        }
+
+        if ((tree->data.type == SYMBOL_IDENTIFIER) && name_reused(tree)){
+                return false;
+        }
+
+        if ((tree->data.type == SYMBOL_IDENTIFIER) && (strcmp(tree->data.value, "main") == 0)){
+                const struct parse_tree *main_signature = tree->parent;
+                if (!equals_type(main_signature->type->ret_type, void_type())){
+                        return false;
+                }
+
+                if (main_signature->type->params_type != NULL){
+                        return false;
+                }
+        }
+
+        return true;
+}
+
 void find_types(const struct type_system *const system, struct parse_tree *tree){
         struct MAP(string, symbol_table_value) *symbol_table = new_symbol_table();
         tree->symbol_table = symbol_table;
@@ -153,8 +208,13 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
 
         for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
                 if (!map_node->data->value->is_defined){
+                        tree->type = NULL;
                         return;
                 }
+        }
+
+        if (!is_valid_type_tree(tree)){
+                tree->type = NULL;
         }
 }
 
