@@ -169,20 +169,31 @@ const struct type * find_call_type(const struct type_system *const system, const
         return return_type(ftype);
 }
 
-bool contains_collision(const struct parse_tree *tree){
+bool is_valid_type_tree(const struct parse_tree *tree){
         if (tree->children){
                 for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
-                        if (contains_collision(node->data)){
-                                return true;
+                        if (!is_valid_type_tree(node->data)){
+                                return false;
                         }
                 }
         }
 
         if ((tree->data.type == SYMBOL_IDENTIFIER) && name_reused(tree)){
-                return true;
+                return false;
         }
 
-        return false;
+        if ((tree->data.type == SYMBOL_IDENTIFIER) && (strcmp(tree->data.value, "main") == 0)){
+                const struct parse_tree *main_signature = tree->parent;
+                if (!equals_type(main_signature->type->ret_type, void_type())){
+                        return false;
+                }
+
+                if (main_signature->type->params_type != NULL){
+                        return false;
+                }
+        }
+
+        return true;
 }
 
 void find_types(const struct type_system *const system, struct parse_tree *tree){
@@ -202,7 +213,7 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
                 }
         }
 
-        if (contains_collision(tree)){
+        if (!is_valid_type_tree(tree)){
                 tree->type = NULL;
         }
 }
