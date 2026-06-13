@@ -158,11 +158,7 @@ const struct type * find_call_type(const struct type_system *const system, const
                 return NULL;
         }
 
-        if ((args_type == NULL) != (ftype->params_type == NULL)){
-                return NULL;
-        }
-
-        if (args_type && !equals_type(args_type, ftype->params_type)){
+        if (!equals_type(args_type, ftype->params_type)){
                 return NULL;
         }
 
@@ -188,7 +184,7 @@ bool is_valid_type_tree(const struct parse_tree *tree){
                         return false;
                 }
 
-                if (main_signature->type->params_type != NULL){
+                if (!equals_type(main_signature->type->params_type, unit_type())){
                         return false;
                 }
         }

@@ -351,7 +351,7 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTPARAMS);
         conditions[1] = new_length_condition(0);
-        rules[i] = new_type_rule(conditions, 2, void_type());
+        rules[i] = new_type_rule(conditions, 2, unit_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTPARAMS);
@@ -379,7 +379,7 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTARGS);
         conditions[1] = new_length_condition(0);
-        rules[i] = new_type_rule(conditions, 2, NULL);
+        rules[i] = new_type_rule(conditions, 2, unit_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTARGS);
@@ -412,7 +412,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_DECL);
         conditions[1] = new_add_symbol_name_function_side_effect(find_decl_signature_name, 1, false);
         conditions[2] = new_add_scope_side_effect(); // this ensures params dont get added to the global scope
-        rules[i] = new_type_rule(conditions, 3, void_type());
+        rules[i] = new_type_rule(conditions, 3, unit_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECLS);
