@@ -43,15 +43,6 @@ struct MAP(string, symbol_table_value) *new_symbol_table();
                 var = node->data;                                          \
         } while (0);   
 
-struct variable {
-        const char *string;
-        const struct type *type;
-};
-
-void free_variable(struct variable *v);
-
-DEFINE_LIST(variable)
-
 struct LIST(variable) get_local_variables(const struct parse_tree *tree);
 struct LIST(variable) get_parameters(const struct parse_tree *tree);
 struct variable find_symbol_variable(const struct parse_tree *tree);

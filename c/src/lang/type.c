@@ -133,6 +133,20 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         return new;
 }
 
+const struct type* const record_type(const struct LIST(variable) fields){
+        struct type *new = (struct type*) malloc(sizeof(struct type));
+        new->category = CATEGORY_RECORD;
+        new->fields = fields;
+        new->word_count = 0;
+
+        for (struct LIST_NODE(variable) *node = fields.head; node != NULL; node = node->next){
+                new->word_count += node->data->type->word_count;
+        }
+
+        add_type(new);
+        return new;
+}
+
 const struct type* const return_type(const struct type *type){
         if (type->category == CATEGORY_FUNCTION){
                 return type->ret_type;
@@ -216,4 +230,8 @@ void free_types(){
         void_ptr = NULL;
         char_ptr = NULL;
         initialized = false;
+}
+
+void free_variable(struct variable *v){
+        free(v);
 }
