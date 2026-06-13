@@ -8,7 +8,6 @@ $$
 \text{returnabletype}&\rightarrow \text{char}\\
 \text{returnabletype}&\rightarrow \text{bool}\\
 \text{returnabletype}&\rightarrow \text{void}\\
-\text{returnabletype}&\rightarrow \text{array}\\
 \text{type}&\rightarrow \text{(optparams) $\mapsto$ returnabletype}\\
 \text{optparams}&\rightarrow \varnothing\\
 \text{optparams}&\rightarrow \text{params}\\

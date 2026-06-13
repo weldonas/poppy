@@ -113,7 +113,7 @@ const struct type* const function_type(const struct type *ret, const struct type
 
 
 const struct type* const param_type(const struct type *current, const struct type *previous){
-        if (!is_returnable(current)){
+        if (!is_assignable(current)){
                 return NULL;
         }
 
@@ -206,7 +206,7 @@ bool is_assignable(const struct type *type){
 }
 
 bool is_returnable(const struct type *type){
-        return is_assignable(type) || ((type->category == CATEGORY_PRIMITIVE) && (type->repr == VOID_CHAR));
+        return type->category == CATEGORY_PRIMITIVE;
 }
 
 void free_type(const struct type *type){

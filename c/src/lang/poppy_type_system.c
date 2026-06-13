@@ -40,6 +40,11 @@ bool is_non_null_array_type(const struct type *const type){
         return type && type->category == CATEGORY_ARRAY;
 }
 
+bool is_non_null_returnable_type(const struct type *const type){
+        return type && is_returnable(type);
+}
+
+
 char *find_defn_signature_name(const struct parse_tree *defn){
         const struct parse_tree *signature = defn->children->head->data;
         const struct parse_tree *id = signature->children->head->next->data;
@@ -398,8 +403,9 @@ const struct type_system *const get_poppy_type_system(){
         ++i; 
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_SIGNATURE);
-        conditions[1] = new_type_at_condition(3, is_non_null_type);
-        rules[i] = new_function_type_rule(conditions, 2, 0, 3);
+        conditions[1] = new_type_at_condition(0, is_non_null_returnable_type);
+        conditions[2] = new_type_at_condition(3, is_non_null_type);
+        rules[i] = new_function_type_rule(conditions, 3, 0, 3);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFN);
