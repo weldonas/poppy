@@ -19,6 +19,7 @@ struct type *int_ptr = NULL;
 struct type *void_ptr = NULL;
 struct type *bool_ptr = NULL;
 struct type *char_ptr = NULL;
+struct type *unit_ptr = NULL;
 
 void add_type(struct type *new) {
         if (!initialized) {
@@ -77,12 +78,23 @@ const struct type* const char_type(){
         return char_ptr;
 }
 
+const struct type* const unit_type(){
+        if (unit_ptr == NULL){
+                unit_ptr = (struct type*) malloc(sizeof(struct type));
+                unit_ptr->category = CATEGORY_UNIT;
+                unit_ptr->word_count = UNASSIGNABLE;
+                add_type(unit_ptr);
+        }
+
+        return unit_ptr;
+}
+
 const struct type* const function_type(const struct type *ret, const struct type *params){
         if (!is_returnable(ret)){
                 return NULL;
         }
 
-        if (!equals_type(params, void_type())){
+        if (!equals_type(params, unit_type())){
                 for (const struct type *param = params; param != NULL; param = param->previous){
                         if (!is_assignable(param->current_type)){
                                 return NULL;
@@ -93,12 +105,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_FUNCTION;
         new->ret_type = ret;
-        if (equals_type(params, void_type())){
-                new->params_type = NULL;
-        }
-        else {
-                new->params_type = params;
-        }
+        new->params_type = params;
         new->word_count = UNASSIGNABLE;
         add_type(new);
         return new;
@@ -160,15 +167,7 @@ bool equals_type(const struct type *t1, const struct type *t2){
         }
 
         else if (t1->category == CATEGORY_FUNCTION){
-                if ((t1->params_type == NULL) != (t2->params_type == NULL)){
-                        return false;
-                }
-
-                if (t1->params_type){
-                        return equals_type(t1->params_type, t2->params_type) && equals_type(t1->ret_type, t2->ret_type);
-                }
-
-                return equals_type(t1->ret_type, t2->ret_type);
+                return equals_type(t1->params_type, t2->params_type) && equals_type(t1->ret_type, t2->ret_type);
         }
 
         else if (t1->category == CATEGORY_PARAMS){
@@ -189,6 +188,10 @@ bool equals_type(const struct type *t1, const struct type *t2){
                 }
 
                 return t1->length == t2->length;
+        }
+
+        else if (t1->category == CATEGORY_UNIT){
+                return true;
         }
 
         return false;

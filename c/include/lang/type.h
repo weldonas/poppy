@@ -8,7 +8,8 @@ enum category {
     CATEGORY_PRIMITIVE,
     CATEGORY_FUNCTION,
     CATEGORY_PARAMS,
-    CATEGORY_ARRAY
+    CATEGORY_ARRAY,
+    CATEGORY_UNIT
 };
 
 struct type {
@@ -20,7 +21,7 @@ struct type {
         }; // primitive
 
         struct {
-            const struct type *params_type; // params (or NULL if no arguments)
+            const struct type *params_type; // params (or unit type if no arguments)
             const struct type *ret_type; // primitive
         }; // function
 
@@ -40,6 +41,7 @@ const struct type* const int_type();
 const struct type* const bool_type();
 const struct type* const void_type();
 const struct type* const char_type();
+const struct type* const unit_type();
 const struct type* const function_type(const struct type *ret, const struct type *params);
 const struct type* const param_type(const struct type *current, const struct type *previous);
 const struct type* const array_type(const struct type *element_type, char *length);
