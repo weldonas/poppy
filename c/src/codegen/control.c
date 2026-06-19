@@ -1,11 +1,12 @@
 #include "codegen/control.h"
 
-#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "codegen/assem.h"
 
+#define MAX_LABEL_INDEX_LENGTH 20 // 2^64 - 1 has 20 digits in base 10
 size_t label_count = 0;
 
 struct label {
@@ -14,18 +15,10 @@ struct label {
 
 struct label *new_label(){
         ++label_count;
-        size_t length = (size_t) log10(label_count) + 1;
+        char *name = (char*) malloc((MAX_LABEL_INDEX_LENGTH + 7) * sizeof(char));
 
-        char *name = (char*) malloc((length + 6) * sizeof(char));
         strcpy(name, "label");
-        name[length + 5] = 0;
-
-        size_t index = length + 4;
-        size_t cur = label_count;
-        while (cur > 0){
-                name[index--] = '0' + (cur % 10);
-                cur /= 10;
-        }
+        sprintf(name + 5, "%zu", label_count);
 
         struct label *l = (struct label*) malloc(sizeof(struct label));
         l->name = name;
