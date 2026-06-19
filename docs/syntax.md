@@ -2,7 +2,7 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl, addressable}\}$
+Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl, addressable, fields, field}\}$
 
 Start symbol: $\text{program}$
 
@@ -14,18 +14,23 @@ $$\begin{align*}
 \text{defndecl} &\rightarrow \text{defn}\\
 \text{defndecl} &\rightarrow \text{decl}\\
 \text{defn} &\rightarrow \text{signature LBRACE body RBRACE}\\
+\text{defn} &\rightarrow \text{RECORD IDENTIFIER LPAREN fields RPAREN} \\
 \text{decl} &\rightarrow \text{DECLARE signature}\\
 \text{signature} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN}\\
 \text{type} &\rightarrow \text{INT}\\
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\
 \text{type} &\rightarrow \text{BOOL}\\
+\text{type} &\rightarrow \text{IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
 \text{params} &\rightarrow \text{param COMMA params}  \\
 \text{params} &\rightarrow \text{param}  \\
 \text{param} &\rightarrow \text{type IDENTIFIER}  \\
+\text{fields} &\rightarrow \text{field COMMA fields}  \\
+\text{fields} &\rightarrow \text{field}  \\
+\text{field} &\rightarrow \text{type IDENTIFIER} \\
 \text{body} &\rightarrow \text{stmts}  \\
 \text{stmts} &\rightarrow \text{stmt}  \\
 \text{stmts} &\rightarrow \text{stmt stmts}  \\
@@ -39,6 +44,7 @@ $$\begin{align*}
 \text{addressable} &\rightarrow \text{IDENTIFIER}  \\
 \text{addressable} &\rightarrow \text{LPAREN addressable RPAREN}  \\
 \text{addressable} &\rightarrow \text{addressable LBRACKET expr RBRACKET}  \\
+\text{addressable} &\rightarrow \text{addressable DOT IDENTIFIER} \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
@@ -76,8 +82,9 @@ $$\begin{align*}
 \text{multexpr} &\rightarrow \text{multexpr DIVIDE unexpr}  \\
 \text{multexpr} &\rightarrow \text{multexpr MOD unexpr}  \\
 \text{multexpr} &\rightarrow \text{unexpr}  \\
-\text{unexpr} &\rightarrow \text{MINUS UNEXPR} \\
+\text{unexpr} &\rightarrow \text{MINUS unexpr} \\
 \text{unexpr} &\rightarrow \text{addressable LBRACKET expr RBRACKET} \\
+\text{unexpr} &\rightarrow \text{addressable DOT IDENTIFIER} \\
 \text{unexpr} &\rightarrow \text{LPAREN expr RPAREN}  \\
 \text{unexpr} &\rightarrow \text{call}\\
 \text{call} &\rightarrow \text{IDENTIFIER LPAREN optargs RPAREN}  \\

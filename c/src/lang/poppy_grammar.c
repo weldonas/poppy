@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 82
+#define RULE_COUNT 89
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -40,18 +40,23 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_DEFNDECL, {SYMBOL_DEFN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECL, {SYMBOL_DECL}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFN, {SYMBOL_SIGNATURE COMMA SYMBOL_LBRACE COMMA SYMBOL_BODY COMMA SYMBOL_RBRACE}, i, poppy_grammar); ++i;
+        populate(SYMBOL_DEFN, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_FIELDS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DECL, {SYMBOL_DECLARE COMMA SYMBOL_SIGNATURE}, i, poppy_grammar); ++i;
         populate(SYMBOL_SIGNATURE, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_OPTPARAMS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_INT}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_VOID}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_CHAR}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_BOOL}, i, poppy_grammar); ++i;
+        populate(SYMBOL_TYPE, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_TYPE COMMA SYMBOL_LBRACKET COMMA SYMBOL_CONSTANT COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {SYMBOL_PARAMS}, i, poppy_grammar); ++i;
         populate(SYMBOL_PARAMS, {SYMBOL_PARAM COMMA SYMBOL_COMMA COMMA SYMBOL_PARAMS}, i, poppy_grammar); ++i;
         populate(SYMBOL_PARAMS, {SYMBOL_PARAM}, i, poppy_grammar); ++i;
         populate(SYMBOL_PARAM, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_FIELDS, {SYMBOL_FIELD COMMA SYMBOL_COMMA COMMA SYMBOL_FIELDS}, i, poppy_grammar); ++i;
+        populate(SYMBOL_FIELDS, {SYMBOL_FIELD}, i, poppy_grammar); ++i;
+        populate(SYMBOL_FIELD, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMTS, {SYMBOL_STMT}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMTS, {SYMBOL_STMT COMMA SYMBOL_STMTS}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMT, {SYMBOL_SEMISTMT COMMA SYMBOL_SEMICOLON}, i, poppy_grammar); ++i;
@@ -64,6 +69,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_ADDRESSABLE, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_ADDRESSABLE, {SYMBOL_LPAREN COMMA SYMBOL_ADDRESSABLE COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_ADDRESSABLE, {SYMBOL_ADDRESSABLE COMMA SYMBOL_LBRACKET COMMA SYMBOL_EXPR COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ADDRESSABLE, {SYMBOL_ADDRESSABLE COMMA SYMBOL_DOT COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_RET}, i, poppy_grammar); ++i;
         populate(SYMBOL_RET, {SYMBOL_HOP COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_RET, {SYMBOL_HOP}, i, poppy_grammar); ++i;
@@ -104,6 +110,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_MULTEXPR, {SYMBOL_UNEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_MINUS COMMA SYMBOL_UNEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_ADDRESSABLE COMMA SYMBOL_LBRACKET COMMA SYMBOL_EXPR COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_ADDRESSABLE COMMA SYMBOL_DOT COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CALL}, i, poppy_grammar); ++i;
         populate(SYMBOL_CALL, {SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_OPTARGS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
@@ -117,6 +124,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_UNEXPR, {SYMBOL_CONSTANT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CHARLIT}, i, poppy_grammar); ++i;
 
+        // this assumes a symbol is nullable if and only if it's the LHS of a rule with an empty RHS
         for (size_t i = 0; i < RULE_COUNT; ++i){
                 if (poppy_grammar->rules[i].rhs_len == 0){
                         poppy_grammar->nullable[poppy_grammar->rules[i].lhs] = true;

@@ -100,6 +100,8 @@ struct lex_data find_alphanumeric_value (FILE* file, char *val){
                 ret.type = SYMBOL_INT;
         } else if ((ret.val_len == 3) && (strncmp(val, "let", 3) == 0)){
                 ret.type = SYMBOL_LET;
+        } else if ((ret.val_len == 6) && (strncmp(val, "record", 6) == 0)){
+                ret.type = SYMBOL_RECORD;
         } else if ((ret.val_len == 4) && (strncmp(val, "true", 4) == 0)){
                 ret.type = SYMBOL_TRUE;
         } else if ((ret.val_len == 4) && (strncmp(val, "void", 4) == 0)){
@@ -281,6 +283,10 @@ struct LIST(token)* lex(FILE *file){
                                 break;
                         case ']':
                                 data.type = SYMBOL_RBRACKET;
+                                data.val_len = 1;
+                                break;
+                        case '.':
+                                data.type = SYMBOL_DOT;
                                 data.val_len = 1;
                                 break;
                         case '\'':

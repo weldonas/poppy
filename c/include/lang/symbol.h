@@ -31,6 +31,7 @@ enum symbol {
         SYMBOL_SEMICOLON,  // ;
         SYMBOL_LBRACKET,   // [
         SYMBOL_RBRACKET,   // ]
+        SYMBOL_DOT,        // .
         SYMBOL_ASM,
         SYMBOL_BOOL,
         SYMBOL_CHAR,
@@ -49,6 +50,7 @@ enum symbol {
         SYMBOL_CHARLIT,
         SYMBOL_STRINGLIT,
         SYMBOL_DECLARE,
+        SYMBOL_RECORD,
         SYMBOL_END,         // end of input
         // non-terminal symbols
         SYMBOL_PROGRAM,
@@ -83,6 +85,8 @@ enum symbol {
         SYMBOL_DECL,
         SYMBOL_DEFNDECL,
         SYMBOL_ADDRESSABLE,
+        SYMBOL_FIELDS,
+        SYMBOL_FIELD,
         SYMBOL_COUNT
 };
 
