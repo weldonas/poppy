@@ -4,6 +4,7 @@
 #include "codegen/program.h"
 #include "data/list.h"
 #include "lang/lexer.h"
+#include "lang/parse_tree.h"
 #include "lang/parser.h"
 #include "lang/poppy_grammar.h"
 #include "lang/poppy_type_system.h"
@@ -41,6 +42,8 @@ int main(int argc, char *argv[]){
                 free(list);
                 return 0;
         }
+
+        // print_parse_tree(pt);
 
         printf("parsed\n");
 

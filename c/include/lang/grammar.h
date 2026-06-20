@@ -14,6 +14,7 @@ struct grammar {
     struct rule *rules;
     int rules_len;
     bool nullable[SYMBOL_COUNT];
+    bool expanded[SYMBOL_COUNT];
 };
 
 #endif

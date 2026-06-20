@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "data/list.h"
+#include "lang/parse_tree.h"
 #include "lang/symbol.h"
 
 struct parse_tree * new_tree(struct token data){
@@ -93,6 +95,48 @@ bool append_if_not_present(struct LIST(item) *state_set, struct item *new_item) 
         return true;
 }
 
+void free_list_keep_trees(struct parse_tree *children){}
+
+void expand_into_list(struct parse_tree *tree, const struct grammar *grammar, struct LIST(parse_tree) *children){
+        if (!tree->children){
+                return;
+        }
+
+        for (struct LIST_NODE(parse_tree) *n = tree->children->head; n != NULL; n = n->next){
+                if (grammar->expanded[n->data->data.type]){
+                        expand_into_list(n->data, grammar, children);
+
+                        // all children of this parse tree will either be deleted or become part of the children list
+                        free_list(n->data->children, free_list_keep_trees, parse_tree);
+                        free(n->data->children);
+                        free(n->data);
+                }
+                else {
+                        append_list(children, n->data, parse_tree);
+                }
+        }
+}
+
+void expand_subtrees(struct parse_tree *tree, const struct grammar *grammar){
+        if (grammar->expanded[tree->data.type]){
+                struct LIST(parse_tree) *children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
+                init_list(children);
+                expand_into_list(tree, grammar, children);
+                
+                free_list(tree->children, free_list_keep_trees, parse_tree);
+                free(tree->children);
+                tree->children = children;
+        }
+
+        if (!tree->children){
+                return;
+        }
+
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                expand_subtrees(node->data, grammar);
+        }
+}
+
 struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *tokens) {
         struct LIST(item) *state_sets = (struct LIST(item)*) malloc((tokens->len + 1) * sizeof(struct LIST(item)));
 
@@ -180,5 +224,6 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
 
         free(state_sets);
 
+        expand_subtrees(ret, grammar);
         return ret;
 }

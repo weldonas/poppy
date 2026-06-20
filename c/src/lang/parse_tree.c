@@ -37,21 +37,28 @@ void free_parse_tree(const struct parse_tree *tree){
         free((void *) tree);
 }
 
-void print_parse_tree_rec(const struct parse_tree *tree){
-        if (is_terminal(tree->data.type)){
-                printf("%s ", tree->data.value);
-        }
+void print_parse_tree_rec(const struct parse_tree *tree, size_t depth) {
+    for (size_t i = 0; i < depth; ++i) {
+        printf("  ");
+    }
 
-        if (tree->children){
-                for(struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
-                        print_parse_tree_rec(node->data);
-                }
-        }
+    printf("%s", symbol_name(tree->data.type));
 
+    if (is_terminal(tree->data.type) && tree->data.value) {
+        printf(" %s", tree->data.value);
+    }
+
+    printf("\n");
+
+    if (tree->children) {
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next) {
+            print_parse_tree_rec(node->data, depth + 1);
+        }
+    }
 }
 
 void print_parse_tree(const struct parse_tree *tree){
-        print_parse_tree_rec(tree);
+        print_parse_tree_rec(tree, 0);
         printf("\n");
 }
 
