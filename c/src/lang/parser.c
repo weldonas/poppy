@@ -126,6 +126,10 @@ void expand_subtrees(struct parse_tree *tree, const struct grammar *grammar){
                 free_list(tree->children, free_list_keep_trees, parse_tree);
                 free(tree->children);
                 tree->children = children;
+        
+                for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                        node->data->parent = tree;
+                }
         }
 
         if (!tree->children){
@@ -224,6 +228,9 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
 
         free(state_sets);
 
-        expand_subtrees(ret, grammar);
+        if (ret){
+                expand_subtrees(ret, grammar);
+        }
+        
         return ret;
 }

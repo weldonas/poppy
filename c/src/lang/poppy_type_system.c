@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 72
+#define RULE_COUNT 70
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -57,6 +57,13 @@ char *find_decl_signature_name(const struct parse_tree *decl){
         return id->data.value;
 }
 
+const struct type *accumulate_last_child(const struct type *accumulated, const struct type *current){
+        if (!accumulated || !current){
+                return NULL;
+        }
+
+        return current;
+}
 
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
@@ -343,15 +350,9 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 1, 0);
         ++i;
 
+        // TODO add prevention against badly typed returns occurring in the middle of a group of stmts
         conditions[0] = new_parent_symbol_condition(SYMBOL_STMTS);
-        conditions[1] = new_length_condition(1);
-        rules[i] = new_child_type_rule(conditions, 2, 0);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_STMTS);
-        conditions[1] = new_length_condition(2);
-        conditions[2] = new_type_at_condition(0, is_non_null_type);
-        rules[i] = new_child_type_rule(conditions, 3, 1);
+        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_last_child, 0, 1);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTPARAMS);
@@ -422,14 +423,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECLS);
-        conditions[1] = new_length_condition(1);
-        rules[i] = new_child_type_rule(conditions, 2, 0);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECLS);
-        conditions[1] = new_length_condition(2);
-        conditions[2] = new_type_at_condition(0, is_non_null_type);
-        rules[i] = new_child_type_rule(conditions, 3, 1);
+        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_last_child, 0, 1);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECL);
