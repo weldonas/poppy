@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "data/list.h"
+
 enum category {
     CATEGORY_PRIMITIVE,
     CATEGORY_FUNCTION,
@@ -11,6 +13,8 @@ enum category {
     CATEGORY_ARRAY,
     CATEGORY_UNIT
 };
+
+DEFINE_LIST(type);
 
 struct type {
     enum category category;
@@ -26,8 +30,9 @@ struct type {
         }; // function
 
         struct {
-            const struct type *current_type; // primitive
-            const struct type *previous; // params or NULL
+            struct LIST(type) subtypes;
+            // const struct type *current_type; // primitive
+            // const struct type *previous; // params or NULL
         }; // params
 
         struct {
@@ -43,7 +48,10 @@ const struct type* const void_type();
 const struct type* const char_type();
 const struct type* const unit_type();
 const struct type* const function_type(const struct type *ret, const struct type *params);
-const struct type* const param_type(const struct type *current, const struct type *previous);
+
+struct type* const param_type();
+void add_param(struct type *params, const struct type *type_to_add);
+
 const struct type* const array_type(const struct type *element_type, char *length);
 const struct type* const return_type(const struct type *type);
 bool equals_type(const struct type *t1, const struct type *t2);

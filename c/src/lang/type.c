@@ -1,16 +1,13 @@
 #include "lang/type.h"
 
+#include <assert.h>
 #include <stdlib.h>
-
-#include "data/list.h"
 
 #define INT_CHAR 'i'
 #define VOID_CHAR 'v'
 #define BOOL_CHAR 'b'
 #define CHAR_CHAR 'c'
 #define UNASSIGNABLE -1
-
-DEFINE_LIST(type);
 
 struct LIST(type) types;
 bool initialized = false;
@@ -94,14 +91,6 @@ const struct type* const function_type(const struct type *ret, const struct type
                 return NULL;
         }
 
-        if (!equals_type(params, unit_type())){
-                for (const struct type *param = params; param != NULL; param = param->previous){
-                        if (!is_assignable(param->current_type)){
-                                return NULL;
-                        }
-                }
-        }
-
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_FUNCTION;
         new->ret_type = ret;
@@ -110,24 +99,19 @@ const struct type* const function_type(const struct type *ret, const struct type
         add_type(new);
         return new;
 }
-
-
-const struct type* const param_type(const struct type *current, const struct type *previous){
-        if (!is_assignable(current)){
-                return NULL;
-        }
-
-        if (previous && (previous->category != CATEGORY_PARAMS)){
-                return NULL;
-        }
-
+struct type* const param_type(){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_PARAMS;
-        new->current_type = current;
-        new->previous = previous;
+        init_list((&new->subtypes));
         new->word_count = UNASSIGNABLE;
+
         add_type(new);
         return new;
+}
+
+void add_param(struct type *params, const struct type *type_to_add){
+        assert(is_assignable(type_to_add));
+        append_list((&params->subtypes), (struct type*) type_to_add, type);
 }
 
 const struct type* const array_type(const struct type *element_type, char *length_str){
@@ -171,15 +155,21 @@ bool equals_type(const struct type *t1, const struct type *t2){
         }
 
         else if (t1->category == CATEGORY_PARAMS){
-                if (!equals_type(t1->current_type, t2->current_type)){
+                if (t1->subtypes.len != t2->subtypes.len){
                         return false;
                 }
 
-                if ((!t1->previous) || (!t2->previous)){
-                        return (!t1->previous) && (!t2->previous); // if either doesn't have previous, return true iff both don't
+                for (
+                        struct LIST_NODE(type) *t1node = t1->subtypes.head, *t2node = t2->subtypes.head; 
+                        t1node != NULL; 
+                        t1node = t1node->next, t2node = t2node->next)
+                {
+                        if (!equals_type(t1node->data, t2node->data)){
+                                return false;
+                        }
                 }
 
-                return equals_type(t1->previous, t2->previous);
+                return true;
         }
 
         else if (t1->category == CATEGORY_ARRAY){
@@ -209,7 +199,13 @@ bool is_returnable(const struct type *type){
         return type->category == CATEGORY_PRIMITIVE;
 }
 
+void free_type_list_item(const struct type *type){}
+
 void free_type(const struct type *type){
+        if (type->category == CATEGORY_PARAMS){
+                free_list((&type->subtypes), free_type_list_item, type);
+        }
+
         free((void*) type);
 }
 

@@ -160,11 +160,12 @@ const struct type * find_call_type(const struct type_system *const system, const
         const struct type *args_type = find_type(system, optargs, NULL);
         const struct type *ftype = find_symbol_type(tree->children->head->data);
 
-        if (ftype == NULL){
+        if (!args_type || !ftype){
                 return NULL;
         }
 
         if (!equals_type(args_type, ftype->params_type)){
+                equals_type(args_type, ftype->params_type);
                 return NULL;
         }
 
@@ -508,21 +509,35 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         else if (type_rule->type == TYPE_RULE_PARAM){
                 size_t current = type_rule->current_index;
                 int next = type_rule->next_index;
-                const struct type *next_type;
+                struct type *next_type;
 
-                get_child_type(&data, current);
                 if (next < 0){
-                        next_type = NULL;
+                        next_type = param_type();
                 }
                 else {
-                        next_type = get_child_type(&data, next);
+                        next_type = (struct type *) get_child_type(&data, next);
                 }
+
+                assert(next_type);
+                assert(next_type->category == CATEGORY_PARAMS);
+
+                // if (next < 0){
+                //         next_type = NULL;
+                // }
+                // else {
+                //         next_type = get_child_type(&data, next);
+                // }
 
                 if (!get_child_type(&data, current) || (!next_type && (next >= 0))){
                         return NULL;
                 }
 
-                return param_type(get_child_type(&data, current), next_type);            
+                assert(get_child_type(&data, current));
+
+                add_param(next_type, get_child_type(&data, current));
+                return next_type;
+
+                // return param_type(get_child_type(&data, current), next_type);            
         }
         else if (type_rule->type == TYPE_RULE_FUNCTION){
                 if (!get_child_type(&data, type_rule->ret_index)){
