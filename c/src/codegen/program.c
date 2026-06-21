@@ -40,12 +40,19 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
         enum symbol symbol = tree->data.type;
 
         if (symbol == SYMBOL_STMTS){
-                char *first_stmt = generate_from_tree(tree->children->head->data, functions, within);
-                if (tree->children->len == 1){
-                        return first_stmt;
+                char *cur = NULL;
+
+                for (struct LIST_NODE(parse_tree) *child = tree->children->head; child != NULL; child = child->next){
+                        char *child_code = generate_from_tree(child->data, functions, within);
+                        if (cur){
+                                cur = concat(2, cur, child_code);
+                        }
+                        else {
+                                cur = child_code;
+                        }
                 }
 
-                return concat(2, first_stmt, generate_from_tree(tree->children->head->next->data, functions, within));
+                return cur;
         } else if (symbol == SYMBOL_STMT){
                 struct parse_tree *child = tree->children->head->data;
                 enum symbol child_symbol = child->data.type;
@@ -343,18 +350,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 struct parse_tree *optargs = tree->children->head->next->next->data;
                 if ((optargs->children != NULL) && (optargs->children->len != 0)){
                         struct parse_tree *args = optargs->children->head->data;
-                        while (1) {
-                                // args -> expr COMMA args
-                                // args -> expr
-                                struct parse_tree *expr = args->children->head->data;
-                                args_code[i++] = generate_from_tree(expr, functions, within);
 
-                                if (args->children->len == 3){
-                                        load_child_at(args, args, 2);
-                                } else {
-                                        break;
-                                }
-                        };
+                        for (struct LIST_NODE(parse_tree) *child = args->children->head; child != NULL; child = child->next ? child->next->next : NULL){
+                                args_code[i++] = generate_from_tree(child->data, functions, within);
+                        }
                 }
 
                 if (num_params(f) == 0){

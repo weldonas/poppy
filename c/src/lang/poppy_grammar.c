@@ -124,9 +124,9 @@ const struct grammar * const get_poppy_grammar(){
         }
 
         // poppy_grammar->expanded[SYMBOL_DEFNDECLS] = true;
-        // poppy_grammar->expanded[SYMBOL_PARAMS] = true;
+        poppy_grammar->expanded[SYMBOL_PARAMS] = true;
         poppy_grammar->expanded[SYMBOL_STMTS] = true;
-        // poppy_grammar->expanded[SYMBOL_ARGS] = true;
+        poppy_grammar->expanded[SYMBOL_ARGS] = true;
 
         return poppy_grammar;
 }

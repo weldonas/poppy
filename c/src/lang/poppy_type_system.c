@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 70
+#define RULE_COUNT 68
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -63,6 +63,23 @@ const struct type *accumulate_last_child(const struct type *accumulated, const s
         }
 
         return current;
+}
+
+const struct type *accumulate_params(const struct type *accumulated, const struct type *current){
+        if (!accumulated || !current){
+                return NULL;
+        }
+
+        struct type *params;
+        if (equals_type(accumulated, unit_type())){
+                params = param_type();
+        }
+        else {
+                params = (struct type*) accumulated;
+        }
+
+        add_param(params, current);
+        return params;
 }
 
 const struct type_system *const get_poppy_type_system(){
@@ -366,17 +383,21 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAMS);
-        conditions[1] = new_length_condition(1);
-        conditions[2] = new_type_at_condition(0, is_non_null_type);
-        rules[i] = new_param_type_rule(conditions, 3, 0, -1);
+        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_params, 0, 2);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_PARAMS);
-        conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_type);
-        rules[i] = new_param_type_rule(conditions, 4, 0, 2);
-        ++i; 
+        // conditions[0] = new_parent_symbol_condition(SYMBOL_PARAMS);
+        // conditions[1] = new_length_condition(1);
+        // conditions[2] = new_type_at_condition(0, is_non_null_type);
+        // rules[i] = new_param_type_rule(conditions, 3, 0, -1);
+        // ++i;
+
+        // conditions[0] = new_parent_symbol_condition(SYMBOL_PARAMS);
+        // conditions[1] = new_length_condition(3);
+        // conditions[2] = new_type_at_condition(0, is_non_null_type);
+        // conditions[3] = new_type_at_condition(2, is_non_null_type);
+        // rules[i] = new_param_type_rule(conditions, 4, 0, 2);
+        // ++i; 
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAM);
         conditions[1] = new_add_symbol_name_index_side_effect(1, 0, true);
@@ -394,14 +415,18 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ARGS);
-        conditions[1] = new_length_condition(1);
-        rules[i] = new_param_type_rule(conditions, 2, 0, -1);
+        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_params, 0, 2);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ARGS);
-        conditions[1] = new_length_condition(3);
-        rules[i] = new_param_type_rule(conditions, 2, 0, 2);
-        ++i; 
+        // conditions[0] = new_parent_symbol_condition(SYMBOL_ARGS);
+        // conditions[1] = new_length_condition(1);
+        // rules[i] = new_param_type_rule(conditions, 2, 0, -1);
+        // ++i;
+
+        // conditions[0] = new_parent_symbol_condition(SYMBOL_ARGS);
+        // conditions[1] = new_length_condition(3);
+        // rules[i] = new_param_type_rule(conditions, 2, 0, 2);
+        // ++i; 
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_SIGNATURE);
         conditions[1] = new_type_at_condition(0, is_non_null_returnable_type);
