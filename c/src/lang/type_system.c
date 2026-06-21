@@ -60,10 +60,10 @@ struct type_rule_condition {
 enum type_rule_type {
         TYPE_RULE_PRIMITIVE,
         TYPE_RULE_CHILD,
-        TYPE_RULE_PARAM,
         TYPE_RULE_FUNCTION,
         TYPE_RULE_ARRAY,
-        TYPE_RULE_ELEMENT
+        TYPE_RULE_ELEMENT,
+        TYPE_RULE_ACCUMULATOR
 };
 
 struct type_rule {
@@ -71,21 +71,26 @@ struct type_rule {
         size_t conditions_len;
         enum type_rule_type type;
         union {
-                const struct type *output_type;
-                size_t output_index;
+                const struct type *output_type; // primitive
+                size_t output_index; // child
                 struct {
                         size_t current_index;
                         int next_index;
-                };
+                }; // param
                 struct {
                         size_t ret_index;
                         size_t param_index;
-                };
+                }; // function
                 struct {
                         size_t element_index;
                         size_t length_index;
-                };
-                size_t array_index;
+                }; // array
+                size_t array_index; // element
+                struct {
+                        accumulator accumulator;
+                        size_t start_index;
+                        size_t step_size;
+                }; // accumulator
         };
 };
 
@@ -154,11 +159,12 @@ const struct type * find_call_type(const struct type_system *const system, const
         const struct type *args_type = find_type(system, optargs, NULL);
         const struct type *ftype = find_symbol_type(tree->children->head->data);
 
-        if (ftype == NULL){
+        if (!args_type || !ftype){
                 return NULL;
         }
 
         if (!equals_type(args_type, ftype->params_type)){
+                equals_type(args_type, ftype->params_type);
                 return NULL;
         }
 
@@ -307,18 +313,6 @@ const struct type_rule *new_child_type_rule(const struct type_rule_condition *co
         return ptr;
 }
 
-const struct type_rule *new_param_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t current_index, int next_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_PARAM;
-        ptr->current_index = current_index;
-        ptr->next_index = next_index;
-        return ptr;
-}
-
 const struct type_rule *new_function_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t ret_index, size_t param_index){
         struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
@@ -351,6 +345,19 @@ const struct type_rule *new_element_type_rule(const struct type_rule_condition *
         ptr->conditions_len = conditions_len;
         ptr->type = TYPE_RULE_ELEMENT;
         ptr->array_index = array_index;
+        return ptr;
+}
+
+const struct type_rule *new_accumulator_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, accumulator accumulator, size_t start_index, size_t step_size){
+        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        for (size_t i = 0; i < conditions_len; ++i){
+                ptr->conditions[i] = conditions[i];
+        }
+        ptr->conditions_len = conditions_len;
+        ptr->type = TYPE_RULE_ACCUMULATOR;
+        ptr->accumulator = accumulator;
+        ptr->start_index = start_index;
+        ptr->step_size = step_size;
         return ptr;
 }
 
@@ -486,25 +493,6 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         else if (type_rule->type == TYPE_RULE_CHILD){
                 return get_child_type(&data, type_rule->output_index);
         }
-        else if (type_rule->type == TYPE_RULE_PARAM){
-                size_t current = type_rule->current_index;
-                int next = type_rule->next_index;
-                const struct type *next_type;
-
-                get_child_type(&data, current);
-                if (next < 0){
-                        next_type = NULL;
-                }
-                else {
-                        next_type = get_child_type(&data, next);
-                }
-
-                if (!get_child_type(&data, current) || (!next_type && (next >= 0))){
-                        return NULL;
-                }
-
-                return param_type(get_child_type(&data, current), next_type);            
-        }
         else if (type_rule->type == TYPE_RULE_FUNCTION){
                 if (!get_child_type(&data, type_rule->ret_index)){
                         return NULL;
@@ -524,6 +512,15 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                         return NULL;
                 }
                 return get_child_type(&data, type_rule->array_index)->element_type;
+        }
+        else if (type_rule->type == TYPE_RULE_ACCUMULATOR){
+                const struct type *current = unit_type();
+
+                for (size_t index = type_rule->start_index; index < tree->children->len; index += type_rule->step_size){
+                        current =  type_rule->accumulator(current, get_child_type(&data, index));
+                }
+
+                return current;
         }
 
         return NULL;

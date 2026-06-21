@@ -28,6 +28,7 @@ const struct grammar * const get_poppy_grammar(){
 
         for (size_t i = 0; i < SYMBOL_COUNT; ++i){
                 poppy_grammar->nullable[i] = false;
+                poppy_grammar->expanded[i] = false;
         }
 
         poppy_grammar->rules = (struct rule*) malloc(RULE_COUNT * sizeof(struct rule));
@@ -122,8 +123,12 @@ const struct grammar * const get_poppy_grammar(){
                 }
         }
 
-        return poppy_grammar;
+        poppy_grammar->expanded[SYMBOL_DEFNDECLS] = true;
+        poppy_grammar->expanded[SYMBOL_PARAMS] = true;
+        poppy_grammar->expanded[SYMBOL_STMTS] = true;
+        poppy_grammar->expanded[SYMBOL_ARGS] = true;
 
+        return poppy_grammar;
 }
 
 void free_poppy_grammar(){

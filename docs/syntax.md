@@ -92,3 +92,11 @@ $$\begin{align*}
 \text{unexpr} &\rightarrow \text{CHARLIT}
 \end{align*}
 $$
+
+We also expand all of the children derived by the following symbols as if they were derived by one rule in a postprocessing step: $\text{defndecls, params, stmts, args}$. That is, the rules containing these symbols are effectively replaced by the following rules in this step:
+$$\begin{align*}
+\text{defndecls} &\rightarrow \text{defndecl}^+\\
+\text{params} &\rightarrow \text{ param (COMMA param)}^+\\
+\text{stmts} &\rightarrow \text{stmt}^+\\
+\text{args} &\rightarrow \text{expr (COMMA expr)}^+\\
+\end{align*}$$
