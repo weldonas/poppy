@@ -401,24 +401,16 @@ char *generate_code(const struct parse_tree *tree){
         // program -> defndecls END
         struct parse_tree *defndecls = tree->children->head->data;
 
-        while (1) {
-                // defndecls -> defndecl defndecls
-                // defndecls -> defndecl
-                struct parse_tree *defndecl = defndecls->children->head->data;
+        for (struct LIST_NODE(parse_tree) *node = defndecls->children->head; node != NULL; node = node->next) {
+                struct parse_tree *defndecl = node->data;
                 struct parse_tree *defn = defndecl->children->head->data;
 
                 if (defn->data.type != SYMBOL_DEFN){
-                        if (defndecls->children->len == 2){
-                                load_child_at(defndecls, defndecls, 1);
-                                continue;
-                        } else {
-                                break;
-                        }
+                        continue;
                 }
 
                 struct LIST(variable) params_list = get_parameters(defn);
                 struct LIST(variable) locals_list = get_local_variables(defn);
-
 
                 struct string *s = (struct string*) malloc(sizeof(struct string));
                 struct parse_tree *signature = defn->children->head->data;
@@ -429,28 +421,14 @@ char *generate_code(const struct parse_tree *tree){
                 free_list((&locals_list), free_variable, variable);
 
                 update_map((&functions), s, fn, string, function);
-
-                if (defndecls->children->len == 2){
-                        load_child_at(defndecls, defndecls, 1);
-                } else {
-                        break;
-                }
         }
 
-        defndecls = tree->children->head->data;
-        while (1) {
-                // defndecls -> defndecl defndecls
-                // defndecls -> defndecl
-                struct parse_tree *defndecl = defndecls->children->head->data;
+        for (struct LIST_NODE(parse_tree) *node = defndecls->children->head; node != NULL; node = node->next) {
+                struct parse_tree *defndecl = node->data;
                 struct parse_tree *defn = defndecl->children->head->data;
 
                 if (defn->data.type != SYMBOL_DEFN){
-                        if (defndecls->children->len == 2){
-                                load_child_at(defndecls, defndecls, 1);
-                                continue;
-                        } else {
-                                break;
-                        }
+                        continue;
                 }
 
                 struct parse_tree *signature = defn->children->head->data;
@@ -460,12 +438,6 @@ char *generate_code(const struct parse_tree *tree){
 
                 struct parse_tree *stmts; load_child_at(stmts, defn, 2);
                 set_body((struct function*) fn, generate_from_tree(stmts, &functions, fn));
-
-                if (defndecls->children->len == 2){
-                        load_child_at(defndecls, defndecls, 1);
-                } else {
-                        break;
-                }
         }
 
         // char *prog = (char*) malloc(44 * sizeof(char));
