@@ -60,7 +60,6 @@ struct type_rule_condition {
 enum type_rule_type {
         TYPE_RULE_PRIMITIVE,
         TYPE_RULE_CHILD,
-        TYPE_RULE_PARAM,
         TYPE_RULE_FUNCTION,
         TYPE_RULE_ARRAY,
         TYPE_RULE_ELEMENT,
@@ -314,18 +313,6 @@ const struct type_rule *new_child_type_rule(const struct type_rule_condition *co
         return ptr;
 }
 
-const struct type_rule *new_param_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t current_index, int next_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_PARAM;
-        ptr->current_index = current_index;
-        ptr->next_index = next_index;
-        return ptr;
-}
-
 const struct type_rule *new_function_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t ret_index, size_t param_index){
         struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
@@ -505,39 +492,6 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         }
         else if (type_rule->type == TYPE_RULE_CHILD){
                 return get_child_type(&data, type_rule->output_index);
-        }
-        else if (type_rule->type == TYPE_RULE_PARAM){
-                size_t current = type_rule->current_index;
-                int next = type_rule->next_index;
-                struct type *next_type;
-
-                if (next < 0){
-                        next_type = param_type();
-                }
-                else {
-                        next_type = (struct type *) get_child_type(&data, next);
-                }
-
-                assert(next_type);
-                assert(next_type->category == CATEGORY_PARAMS);
-
-                // if (next < 0){
-                //         next_type = NULL;
-                // }
-                // else {
-                //         next_type = get_child_type(&data, next);
-                // }
-
-                if (!get_child_type(&data, current) || (!next_type && (next >= 0))){
-                        return NULL;
-                }
-
-                assert(get_child_type(&data, current));
-
-                add_param(next_type, get_child_type(&data, current));
-                return next_type;
-
-                // return param_type(get_child_type(&data, current), next_type);            
         }
         else if (type_rule->type == TYPE_RULE_FUNCTION){
                 if (!get_child_type(&data, type_rule->ret_index)){
