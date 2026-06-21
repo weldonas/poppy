@@ -98,5 +98,5 @@ $$\begin{align*}
 \text{defndecls} &\rightarrow \text{defndecl}^+\\
 \text{params} &\rightarrow \text{ param (COMMA param)}^+\\
 \text{stmts} &\rightarrow \text{stmt}^+\\
-\text{args} &\rightarrow \text{ arg (COMMA arg)}^+\\
+\text{args} &\rightarrow \text{expr (COMMA expr)}^+\\
 \end{align*}$$
