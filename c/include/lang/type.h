@@ -49,7 +49,9 @@ struct type {
             size_t length;
         }; // array
 
-        struct LIST(variable) fields; // record
+        struct {
+            struct LIST(variable) fields;
+        }; // record
     };
 };
 
@@ -64,7 +66,7 @@ struct type* const param_type();
 void add_param(struct type *params, const struct type *type_to_add);
 
 const struct type* const array_type(const struct type *element_type, char *length);
-const struct type* const record_type(const struct LIST(variable) fields);
+const struct type* const record_type(char *name, const struct LIST(variable) fields);
 const struct type* const return_type(const struct type *type);
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);

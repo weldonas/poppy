@@ -3,13 +3,25 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "data/list.h"
+#include "data/map.h"
+#include "lang/parse_tree.h"
+
 #define INT_CHAR 'i'
 #define VOID_CHAR 'v'
 #define BOOL_CHAR 'b'
 #define CHAR_CHAR 'c'
 #define UNASSIGNABLE -1
 
+DEFINE_MAP(string, type);
+
+void free_record_map_entry(const struct MAP_ENTRY(string, type) *entry){
+        free((void*) entry->key);
+        free((void*) entry);
+}
+
 struct LIST(type) types;
+struct MAP(string, type) record_map;
 bool initialized = false;
 
 struct type *int_ptr = NULL;
@@ -18,13 +30,20 @@ struct type *bool_ptr = NULL;
 struct type *char_ptr = NULL;
 struct type *unit_ptr = NULL;
 
-void add_type(struct type *new) {
+void add_type(struct type *new, char *name) {
         if (!initialized) {
                 init_list((&types));
+                init_map((&record_map), equals_string, free_record_map_entry, string, type);
                 initialized = true;
         }
 
         append_list((&types), new, type);
+
+        if (name){
+                struct string *s = (struct string*) malloc(sizeof(struct string));
+                s->data = name;
+                update_map((&record_map), s, new, string, type);
+        }
 }
 
 const struct type* const int_type(){
@@ -33,7 +52,7 @@ const struct type* const int_type(){
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
                 int_ptr->word_count = 1;
-                add_type(int_ptr);
+                add_type(int_ptr, 0);
         }
 
         return int_ptr;
@@ -45,7 +64,7 @@ const struct type* const bool_type(){
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
                 bool_ptr->word_count = 1;
-                add_type(bool_ptr);
+                add_type(bool_ptr, 0);
         }
 
         return bool_ptr;
@@ -57,7 +76,7 @@ const struct type* const void_type(){
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
                 void_ptr->word_count = UNASSIGNABLE;
-                add_type(void_ptr);
+                add_type(void_ptr, 0);
         }
 
         return void_ptr;
@@ -69,7 +88,7 @@ const struct type* const char_type(){
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
                 char_ptr->word_count = 1;
-                add_type(char_ptr);
+                add_type(char_ptr, 0);
         }
 
         return char_ptr;
@@ -80,7 +99,7 @@ const struct type* const unit_type(){
                 unit_ptr = (struct type*) malloc(sizeof(struct type));
                 unit_ptr->category = CATEGORY_UNIT;
                 unit_ptr->word_count = UNASSIGNABLE;
-                add_type(unit_ptr);
+                add_type(unit_ptr, 0);
         }
 
         return unit_ptr;
@@ -96,7 +115,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         new->ret_type = ret;
         new->params_type = params;
         new->word_count = UNASSIGNABLE;
-        add_type(new);
+        add_type(new, 0);
         return new;
 }
 struct type* const param_type(){
@@ -104,8 +123,7 @@ struct type* const param_type(){
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
         new->word_count = UNASSIGNABLE;
-
-        add_type(new);
+        add_type(new, 0);
         return new;
 }
 
@@ -129,11 +147,11 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         new->element_type = element_type;
         new->length = length;
         new->word_count = element_type->word_count * length;
-        add_type(new);
+        add_type(new, 0);
         return new;
 }
 
-const struct type* const record_type(const struct LIST(variable) fields){
+const struct type* const record_type(char *name, const struct LIST(variable) fields){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
         new->fields = fields;
@@ -143,7 +161,7 @@ const struct type* const record_type(const struct LIST(variable) fields){
                 new->word_count += node->data->type->word_count;
         }
 
-        add_type(new);
+        add_type(new, name);
         return new;
 }
 
@@ -225,6 +243,7 @@ void free_type(const struct type *type){
 
 void free_types(){
         free_list((&types), free_type, type);
+        free_map((&record_map), string, type);
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;
