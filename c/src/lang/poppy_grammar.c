@@ -47,7 +47,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_TYPE, {SYMBOL_VOID}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_CHAR}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_BOOL}, i, poppy_grammar); ++i;
-        populate(SYMBOL_TYPE, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_TYPE, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_TYPE COMMA SYMBOL_LBRACKET COMMA SYMBOL_CONSTANT COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {SYMBOL_PARAMS}, i, poppy_grammar); ++i;

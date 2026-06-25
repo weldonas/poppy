@@ -21,7 +21,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\
 \text{type} &\rightarrow \text{BOOL}\\
-\text{type} &\rightarrow \text{IDENTIFIER}\\
+\text{type} &\rightarrow \text{RECORD IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
