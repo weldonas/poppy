@@ -14,7 +14,7 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
 
 #define MAX_CONDITION_COUNT 16
 
-typedef const struct type *(*accumulator)(const struct type *accumulated, const struct type *current);
+typedef const struct type *(*accumulator)(const struct type *accumulated, const struct parse_tree *current);
 
 const struct type_rule_condition *new_length_condition(size_t length);
 const struct type_rule_condition *new_parent_symbol_condition(enum symbol parent_symbol);

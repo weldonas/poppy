@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 89
+#define RULE_COUNT 90
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -37,10 +37,11 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_PROGRAM, {SYMBOL_DEFNDECLS COMMA SYMBOL_END}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECLS, {SYMBOL_DEFNDECL}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECLS, {SYMBOL_DEFNDECL COMMA SYMBOL_DEFNDECLS}, i, poppy_grammar); ++i;
-        populate(SYMBOL_DEFNDECL, {SYMBOL_DEFN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_DEFNDECL, {SYMBOL_FNDEFN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_DEFNDECL, {SYMBOL_RECDEFN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECL, {SYMBOL_DECL}, i, poppy_grammar); ++i;
-        populate(SYMBOL_DEFN, {SYMBOL_SIGNATURE COMMA SYMBOL_LBRACE COMMA SYMBOL_BODY COMMA SYMBOL_RBRACE}, i, poppy_grammar); ++i;
-        populate(SYMBOL_DEFN, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_FIELDS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_FNDEFN, {SYMBOL_SIGNATURE COMMA SYMBOL_LBRACE COMMA SYMBOL_BODY COMMA SYMBOL_RBRACE}, i, poppy_grammar); ++i;
+        populate(SYMBOL_RECDEFN, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_FIELDS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DECL, {SYMBOL_DECLARE COMMA SYMBOL_SIGNATURE}, i, poppy_grammar); ++i;
         populate(SYMBOL_SIGNATURE, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_OPTPARAMS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_INT}, i, poppy_grammar); ++i;
@@ -135,6 +136,7 @@ const struct grammar * const get_poppy_grammar(){
         poppy_grammar->expanded[SYMBOL_PARAMS] = true;
         poppy_grammar->expanded[SYMBOL_STMTS] = true;
         poppy_grammar->expanded[SYMBOL_ARGS] = true;
+        poppy_grammar->expanded[SYMBOL_FIELDS] = true;
 
         return poppy_grammar;
 }

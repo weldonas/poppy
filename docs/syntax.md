@@ -11,10 +11,11 @@ $$\begin{align*}
 \text{program} &\rightarrow \text{defndecls END}\\
 \text{defndecls} &\rightarrow \text{defndecl}\\
 \text{defndecls} &\rightarrow \text{defndecl defndecls}\\
-\text{defndecl} &\rightarrow \text{defn}\\
+\text{defndecl} &\rightarrow \text{fndefn}\\
+\text{defndecl} &\rightarrow \text{recdefn}\\
 \text{defndecl} &\rightarrow \text{decl}\\
-\text{defn} &\rightarrow \text{signature LBRACE body RBRACE}\\
-\text{defn} &\rightarrow \text{RECORD IDENTIFIER LPAREN fields RPAREN} \\
+\text{fndefn} &\rightarrow \text{signature LBRACE body RBRACE}\\
+\text{recdefn} &\rightarrow \text{RECORD IDENTIFIER LPAREN fields RPAREN} \\
 \text{decl} &\rightarrow \text{DECLARE signature}\\
 \text{signature} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN}\\
 \text{type} &\rightarrow \text{INT}\\
@@ -103,7 +104,8 @@ $$
 We also expand all of the children derived by the following symbols as if they were derived by one rule in a postprocessing step: $\text{defndecls, params, stmts, args}$. That is, the rules containing these symbols are effectively replaced by the following rules in this step:
 $$\begin{align*}
 \text{defndecls} &\rightarrow \text{defndecl}^+\\
-\text{params} &\rightarrow \text{ param (COMMA param)}^+\\
 \text{stmts} &\rightarrow \text{stmt}^+\\
+\text{params} &\rightarrow \text{ param (COMMA param)}^+\\
 \text{args} &\rightarrow \text{expr (COMMA expr)}^+\\
+\text{fields} &\rightarrow \text{field (COMMA field)}^+
 \end{align*}$$

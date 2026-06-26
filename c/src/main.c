@@ -61,12 +61,12 @@ int main(int argc, char *argv[]){
                 }
         }
 
-        free_list(list, free_token, token);
-        free(list);
         free_parse_tree(pt);
 
         free_poppy_type_system();
         free_types();
+        free_list(list, free_token, token);
+        free(list);
 
         return 0;
 }

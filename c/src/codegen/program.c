@@ -405,7 +405,7 @@ char *generate_code(const struct parse_tree *tree){
                 struct parse_tree *defndecl = node->data;
                 struct parse_tree *defn = defndecl->children->head->data;
 
-                if (defn->data.type != SYMBOL_DEFN){
+                if (defn->data.type != SYMBOL_FNDEFN){
                         continue;
                 }
 
@@ -427,7 +427,7 @@ char *generate_code(const struct parse_tree *tree){
                 struct parse_tree *defndecl = node->data;
                 struct parse_tree *defn = defndecl->children->head->data;
 
-                if (defn->data.type != SYMBOL_DEFN){
+                if (defn->data.type != SYMBOL_FNDEFN){
                         continue;
                 }
 

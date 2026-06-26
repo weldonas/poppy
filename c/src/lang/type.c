@@ -30,7 +30,7 @@ struct type *bool_ptr = NULL;
 struct type *char_ptr = NULL;
 struct type *unit_ptr = NULL;
 
-void add_type(struct type *new, char *name) {
+void add_type(struct type *new) {
         if (!initialized) {
                 init_list((&types));
                 init_map((&record_map), equals_string, free_record_map_entry, string, type);
@@ -38,12 +38,6 @@ void add_type(struct type *new, char *name) {
         }
 
         append_list((&types), new, type);
-
-        if (name){
-                struct string *s = (struct string*) malloc(sizeof(struct string));
-                s->data = name;
-                update_map((&record_map), s, new, string, type);
-        }
 }
 
 const struct type* const int_type(){
@@ -52,7 +46,7 @@ const struct type* const int_type(){
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
                 int_ptr->word_count = 1;
-                add_type(int_ptr, 0);
+                add_type(int_ptr);
         }
 
         return int_ptr;
@@ -64,7 +58,7 @@ const struct type* const bool_type(){
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
                 bool_ptr->word_count = 1;
-                add_type(bool_ptr, 0);
+                add_type(bool_ptr);
         }
 
         return bool_ptr;
@@ -76,7 +70,7 @@ const struct type* const void_type(){
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
                 void_ptr->word_count = UNASSIGNABLE;
-                add_type(void_ptr, 0);
+                add_type(void_ptr);
         }
 
         return void_ptr;
@@ -88,7 +82,7 @@ const struct type* const char_type(){
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
                 char_ptr->word_count = 1;
-                add_type(char_ptr, 0);
+                add_type(char_ptr);
         }
 
         return char_ptr;
@@ -99,7 +93,7 @@ const struct type* const unit_type(){
                 unit_ptr = (struct type*) malloc(sizeof(struct type));
                 unit_ptr->category = CATEGORY_UNIT;
                 unit_ptr->word_count = UNASSIGNABLE;
-                add_type(unit_ptr, 0);
+                add_type(unit_ptr);
         }
 
         return unit_ptr;
@@ -115,7 +109,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         new->ret_type = ret;
         new->params_type = params;
         new->word_count = UNASSIGNABLE;
-        add_type(new, 0);
+        add_type(new);
         return new;
 }
 struct type* const param_type(){
@@ -123,7 +117,7 @@ struct type* const param_type(){
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
         new->word_count = UNASSIGNABLE;
-        add_type(new, 0);
+        add_type(new);
         return new;
 }
 
@@ -147,22 +141,24 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         new->element_type = element_type;
         new->length = length;
         new->word_count = element_type->word_count * length;
-        add_type(new, 0);
+        add_type(new);
         return new;
 }
 
-const struct type* const record_type(char *name, const struct LIST(variable) fields){
+struct type* const record_type(){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
-        new->fields = fields;
+        init_list((&new->fields));
         new->word_count = 0;
 
-        for (struct LIST_NODE(variable) *node = fields.head; node != NULL; node = node->next){
-                new->word_count += node->data->type->word_count;
-        }
-
-        add_type(new, name);
+        add_type(new);
         return new;
+}
+
+void add_field(struct type *record, struct variable *v){
+        assert(is_assignable(v->type));
+        append_list((&record->fields), v, variable);
+        record->word_count += v->type->word_count;
 }
 
 const struct type* const return_type(const struct type *type){
@@ -171,6 +167,14 @@ const struct type* const return_type(const struct type *type){
         }
 
         return NULL;
+}
+
+void name_record_type(const struct type *record_type, char *name){
+        assert(record_type->category == CATEGORY_RECORD);
+        
+        struct string *s = (struct string*) malloc(sizeof(struct string));
+        s->data = name;
+        update_map((&record_map), s, record_type, string, type);
 }
 
 bool equals_type(const struct type *t1, const struct type *t2){
@@ -236,6 +240,10 @@ void free_type_list_item(const struct type *type){}
 void free_type(const struct type *type){
         if (type->category == CATEGORY_PARAMS){
                 free_list((&type->subtypes), free_type_list_item, type);
+        }
+
+        else if (type->category == CATEGORY_RECORD){
+                free_list((&type->fields), free_variable, variable);
         }
 
         free((void*) type);

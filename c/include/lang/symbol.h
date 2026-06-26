@@ -55,7 +55,7 @@ enum symbol {
         // non-terminal symbols
         SYMBOL_PROGRAM,
         SYMBOL_DEFNDECLS,
-        SYMBOL_DEFN,
+        SYMBOL_FNDEFN,
         SYMBOL_TYPE,
         SYMBOL_OPTPARAMS,
         SYMBOL_STMTS,
@@ -87,6 +87,7 @@ enum symbol {
         SYMBOL_ADDRESSABLE,
         SYMBOL_FIELDS,
         SYMBOL_FIELD,
+        SYMBOL_RECDEFN,
         SYMBOL_COUNT
 };
 

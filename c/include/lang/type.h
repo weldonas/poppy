@@ -59,15 +59,21 @@ const struct type* const int_type();
 const struct type* const bool_type();
 const struct type* const void_type();
 const struct type* const char_type();
+
 const struct type* const unit_type();
+
 const struct type* const function_type(const struct type *ret, const struct type *params);
+const struct type* const return_type(const struct type *type);
 
 struct type* const param_type();
 void add_param(struct type *params, const struct type *type_to_add);
 
 const struct type* const array_type(const struct type *element_type, char *length);
-const struct type* const record_type(char *name, const struct LIST(variable) fields);
-const struct type* const return_type(const struct type *type);
+
+struct type* const record_type();
+void add_field(struct type *record, struct variable *v);
+void name_record_type(const struct type *record_type, char *name);
+
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);
 bool is_assignable(const struct type *type);
