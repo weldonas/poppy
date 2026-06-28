@@ -3,8 +3,8 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 71
-
+#define RULE_COUNT 73
+ 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
 
@@ -43,7 +43,6 @@ bool is_non_null_array_type(const struct type *const type){
 bool is_non_null_returnable_type(const struct type *const type){
         return type && is_returnable(type);
 }
-
 
 char *find_defn_signature_name(const struct parse_tree *defn){
         const struct parse_tree *signature = defn->children->head->data;
@@ -118,6 +117,22 @@ const struct type *accumulate_record(const struct type *accumulated, const struc
         return current->type;
 }
 
+const struct type *accumulate_record_type(const struct type *accumulated, const struct parse_tree *current){
+        // current is IDENTIFIER
+        char *record_name = current->data.value;
+        return query_record_type(record_name);
+}
+
+const struct type *accumulate_addressable_dot(const struct type *accumulated, const struct parse_tree *current){
+        if (equals_type(accumulated, unit_type())){
+                // get type of identifier
+                return current->type;
+        }
+
+        const struct type *ret = field_type(accumulated, current->data.value);
+        return ret;
+}
+
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
                 return poppy_type_system;
@@ -129,6 +144,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_length_condition(1);
         rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_RECORD);
+        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_record_type, 1, 1);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CHAR);
@@ -491,8 +511,13 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
-        conditions[1] = new_length_condition(3);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
         rules[i] = new_child_type_rule(conditions, 2, 1);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
+        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);

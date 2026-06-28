@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "data/list.h"
 #include "data/map.h"
@@ -169,12 +170,47 @@ const struct type* const return_type(const struct type *type){
         return NULL;
 }
 
-void name_record_type(const struct type *record_type, char *name){
-        assert(record_type->category == CATEGORY_RECORD);
+void name_record_type(const struct type *record, char *name){
+        assert(record->category == CATEGORY_RECORD);
         
         struct string *s = (struct string*) malloc(sizeof(struct string));
         s->data = name;
-        update_map((&record_map), s, record_type, string, type);
+        update_map((&record_map), s, record, string, type);
+}
+
+const struct type *query_record_type(const char *name){
+        struct string *s = (struct string*) malloc(sizeof(struct string));
+        s->data = name;
+
+        const struct type *result;
+        query_map((&record_map), s, result, string, type);
+
+        free(s);
+        return result;
+}
+
+const struct type *field_type(const struct type *record, const char *name){
+        for (struct LIST_NODE(variable) *node = record->fields.head; node != NULL; node = node->next){
+                if (strcmp(node->data->string, name) == 0){
+                        return node->data->type;
+                }
+        }
+
+        return NULL;
+}
+
+size_t record_type_offset(const struct type *record, const char *name){
+        size_t current = 0;
+
+        for (struct LIST_NODE(variable) *node = record->fields.head; node != NULL; node = node->next){
+                if (strcmp(node->data->string, name) == 0){
+                        return current;
+                }
+
+                current += node->data->type->word_count;
+        }
+
+        return UNASSIGNABLE;
 }
 
 bool equals_type(const struct type *t1, const struct type *t2){
