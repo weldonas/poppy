@@ -2,6 +2,11 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "data/list.h"
+#include "data/map.h"
+#include "lang/parse_tree.h"
 
 #define INT_CHAR 'i'
 #define VOID_CHAR 'v'
@@ -9,7 +14,15 @@
 #define CHAR_CHAR 'c'
 #define UNASSIGNABLE -1
 
+DEFINE_MAP(string, type);
+
+void free_record_map_entry(const struct MAP_ENTRY(string, type) *entry){
+        free((void*) entry->key);
+        free((void*) entry);
+}
+
 struct LIST(type) types;
+struct MAP(string, type) record_map;
 bool initialized = false;
 
 struct type *int_ptr = NULL;
@@ -21,6 +34,7 @@ struct type *unit_ptr = NULL;
 void add_type(struct type *new) {
         if (!initialized) {
                 init_list((&types));
+                init_map((&record_map), equals_string, free_record_map_entry, string, type);
                 initialized = true;
         }
 
@@ -104,7 +118,6 @@ struct type* const param_type(){
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
         new->word_count = UNASSIGNABLE;
-
         add_type(new);
         return new;
 }
@@ -133,12 +146,71 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         return new;
 }
 
+struct type* const record_type(){
+        struct type *new = (struct type*) malloc(sizeof(struct type));
+        new->category = CATEGORY_RECORD;
+        init_list((&new->fields));
+        new->word_count = 0;
+
+        add_type(new);
+        return new;
+}
+
+void add_field(struct type *record, struct variable *v){
+        assert(is_assignable(v->type));
+        append_list((&record->fields), v, variable);
+        record->word_count += v->type->word_count;
+}
+
 const struct type* const return_type(const struct type *type){
         if (type->category == CATEGORY_FUNCTION){
                 return type->ret_type;
         }
 
         return NULL;
+}
+
+void name_record_type(const struct type *record, char *name){
+        assert(record->category == CATEGORY_RECORD);
+        
+        struct string *s = (struct string*) malloc(sizeof(struct string));
+        s->data = name;
+        update_map((&record_map), s, record, string, type);
+}
+
+const struct type *query_record_type(const char *name){
+        struct string *s = (struct string*) malloc(sizeof(struct string));
+        s->data = name;
+
+        const struct type *result;
+        query_map((&record_map), s, result, string, type);
+
+        free(s);
+        return result;
+}
+
+const struct type *field_type(const struct type *record, const char *name){
+        for (struct LIST_NODE(variable) *node = record->fields.head; node != NULL; node = node->next){
+                if (strcmp(node->data->string, name) == 0){
+                        return node->data->type;
+                }
+        }
+
+        return NULL;
+}
+
+size_t record_type_offset(const struct type *record, const char *name){
+        size_t current = 0;
+
+        for (struct LIST_NODE(variable) *node = record->fields.head; node != NULL; node = node->next){
+                if (strcmp(node->data->string, name) == 0){
+                        return current;
+                }
+
+                current += node->data->type->word_count;
+        }
+
+        return UNASSIGNABLE;
 }
 
 bool equals_type(const struct type *t1, const struct type *t2){
@@ -180,6 +252,12 @@ bool equals_type(const struct type *t1, const struct type *t2){
                 return t1->length == t2->length;
         }
 
+        else if (t1->category == CATEGORY_RECORD){
+                // unlike other types, we require that records' names are the same (not just their internals)
+                // assuming uniqueness among type names, this is true iff the type pointers are equal
+                return t1 == t2;
+        }
+
         else if (t1->category == CATEGORY_UNIT){
                 return true;
         }
@@ -199,6 +277,10 @@ bool is_returnable(const struct type *type){
         return type->category == CATEGORY_PRIMITIVE;
 }
 
+bool is_composite(const struct type *type){
+        return (type->category == CATEGORY_ARRAY) || (type->category == CATEGORY_RECORD);
+}
+
 void free_type_list_item(const struct type *type){}
 
 void free_type(const struct type *type){
@@ -206,14 +288,23 @@ void free_type(const struct type *type){
                 free_list((&type->subtypes), free_type_list_item, type);
         }
 
+        else if (type->category == CATEGORY_RECORD){
+                free_list((&type->fields), free_variable, variable);
+        }
+
         free((void*) type);
 }
 
 void free_types(){
         free_list((&types), free_type, type);
+        free_map((&record_map), string, type);
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;
         char_ptr = NULL;
         initialized = false;
+}
+
+void free_variable(struct variable *v){
+        free(v);
 }

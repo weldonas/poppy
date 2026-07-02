@@ -9,7 +9,7 @@ _token_:
 - _punctuator_
 
 _keyword_:
-- One of __asm__, __bool__, __char__, __declare__, __else__, __false__, __for__, __hop__, __if__, __int__, __let__, __true__, __void__, __while__
+- One of __asm__, __bool__, __char__, __declare__, __else__, __false__, __for__, __hop__, __if__, __int__, __let__, __record__, __true__, __void__, __while__
 
 _identifier_:
 - any string matching the following regex that is not part of the above list: [A-Za-z_][A-Za-z0-9_]*
@@ -24,4 +24,4 @@ _strlit_:
 - any sequence of characters
 
 _punctuator_:
-- One of __(__, __)__, __{__, __}__, __++__, __--__, __&&__, __||__, __!__, __+__, __-__, __*__, __/__, __%__, __<__, __>__, __<=__, __>=__, __==__, __!=__, __=__, __,__, __;__, __'__, __"__, __[__, __]__
+- One of __(__, __)__, __{__, __}__, __++__, __--__, __&&__, __||__, __!__, __+__, __-__, __*__, __/__, __%__, __<__, __>__, __<=__, __>=__, __==__, __!=__, __=__, __,__, __;__, __'__, __"__, __[__, __]__, __.__

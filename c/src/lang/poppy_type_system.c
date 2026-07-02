@@ -3,8 +3,8 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 68
-
+#define RULE_COUNT 74
+ 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
 
@@ -44,7 +44,6 @@ bool is_non_null_returnable_type(const struct type *const type){
         return type && is_returnable(type);
 }
 
-
 char *find_defn_signature_name(const struct parse_tree *defn){
         const struct parse_tree *signature = defn->children->head->data;
         const struct parse_tree *id = signature->children->head->next->data;
@@ -57,16 +56,16 @@ char *find_decl_signature_name(const struct parse_tree *decl){
         return id->data.value;
 }
 
-const struct type *accumulate_last_child(const struct type *accumulated, const struct type *current){
-        if (!accumulated || !current){
+const struct type *accumulate_last_child(const struct type *accumulated, const struct parse_tree *current){
+        if (!accumulated || !current->type){
                 return NULL;
         }
 
-        return current;
+        return current->type;
 }
 
-const struct type *accumulate_params(const struct type *accumulated, const struct type *current){
-        if (!accumulated || !current){
+const struct type *accumulate_params(const struct type *accumulated, const struct parse_tree *current){
+        if (!accumulated || !current->type){
                 return NULL;
         }
 
@@ -78,8 +77,60 @@ const struct type *accumulate_params(const struct type *accumulated, const struc
                 params = (struct type*) accumulated;
         }
 
-        add_param(params, current);
+        add_param(params, current->type);
         return params;
+}
+ 
+const struct type *accumulate_fields(const struct type *accumulated, const struct parse_tree *current){
+        if (!accumulated || !current->type){
+                return NULL;
+        }
+
+        struct type *record;
+        if (equals_type(accumulated, unit_type())){
+                record = record_type();
+        }
+        else {
+                record = (struct type*) accumulated;
+        }
+
+        // current is a field (type IDENTIFIER)
+        const struct type *field_type = current->type;
+        char *field_name = current->children->head->next->data->data.value;
+
+        struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+        v->type = field_type;
+        v->string = field_name;
+        
+        add_field(record, v);
+        return record;
+}
+
+const struct type *accumulate_record(const struct type *accumulated, const struct parse_tree *current){
+        if (equals_type(accumulated, unit_type())){
+                char *name = current->data.value;
+                return (const struct type*) name;
+        }
+
+        char *name = (char*) accumulated;
+        name_record_type(current->type, name);
+        return current->type;
+}
+
+const struct type *accumulate_record_type(const struct type *accumulated, const struct parse_tree *current){
+        // current is IDENTIFIER
+        char *record_name = current->data.value;
+        return query_record_type(record_name);
+}
+
+const struct type *accumulate_addressable_dot(const struct type *accumulated, const struct parse_tree *current){
+        if (equals_type(accumulated, unit_type())){
+                // get type of identifier
+                return current->type;
+        }
+
+        const struct type *ret = field_type(accumulated, current->data.value);
+        return ret;
 }
 
 const struct type_system *const get_poppy_type_system(){
@@ -93,6 +144,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_length_condition(1);
         rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_RECORD);
+        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_record_type, 1, 1);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CHAR);
@@ -411,13 +467,25 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_function_type_rule(conditions, 3, 0, 3);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_DEFN);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_FNDEFN);
         conditions[1] = new_add_symbol_name_function_side_effect(find_defn_signature_name, 0, true);
         conditions[2] = new_add_scope_side_effect();
         conditions[3] = new_return_type_at_condition(2, 0);
         rules[i] = new_child_type_rule(conditions, 4, 0);
         ++i;
 
+        conditions[0] = new_parent_symbol_condition(SYMBOL_RECDEFN);
+        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_record, 1, 2);
+        ++i;       
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_FIELDS);
+        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_fields, 0, 2);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_FIELD);
+        rules[i] = new_child_type_rule(conditions, 1, 0);
+        ++i;
+        
         conditions[0] = new_parent_symbol_condition(SYMBOL_DECL);
         conditions[1] = new_add_symbol_name_function_side_effect(find_decl_signature_name, 1, false);
         conditions[2] = new_add_scope_side_effect(); // this ensures params dont get added to the global scope
@@ -443,8 +511,18 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
-        conditions[1] = new_length_condition(3);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
         rules[i] = new_child_type_rule(conditions, 2, 1);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
+        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
+        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);

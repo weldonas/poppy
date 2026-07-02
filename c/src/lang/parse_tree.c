@@ -62,10 +62,6 @@ void print_parse_tree(const struct parse_tree *tree){
         printf("\n");
 }
 
-void free_variable(struct variable *v){
-        free(v);
-}
-
 void get_variables_recursive(const struct parse_tree *tree, struct LIST(variable) *list){
         const struct MAP(string, symbol_table_value) *symbol_table = tree->symbol_table; 
 

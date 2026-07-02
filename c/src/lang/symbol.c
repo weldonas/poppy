@@ -32,6 +32,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_SEMICOLON: return ";";
                 case SYMBOL_LBRACKET: return "[";
                 case SYMBOL_RBRACKET: return "]";
+                case SYMBOL_DOT: return ".";
                 case SYMBOL_ELSE: return "else";
                 case SYMBOL_FOR: return "for";
                 case SYMBOL_HOP: return "hop";
@@ -45,7 +46,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_END: return "END";
                 case SYMBOL_PROGRAM: return "PROGRAM";
                 case SYMBOL_DEFNDECLS: return "DEFNDECLS";
-                case SYMBOL_DEFN: return "DEFN";
+                case SYMBOL_FNDEFN: return "FNDEFN";
                 case SYMBOL_TYPE: return "TYPE";
                 case SYMBOL_OPTPARAMS: return "OPTPARAMS";
                 case SYMBOL_STMTS: return "STMTS";
@@ -71,6 +72,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_CHAR: return "char";
                 case SYMBOL_FALSE: return "false";
                 case SYMBOL_TRUE: return "true";
+                case SYMBOL_RECORD: return "record";
                 case SYMBOL_CHARLIT: return "CHARLIT";
                 case SYMBOL_CALL: return "CALL";
                 case SYMBOL_STRINGLIT: return "STRINGLIT";
@@ -84,6 +86,9 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_DECL: return "DECL";
                 case SYMBOL_DEFNDECL: return "DEFNDECL";
                 case SYMBOL_ADDRESSABLE: return "ADDRESSABLE";
+                case SYMBOL_FIELDS: return "FIELDS";
+                case SYMBOL_FIELD: return "FIELD";
+                case SYMBOL_RECDEFN: return "RECDEFN";
         }
         return 0;
 }
