@@ -133,7 +133,7 @@ char *call_function(const struct function *function, char **args){
                                 str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
                         );
                 }
-                else if (param->data->type->category == CATEGORY_ARRAY) {
+                else if (is_composite(param->data->type)) {
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP),

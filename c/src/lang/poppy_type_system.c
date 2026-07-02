@@ -3,7 +3,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 73
+#define RULE_COUNT 74
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -516,6 +516,11 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
+        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
         rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
         ++i;

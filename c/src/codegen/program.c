@@ -9,6 +9,7 @@
 #include "codegen/function.h"
 #include "codegen/ops.h"
 #include "codegen/register.h"
+#include "lang/parse_tree.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 
@@ -132,7 +133,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
                         );
                 }
-                else if (addressable->type->category == CATEGORY_ARRAY){
+                else if (is_composite(addressable->type)){
                         return concat(5,
                                 find_memory_addr,
                                 push(REG_ADDRESS_RESULT),
@@ -296,7 +297,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                         ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
                                 );
                         }
-                        else if (var.type->category == CATEGORY_ARRAY){
+                        else if (is_composite(var.type)){
                                 return concat(2,
                                         function_variable_address(within, var),
                                         mov(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
@@ -309,34 +310,58 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 if (first == SYMBOL_ADDRESSABLE){
-                        struct parse_tree *array; load_child_at(array, tree, 0);
-                        size_t element_size = array->type->element_type->word_count;
-                        char *find_memory_address = generate_from_tree(array, functions, within);
-                        struct parse_tree *expr; load_child_at(expr, tree, 2);
-                        char *expr_code = generate_from_tree(expr, functions, within);
-                        if (array->type->element_type->category == CATEGORY_PRIMITIVE){
-                                return concat(8,
-                                        find_memory_address,
-                                        push(REG_ADDRESS_RESULT),
-                                        expr_code,
-                                        movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
-                                        mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                        pop(REG_ADDRESS_RESULT),
-                                        add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
-                                        ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                                );
+                        if (tree->children->len == 4){
+                                struct parse_tree *array; load_child_at(array, tree, 0);
+                                size_t element_size = array->type->element_type->word_count;
+                                char *find_memory_address = generate_from_tree(array, functions, within);
+                                struct parse_tree *expr; load_child_at(expr, tree, 2);
+                                char *expr_code = generate_from_tree(expr, functions, within);
+                                if (array->type->element_type->category == CATEGORY_PRIMITIVE){
+                                        return concat(8,
+                                                find_memory_address,
+                                                push(REG_ADDRESS_RESULT),
+                                                expr_code,
+                                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
+                                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                                pop(REG_ADDRESS_RESULT),
+                                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
+                                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                        );
+                                }
+                                else if (is_composite(array->type->element_type)){
+                                        return concat(7,
+                                                find_memory_address,
+                                                push(REG_ADDRESS_RESULT),
+                                                expr_code,
+                                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
+                                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                                pop(REG_ADDRESS_RESULT),
+                                                add(REG_ARITH_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
+                                        ); 
+                                }
                         }
-                        else if (array->type->element_type->category == CATEGORY_ARRAY){
-                                return concat(7,
-                                        find_memory_address,
-                                        push(REG_ADDRESS_RESULT),
-                                        expr_code,
-                                        movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
-                                        mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                        pop(REG_ADDRESS_RESULT),
-                                        add(REG_ARITH_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
-                                ); 
-                        }                    
+                        else if (tree->children->len == 3){
+                                struct parse_tree *record; load_child_at(record, tree, 0);
+                                struct parse_tree *field; load_child_at(field, tree, 2);
+                                const struct type *ftype = field_type(record->type, field->data.value);
+                                size_t offset = record_type_offset(record->type, field->data.value);
+                                char *find_memory_address = generate_from_tree(record, functions, within);
+                                if (ftype->category == CATEGORY_PRIMITIVE){
+                                        return concat(4,
+                                                find_memory_address,
+                                                movi(REG_SCRATCH, 8 * offset),
+                                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_SCRATCH),
+                                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                        );
+                                }
+                                else if (is_composite(ftype)){
+                                        return concat(3,
+                                                find_memory_address,
+                                                movi(REG_SCRATCH, 8 * offset),   // each word is 8 bytes
+                                                add(REG_ARITH_RESULT, REG_ADDRESS_RESULT, REG_SCRATCH)
+                                        ); 
+                                }                                
+                        }
                 }
         } else if (symbol == SYMBOL_CALL){
                 char *id = tree->children->head->data->data.value;
@@ -370,6 +395,20 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (tree->children->len == 1){
                         struct variable var = find_symbol_variable(tree->children->head->data);
                         return function_variable_address(within, var);
+                }
+
+                if (tree->children->head->next->data->data.type == SYMBOL_DOT){
+                        struct parse_tree *record; load_child_at(record, tree, 0);
+                        struct parse_tree *field; load_child_at(field, tree, 2);
+                        size_t field_offset = record_type_offset(record->type, field->data.value);
+
+                        char *find_memory_address = generate_from_tree(record, functions, within);
+
+                        return concat(3,
+                                find_memory_address,
+                                movi(REG_SCRATCH, 8 * field_offset),
+                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_SCRATCH)
+                        );
                 }
 
                 if (tree->children->len == 4){

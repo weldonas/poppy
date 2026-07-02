@@ -252,6 +252,12 @@ bool equals_type(const struct type *t1, const struct type *t2){
                 return t1->length == t2->length;
         }
 
+        else if (t1->category == CATEGORY_RECORD){
+                // unlike other types, we require that records' names are the same (not just their internals)
+                // assuming uniqueness among type names, this is true iff the type pointers are equal
+                return t1 == t2;
+        }
+
         else if (t1->category == CATEGORY_UNIT){
                 return true;
         }
@@ -269,6 +275,10 @@ bool is_assignable(const struct type *type){
 
 bool is_returnable(const struct type *type){
         return type->category == CATEGORY_PRIMITIVE;
+}
+
+bool is_composite(const struct type *type){
+        return (type->category == CATEGORY_ARRAY) || (type->category == CATEGORY_RECORD);
 }
 
 void free_type_list_item(const struct type *type){}

@@ -81,5 +81,6 @@ bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);
 bool is_assignable(const struct type *type);
 bool is_returnable(const struct type *type);
+bool is_composite(const struct type *type);
 void free_types();
 #endif
