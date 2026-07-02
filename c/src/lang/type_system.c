@@ -520,7 +520,11 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 for (size_t index = type_rule->start_index; index < tree->children->len; index += type_rule->step_size){
                         get_child_type(&data, index);
                         const struct parse_tree *child; load_child_at(child, tree, index);
+
                         current =  type_rule->accumulator(current, child);
+                        if (!current){
+                                return NULL;
+                        }
                 }
 
                 return current;
