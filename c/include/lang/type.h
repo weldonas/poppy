@@ -71,7 +71,7 @@ void add_param(struct type *params, const struct type *type_to_add);
 const struct type* const array_type(const struct type *element_type, char *length);
 
 struct type* const record_type();
-void add_field(struct type *record, struct variable *v);
+bool add_field(struct type *record, struct variable *v);
 void name_record_type(const struct type *record, char *name);
 const struct type *query_record_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);

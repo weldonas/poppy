@@ -1,4 +1,5 @@
 #include "lang/poppy_type_system.h"
+#include "lang/parse_tree.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 #include "lang/type_system.h"
@@ -56,54 +57,62 @@ char *find_decl_signature_name(const struct parse_tree *decl){
         return id->data.value;
 }
 
-const struct type *accumulate_last_child(const struct type *accumulated, const struct parse_tree *current){
-        if (!accumulated || !current->type){
-                return NULL;
+const struct type *deduce_from_last_child(const struct parse_tree *tree){
+        const struct type *current;
+        
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                current = node->data->type;
+                if (!current){
+                        return NULL;
+                }
         }
 
-        return current->type;
+        return current;
 }
 
-const struct type *accumulate_params(const struct type *accumulated, const struct parse_tree *current){
-        if (!accumulated || !current->type){
-                return NULL;
+const struct type *deduce_params(const struct parse_tree *tree){
+        struct type *params = param_type();
+
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+                if (!node->data->type){
+                        return NULL;
+                }
+                add_param(params, node->data->type);
         }
 
-        struct type *params;
-        if (equals_type(accumulated, unit_type())){
-                params = param_type();
-        }
-        else {
-                params = (struct type*) accumulated;
-        }
-
-        add_param(params, current->type);
         return params;
 }
- 
-const struct type *accumulate_fields(const struct type *accumulated, const struct parse_tree *current){
-        if (!accumulated || !current->type){
+
+const struct type *deduce_fields(const struct parse_tree *tree){
+        struct type *record = record_type();
+
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+                const struct type *field_type = node->data->type;
+                char *field_name = node->data->children->head->next->data->data.value;
+
+                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                v->type = field_type;
+                v->string = field_name;
+
+                if(!add_field(record, v)){
+                        free_variable(v);
+                        return NULL;
+                }
+        }
+
+        return record;
+}
+
+const struct type *deduce_record(const struct parse_tree *tree){
+        const struct parse_tree *name_tree; load_child_at(name_tree, tree, 1);
+        const struct parse_tree *field_tree; load_child_at(field_tree, tree, 3);      
+        
+        if (!field_tree->type){
                 return NULL;
         }
 
-        struct type *record;
-        if (equals_type(accumulated, unit_type())){
-                record = record_type();
-        }
-        else {
-                record = (struct type*) accumulated;
-        }
-
-        // current is a field (type IDENTIFIER)
-        const struct type *field_type = current->type;
-        char *field_name = current->children->head->next->data->data.value;
-
-        struct variable *v = (struct variable*) malloc(sizeof(struct variable));
-        v->type = field_type;
-        v->string = field_name;
-        
-        add_field(record, v);
-        return record;
+        name_record_type(field_tree->type, name_tree->data.value);
+        return field_tree->type;
 }
 
 const struct type *accumulate_record(const struct type *accumulated, const struct parse_tree *current){
@@ -117,21 +126,32 @@ const struct type *accumulate_record(const struct type *accumulated, const struc
         return current->type;
 }
 
-const struct type *accumulate_record_type(const struct type *accumulated, const struct parse_tree *current){
-        // current is IDENTIFIER
-        char *record_name = current->data.value;
+const struct type *deduce_record_type(const struct parse_tree *tree){
+        const struct parse_tree *record; load_child_at(record, tree, 1);
+        char *record_name = record->data.value;
         return query_record_type(record_name);
 }
 
-const struct type *accumulate_addressable_dot(const struct type *accumulated, const struct parse_tree *current){
-        if (equals_type(accumulated, unit_type())){
-                // get type of identifier
-                return current->type;
+const struct type *deduce_addressable_dot(const struct parse_tree *tree){
+        const struct parse_tree *record_tree; load_child_at(record_tree, tree, 0);
+        const struct parse_tree *field_tree; load_child_at(field_tree, tree, 2);
+
+        if (!record_tree->type){
+                return NULL;
         }
 
-        const struct type *ret = field_type(accumulated, current->data.value);
-        return ret;
+        return field_type(record_tree->type, field_tree->data.value);
 }
+
+// const struct type *accumulate_addressable_dot(const struct type *accumulated, const struct parse_tree *current){
+//         if (equals_type(accumulated, unit_type())){
+//                 // get type of identifier
+//                 return current->type;
+//         }
+
+//         const struct type *ret = field_type(accumulated, current->data.value);
+//         return ret;
+// }
 
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
@@ -148,7 +168,7 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_RECORD);
-        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_record_type, 1, 1);
+        rules[i] = new_deducer_type_rule(conditions, 2, deduce_record_type);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CHAR);
@@ -423,9 +443,8 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 1, 0);
         ++i;
 
-        // TODO add prevention against badly typed returns occurring in the middle of a group of stmts
         conditions[0] = new_parent_symbol_condition(SYMBOL_STMTS);
-        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_last_child, 0, 1);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_from_last_child);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTPARAMS);
@@ -439,7 +458,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAMS);
-        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_params, 0, 2);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_params);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAM);
@@ -458,7 +477,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ARGS);
-        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_params, 0, 2);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_params);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_SIGNATURE);
@@ -475,11 +494,11 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_RECDEFN);
-        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_record, 1, 2);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_record);
         ++i;       
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELDS);
-        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_fields, 0, 2);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_fields);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELD);
@@ -493,7 +512,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECLS);
-        rules[i] = new_accumulator_type_rule(conditions, 1, accumulate_last_child, 0, 1);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_from_last_child);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_DEFNDECL);
@@ -517,12 +536,12 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
         conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
-        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
+        rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
-        rules[i] = new_accumulator_type_rule(conditions, 2, accumulate_addressable_dot, 0, 2);
+        rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);

@@ -64,7 +64,7 @@ enum type_rule_type {
         TYPE_RULE_FUNCTION,
         TYPE_RULE_ARRAY,
         TYPE_RULE_ELEMENT,
-        TYPE_RULE_ACCUMULATOR
+        TYPE_RULE_DEDUCER
 };
 
 struct type_rule {
@@ -88,9 +88,7 @@ struct type_rule {
                 }; // array
                 size_t array_index; // element
                 struct {
-                        accumulator accumulator;
-                        size_t start_index;
-                        size_t step_size;
+                        type_deducer deducer;
                 }; // accumulator
         };
 };
@@ -165,7 +163,6 @@ const struct type * find_call_type(const struct type_system *const system, const
         }
 
         if (!equals_type(args_type, ftype->params_type)){
-                equals_type(args_type, ftype->params_type);
                 return NULL;
         }
 
@@ -349,16 +346,14 @@ const struct type_rule *new_element_type_rule(const struct type_rule_condition *
         return ptr;
 }
 
-const struct type_rule *new_accumulator_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, accumulator accumulator, size_t start_index, size_t step_size){
+const struct type_rule *new_deducer_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, type_deducer deducer){
         struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
                 ptr->conditions[i] = conditions[i];
         }
         ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_ACCUMULATOR;
-        ptr->accumulator = accumulator;
-        ptr->start_index = start_index;
-        ptr->step_size = step_size;
+        ptr->type = TYPE_RULE_DEDUCER;
+        ptr->deducer = deducer;
         return ptr;
 }
 
@@ -425,12 +420,22 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         satisfied = tree->data.type == condition->parent_symbol;
                                         break;
                                 case CONDITION_SYMBOL_AT:
-                                        load_child_at(child, tree, condition->index);
-                                        satisfied = child->data.type == condition->symbol;
+                                        if (tree->children->len <= condition->index){
+                                                satisfied = false;
+                                        }
+                                        else {
+                                                load_child_at(child, tree, condition->index);
+                                                satisfied = child->data.type == condition->symbol;
+                                        }
                                         break;
                                 case CONDITION_TYPE_AT:
-                                        load_child_at(child, tree, condition->index);
-                                        satisfied = condition->is_valid(get_child_type(&data, condition->index));
+                                        if (tree->children->len <= condition->index){
+                                                satisfied = false;
+                                        }
+                                        else {
+                                                load_child_at(child, tree, condition->index);
+                                                satisfied = condition->is_valid(get_child_type(&data, condition->index));
+                                        }
                                         break;
                                 case CONDITION_TYPES_EQUAL_AT:
                                         const struct type *child_type1 = get_child_type(&data, condition->index1);
@@ -514,20 +519,11 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 }
                 return get_child_type(&data, type_rule->array_index)->element_type;
         }
-        else if (type_rule->type == TYPE_RULE_ACCUMULATOR){
-                const struct type *current = unit_type();
-
-                for (size_t index = type_rule->start_index; index < tree->children->len; index += type_rule->step_size){
-                        get_child_type(&data, index);
-                        const struct parse_tree *child; load_child_at(child, tree, index);
-
-                        current =  type_rule->accumulator(current, child);
-                        if (!current){
-                                return NULL;
-                        }
+        else if (type_rule->type == TYPE_RULE_DEDUCER){
+                for (size_t i = 0; i < tree->children->len; ++i){
+                        get_child_type(&data, i);
                 }
-
-                return current;
+                return type_rule->deducer(tree);
         }
 
         return NULL;

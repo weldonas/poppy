@@ -156,10 +156,13 @@ struct type* const record_type(){
         return new;
 }
 
-void add_field(struct type *record, struct variable *v){
-        assert(is_assignable(v->type));
+bool add_field(struct type *record, struct variable *v){
+        if (!v->type || !is_assignable(v->type)){
+                return false;
+        }
         append_list((&record->fields), v, variable);
         record->word_count += v->type->word_count;
+        return true;
 }
 
 const struct type* const return_type(const struct type *type){
