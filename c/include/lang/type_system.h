@@ -24,7 +24,7 @@ const struct type_rule_condition *new_types_equal_at_condition(size_t index1, si
 const struct type_rule_condition *new_return_type_at_condition(size_t return_index, size_t function_index);
 
 const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index, bool is_defined);
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index, bool is_defined);
+const struct type_rule_condition *new_add_symbol_name_function_side_effect(const struct parse_tree *(*find_name_tree)(const struct parse_tree *), size_t type_index, bool is_defined);
 const struct type_rule_condition *new_add_scope_side_effect();
 
 const struct type_rule *new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type);

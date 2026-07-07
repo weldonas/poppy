@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 74
+#define RULE_COUNT 76
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -45,16 +45,16 @@ bool is_non_null_returnable_type(const struct type *const type){
         return type && is_returnable(type);
 }
 
-char *find_defn_signature_name(const struct parse_tree *defn){
+const struct parse_tree *find_defn_signature_name(const struct parse_tree *defn){
         const struct parse_tree *signature = defn->children->head->data;
         const struct parse_tree *id = signature->children->head->next->data;
-        return id->data.value;
+        return id;
 }
 
-char *find_decl_signature_name(const struct parse_tree *decl){
+const struct parse_tree *find_decl_signature_name(const struct parse_tree *decl){
         const struct parse_tree *signature = decl->children->head->next->data;
         const struct parse_tree *id = signature->children->head->next->data;
-        return id->data.value;
+        return id;
 }
 
 const struct type *deduce_from_last_child(const struct parse_tree *tree){
@@ -165,6 +165,35 @@ const struct type *deduce_function(const struct parse_tree *tree){
 
 }
 
+const struct type *deduce_call(const struct parse_tree *tree){
+        const struct parse_tree *optargs; load_child_at(optargs, tree, 2);
+        const struct parse_tree *fn; load_child_at(fn, tree, 0);
+
+        if (!equals_type(optargs->type, fn->type->params_type)){
+                return NULL;
+        }
+
+        return return_type(fn->type);
+}
+
+const struct type *deduce_symbol_type(const struct parse_tree *tree){
+        struct string string;
+        string.data = tree->data.value;
+        const struct parse_tree *cur = tree;
+        
+        while (cur != NULL){
+                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
+                if (symbol_table != NULL){
+                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
+
+                        if (value != NULL){
+                                return value->type;
+                        }
+                }
+                cur = cur->parent;
+        }
+        return NULL;
+}
 
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
@@ -242,6 +271,16 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
         rules[i] = new_child_type_rule(conditions, 2, 1);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_CALL);
+        conditions[1] = new_type_at_condition(0, is_non_null_type);
+        conditions[2] = new_type_at_condition(2, is_non_null_type);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_call);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_IDENTIFIER);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_symbol_type);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_EXPR);
@@ -497,7 +536,6 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_type_at_condition(0, is_non_null_returnable_type);
         conditions[2] = new_type_at_condition(3, is_non_null_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_function);
-        // rules[i] = new_function_type_rule(conditions, 3, 0, 3);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FNDEFN);

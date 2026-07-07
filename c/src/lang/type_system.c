@@ -46,7 +46,7 @@ struct type_rule_condition {
                 struct {
                         union {
                                 size_t name_index;
-                                char *(*find_name)(const struct parse_tree *);
+                                const struct parse_tree *(*find_name_tree)(const struct parse_tree *);
                         };
                         size_t type_index;
                         bool is_defined;
@@ -83,26 +83,6 @@ bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt
         return pt1 == pt2;
 }
 
-const struct type * find_symbol_type(const struct parse_tree *tree, char *name){
-        struct string string;
-        string.data = name ? name : tree->data.value;
-
-        const struct parse_tree *cur = tree;
-        
-        while (cur != NULL){
-                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
-                if (symbol_table != NULL){
-                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
-
-                        if (value != NULL){
-                                return value->type;
-                        }
-                }
-                cur = cur->parent;
-        }
-        return NULL;
-}
-
 bool name_reused(const struct parse_tree *tree){
         struct string string;
         string.data = tree->data.value;
@@ -127,30 +107,6 @@ bool name_reused(const struct parse_tree *tree){
                 cur = cur->parent;
         }
         return false;
-}
-
-struct variable find_symbol_variable(const struct parse_tree *tree){
-        const struct type *type = find_symbol_type(tree, NULL);
-        struct variable var = {tree->data.value, type};
-        return var;
-}
-
-const struct type * find_call_type(const struct type_system *const system, const struct parse_tree *tree){
-        // call -> IDENTIFIER LPAREN optargs RPAREN
-        struct parse_tree *optargs; load_child_at(optargs, tree, 2);
-        
-        const struct type *args_type = find_type(system, optargs, NULL);
-        const struct type *ftype = find_symbol_type(tree->children->head->data, NULL);
-
-        if (!args_type || !ftype){
-                return NULL;
-        }
-
-        if (!equals_type(args_type, ftype->params_type)){
-                return NULL;
-        }
-
-        return return_type(ftype);
 }
 
 bool is_valid_type_tree(const struct parse_tree *tree){
@@ -258,8 +214,8 @@ const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t n
         return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index, .is_defined = is_defined});
 }
 
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index, bool is_defined) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name = find_name, .type_index = type_index, .is_defined = is_defined});
+const struct type_rule_condition *new_add_symbol_name_function_side_effect(const struct parse_tree *(*find_name_tree)(const struct parse_tree *), size_t type_index, bool is_defined) {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name_tree = find_name_tree, .type_index = type_index, .is_defined = is_defined});
 }
 
 const struct type_rule_condition *new_add_scope_side_effect() {
@@ -397,8 +353,10 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         satisfied = fn_type && ret_type && equals_type(return_type(fn_type), ret_type);
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
+                                        get_child_type(&data, condition->name_index);
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
-                                        if (find_symbol_type(child, NULL)){
+
+                                        if (child->type){
                                                 return NULL;
                                         }
 
@@ -417,12 +375,8 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
-                                        if (find_symbol_type(tree, condition->find_name(tree))){
-                                                return NULL;
-                                        }
-
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
-                                        str->data = condition->find_name(tree);
+                                        str->data = condition->find_name_tree(tree)->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
                                         const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
@@ -457,9 +411,12 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                 return get_child_type(&data, type_rule->output_index);
         }
         else if (type_rule->type == TYPE_RULE_DEDUCER){
-                for (size_t i = 0; i < tree->children->len; ++i){
-                        get_child_type(&data, i);
+                if (tree->children){
+                        for (size_t i = 0; i < tree->children->len; ++i){
+                                get_child_type(&data, i);
+                        }
                 }
+
                 return type_rule->deducer(tree);
         }
 
@@ -471,15 +428,6 @@ const struct type *find_type(const struct type_system *const system, struct pars
                 return tree->type;
         }
         
-        if (tree->data.type == SYMBOL_IDENTIFIER){
-                tree->type = find_symbol_type(tree, NULL);
-                return tree->type;
-        }
-        else if (tree->data.type == SYMBOL_CALL){
-                tree->type = find_call_type(system, tree);
-                return tree->type;
-        }
-
         for (size_t i = 0; i < system->rules_len; ++i){
                 const struct type *const output = apply(system->rules[i], system, tree, scope_map);
                 if (output){
