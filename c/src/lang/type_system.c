@@ -46,7 +46,7 @@ struct type_rule_condition {
                 struct {
                         union {
                                 size_t name_index;
-                                char *(*find_name)(const struct parse_tree *);
+                                const struct parse_tree *(*find_name_tree)(const struct parse_tree *);
                         };
                         size_t type_index;
                         bool is_defined;
@@ -61,10 +61,7 @@ struct type_rule_condition {
 enum type_rule_type {
         TYPE_RULE_PRIMITIVE,
         TYPE_RULE_CHILD,
-        TYPE_RULE_FUNCTION,
-        TYPE_RULE_ARRAY,
-        TYPE_RULE_ELEMENT,
-        TYPE_RULE_ACCUMULATOR
+        TYPE_RULE_DEDUCER
 };
 
 struct type_rule {
@@ -75,23 +72,8 @@ struct type_rule {
                 const struct type *output_type; // primitive
                 size_t output_index; // child
                 struct {
-                        size_t current_index;
-                        int next_index;
-                }; // param
-                struct {
-                        size_t ret_index;
-                        size_t param_index;
-                }; // function
-                struct {
-                        size_t element_index;
-                        size_t length_index;
-                }; // array
-                size_t array_index; // element
-                struct {
-                        accumulator accumulator;
-                        size_t start_index;
-                        size_t step_size;
-                }; // accumulator
+                        type_deducer deducer;
+                }; // deducer
         };
 };
 
@@ -99,26 +81,6 @@ const struct type *find_type(const struct type_system *const system, struct pars
 
 bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt2){
         return pt1 == pt2;
-}
-
-const struct type * find_symbol_type(const struct parse_tree *tree){
-        struct string string;
-        string.data = tree->data.value;
-
-        const struct parse_tree *cur = tree;
-        
-        while (cur != NULL){
-                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
-                if (symbol_table != NULL){
-                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
-
-                        if (value != NULL){
-                                return value->type;
-                        }
-                }
-                cur = cur->parent;
-        }
-        return NULL;
 }
 
 bool name_reused(const struct parse_tree *tree){
@@ -145,31 +107,6 @@ bool name_reused(const struct parse_tree *tree){
                 cur = cur->parent;
         }
         return false;
-}
-
-struct variable find_symbol_variable(const struct parse_tree *tree){
-        const struct type *type = find_symbol_type(tree);
-        struct variable var = {tree->data.value, type};
-        return var;
-}
-
-const struct type * find_call_type(const struct type_system *const system, const struct parse_tree *tree){
-        // call -> IDENTIFIER LPAREN optargs RPAREN
-        struct parse_tree *optargs; load_child_at(optargs, tree, 2);
-        
-        const struct type *args_type = find_type(system, optargs, NULL);
-        const struct type *ftype = find_symbol_type(tree->children->head->data);
-
-        if (!args_type || !ftype){
-                return NULL;
-        }
-
-        if (!equals_type(args_type, ftype->params_type)){
-                equals_type(args_type, ftype->params_type);
-                return NULL;
-        }
-
-        return return_type(ftype);
 }
 
 bool is_valid_type_tree(const struct parse_tree *tree){
@@ -277,8 +214,8 @@ const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t n
         return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index, .is_defined = is_defined});
 }
 
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(char *(*find_name)(const struct parse_tree *), size_t type_index, bool is_defined) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name = find_name, .type_index = type_index, .is_defined = is_defined});
+const struct type_rule_condition *new_add_symbol_name_function_side_effect(const struct parse_tree *(*find_name_tree)(const struct parse_tree *), size_t type_index, bool is_defined) {
+        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name_tree = find_name_tree, .type_index = type_index, .is_defined = is_defined});
 }
 
 const struct type_rule_condition *new_add_scope_side_effect() {
@@ -314,51 +251,14 @@ const struct type_rule *new_child_type_rule(const struct type_rule_condition *co
         return ptr;
 }
 
-const struct type_rule *new_function_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t ret_index, size_t param_index){
+const struct type_rule *new_deducer_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, type_deducer deducer){
         struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
                 ptr->conditions[i] = conditions[i];
         }
         ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_FUNCTION;
-        ptr->ret_index = ret_index;
-        ptr->param_index = param_index;
-        return ptr;
-}
-
-const struct type_rule *new_array_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t element_index, size_t length_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_ARRAY;
-        ptr->element_index = element_index;
-        ptr->length_index = length_index;
-        return ptr;
-}
-
-const struct type_rule *new_element_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t array_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_ELEMENT;
-        ptr->array_index = array_index;
-        return ptr;
-}
-
-const struct type_rule *new_accumulator_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, accumulator accumulator, size_t start_index, size_t step_size){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_ACCUMULATOR;
-        ptr->accumulator = accumulator;
-        ptr->start_index = start_index;
-        ptr->step_size = step_size;
+        ptr->type = TYPE_RULE_DEDUCER;
+        ptr->deducer = deducer;
         return ptr;
 }
 
@@ -425,12 +325,22 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         satisfied = tree->data.type == condition->parent_symbol;
                                         break;
                                 case CONDITION_SYMBOL_AT:
-                                        load_child_at(child, tree, condition->index);
-                                        satisfied = child->data.type == condition->symbol;
+                                        if (tree->children->len <= condition->index){
+                                                satisfied = false;
+                                        }
+                                        else {
+                                                load_child_at(child, tree, condition->index);
+                                                satisfied = child->data.type == condition->symbol;
+                                        }
                                         break;
                                 case CONDITION_TYPE_AT:
-                                        load_child_at(child, tree, condition->index);
-                                        satisfied = condition->is_valid(get_child_type(&data, condition->index));
+                                        if (tree->children->len <= condition->index){
+                                                satisfied = false;
+                                        }
+                                        else {
+                                                load_child_at(child, tree, condition->index);
+                                                satisfied = condition->is_valid(get_child_type(&data, condition->index));
+                                        }
                                         break;
                                 case CONDITION_TYPES_EQUAL_AT:
                                         const struct type *child_type1 = get_child_type(&data, condition->index1);
@@ -443,7 +353,13 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         satisfied = fn_type && ret_type && equals_type(return_type(fn_type), ret_type);
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
+                                        get_child_type(&data, condition->name_index);
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
+
+                                        if (child->type){
+                                                return NULL;
+                                        }
+
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
@@ -460,7 +376,7 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
-                                        str->data = condition->find_name(tree);
+                                        str->data = condition->find_name_tree(tree)->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
                                         const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
@@ -494,40 +410,14 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         else if (type_rule->type == TYPE_RULE_CHILD){
                 return get_child_type(&data, type_rule->output_index);
         }
-        else if (type_rule->type == TYPE_RULE_FUNCTION){
-                if (!get_child_type(&data, type_rule->ret_index)){
-                        return NULL;
-                }
-                return function_type(get_child_type(&data, type_rule->ret_index), get_child_type(&data, type_rule->param_index));          
-        }
-        else if (type_rule->type == TYPE_RULE_ARRAY){
-                if (!get_child_type(&data, type_rule->element_index)){
-                        return NULL;
-                }
-
-                struct parse_tree *length_tree; load_child_at(length_tree, tree, type_rule->length_index);
-                return array_type(get_child_type(&data, type_rule->element_index), length_tree->data.value);
-        }
-        else if (type_rule->type == TYPE_RULE_ELEMENT){
-                if (!get_child_type(&data, type_rule->array_index)){
-                        return NULL;
-                }
-                return get_child_type(&data, type_rule->array_index)->element_type;
-        }
-        else if (type_rule->type == TYPE_RULE_ACCUMULATOR){
-                const struct type *current = unit_type();
-
-                for (size_t index = type_rule->start_index; index < tree->children->len; index += type_rule->step_size){
-                        get_child_type(&data, index);
-                        const struct parse_tree *child; load_child_at(child, tree, index);
-
-                        current =  type_rule->accumulator(current, child);
-                        if (!current){
-                                return NULL;
+        else if (type_rule->type == TYPE_RULE_DEDUCER){
+                if (tree->children){
+                        for (size_t i = 0; i < tree->children->len; ++i){
+                                get_child_type(&data, i);
                         }
                 }
 
-                return current;
+                return type_rule->deducer(tree);
         }
 
         return NULL;
@@ -538,15 +428,6 @@ const struct type *find_type(const struct type_system *const system, struct pars
                 return tree->type;
         }
         
-        if (tree->data.type == SYMBOL_IDENTIFIER){
-                tree->type = find_symbol_type(tree);
-                return tree->type;
-        }
-        else if (tree->data.type == SYMBOL_CALL){
-                tree->type = find_call_type(system, tree);
-                return tree->type;
-        }
-
         for (size_t i = 0; i < system->rules_len; ++i){
                 const struct type *const output = apply(system->rules[i], system, tree, scope_map);
                 if (output){
