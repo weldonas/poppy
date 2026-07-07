@@ -99,9 +99,9 @@ bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt
         return pt1 == pt2;
 }
 
-const struct type * find_symbol_type(const struct parse_tree *tree){
+const struct type * find_symbol_type(const struct parse_tree *tree, char *name){
         struct string string;
-        string.data = tree->data.value;
+        string.data = name ? name : tree->data.value;
 
         const struct parse_tree *cur = tree;
         
@@ -146,7 +146,7 @@ bool name_reused(const struct parse_tree *tree){
 }
 
 struct variable find_symbol_variable(const struct parse_tree *tree){
-        const struct type *type = find_symbol_type(tree);
+        const struct type *type = find_symbol_type(tree, NULL);
         struct variable var = {tree->data.value, type};
         return var;
 }
@@ -156,7 +156,7 @@ const struct type * find_call_type(const struct type_system *const system, const
         struct parse_tree *optargs; load_child_at(optargs, tree, 2);
         
         const struct type *args_type = find_type(system, optargs, NULL);
-        const struct type *ftype = find_symbol_type(tree->children->head->data);
+        const struct type *ftype = find_symbol_type(tree->children->head->data, NULL);
 
         if (!args_type || !ftype){
                 return NULL;
@@ -449,6 +449,10 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
+                                        if (find_symbol_type(child, NULL)){
+                                                return NULL;
+                                        }
+
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
@@ -464,6 +468,10 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
+                                        if (find_symbol_type(tree, condition->find_name(tree))){
+                                                return NULL;
+                                        }
+
                                         struct string *str = (struct string*) malloc(sizeof(struct string));
                                         str->data = condition->find_name(tree);
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
@@ -535,7 +543,7 @@ const struct type *find_type(const struct type_system *const system, struct pars
         }
         
         if (tree->data.type == SYMBOL_IDENTIFIER){
-                tree->type = find_symbol_type(tree);
+                tree->type = find_symbol_type(tree, NULL);
                 return tree->type;
         }
         else if (tree->data.type == SYMBOL_CALL){
