@@ -115,17 +115,6 @@ const struct type *deduce_record(const struct parse_tree *tree){
         return field_tree->type;
 }
 
-const struct type *accumulate_record(const struct type *accumulated, const struct parse_tree *current){
-        if (equals_type(accumulated, unit_type())){
-                char *name = current->data.value;
-                return (const struct type*) name;
-        }
-
-        char *name = (char*) accumulated;
-        name_record_type(current->type, name);
-        return current->type;
-}
-
 const struct type *deduce_record_type(const struct parse_tree *tree){
         const struct parse_tree *record; load_child_at(record, tree, 1);
         char *record_name = record->data.value;
@@ -143,15 +132,39 @@ const struct type *deduce_addressable_dot(const struct parse_tree *tree){
         return field_type(record_tree->type, field_tree->data.value);
 }
 
-// const struct type *accumulate_addressable_dot(const struct type *accumulated, const struct parse_tree *current){
-//         if (equals_type(accumulated, unit_type())){
-//                 // get type of identifier
-//                 return current->type;
-//         }
+const struct type *deduce_addressable_index(const struct parse_tree *tree){
+        const struct parse_tree *array_tree; load_child_at(array_tree, tree, 0);
 
-//         const struct type *ret = field_type(accumulated, current->data.value);
-//         return ret;
-// }
+        if (!array_tree->type){
+                return NULL;
+        }
+
+        return array_tree->type->element_type;
+}
+
+const struct type *deduce_array(const struct parse_tree *tree){
+        const struct parse_tree *element_tree; load_child_at(element_tree, tree, 0);
+        const struct parse_tree *length_tree; load_child_at(length_tree, tree, 2);
+
+        if (!element_tree->type){
+                return NULL;
+        }
+
+        return array_type(element_tree->type, length_tree->data.value);
+}
+
+const struct type *deduce_function(const struct parse_tree *tree){
+        const struct parse_tree *ret_tree; load_child_at(ret_tree, tree, 0);
+        const struct parse_tree *param_tree; load_child_at(param_tree, tree, 3);
+
+        if (!ret_tree->type || !param_tree->type){
+                return NULL;
+        }
+
+        return function_type(ret_tree->type, param_tree->type);
+
+}
+
 
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
@@ -483,7 +496,8 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_SIGNATURE);
         conditions[1] = new_type_at_condition(0, is_non_null_returnable_type);
         conditions[2] = new_type_at_condition(3, is_non_null_type);
-        rules[i] = new_function_type_rule(conditions, 3, 0, 3);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_function);
+        // rules[i] = new_function_type_rule(conditions, 3, 0, 3);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FNDEFN);
@@ -547,21 +561,21 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_assignable_type);
-        rules[i] = new_array_type_rule(conditions, 3, 0, 2);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_array);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_array_type);
         conditions[3] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_element_type_rule(conditions, 4, 0);
+        rules[i] = new_deducer_type_rule(conditions, 4, deduce_addressable_index);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_array_type);
         conditions[3] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_element_type_rule(conditions, 4, 0);
+        rules[i] = new_deducer_type_rule(conditions, 4, deduce_addressable_index);
         ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);

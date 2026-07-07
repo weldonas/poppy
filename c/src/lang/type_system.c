@@ -61,9 +61,6 @@ struct type_rule_condition {
 enum type_rule_type {
         TYPE_RULE_PRIMITIVE,
         TYPE_RULE_CHILD,
-        TYPE_RULE_FUNCTION,
-        TYPE_RULE_ARRAY,
-        TYPE_RULE_ELEMENT,
         TYPE_RULE_DEDUCER
 };
 
@@ -75,21 +72,8 @@ struct type_rule {
                 const struct type *output_type; // primitive
                 size_t output_index; // child
                 struct {
-                        size_t current_index;
-                        int next_index;
-                }; // param
-                struct {
-                        size_t ret_index;
-                        size_t param_index;
-                }; // function
-                struct {
-                        size_t element_index;
-                        size_t length_index;
-                }; // array
-                size_t array_index; // element
-                struct {
                         type_deducer deducer;
-                }; // accumulator
+                }; // deducer
         };
 };
 
@@ -311,41 +295,6 @@ const struct type_rule *new_child_type_rule(const struct type_rule_condition *co
         return ptr;
 }
 
-const struct type_rule *new_function_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t ret_index, size_t param_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_FUNCTION;
-        ptr->ret_index = ret_index;
-        ptr->param_index = param_index;
-        return ptr;
-}
-
-const struct type_rule *new_array_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t element_index, size_t length_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_ARRAY;
-        ptr->element_index = element_index;
-        ptr->length_index = length_index;
-        return ptr;
-}
-
-const struct type_rule *new_element_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t array_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
-        for (size_t i = 0; i < conditions_len; ++i){
-                ptr->conditions[i] = conditions[i];
-        }
-        ptr->conditions_len = conditions_len;
-        ptr->type = TYPE_RULE_ELEMENT;
-        ptr->array_index = array_index;
-        return ptr;
-}
-
 const struct type_rule *new_deducer_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, type_deducer deducer){
         struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
@@ -506,26 +455,6 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
         }
         else if (type_rule->type == TYPE_RULE_CHILD){
                 return get_child_type(&data, type_rule->output_index);
-        }
-        else if (type_rule->type == TYPE_RULE_FUNCTION){
-                if (!get_child_type(&data, type_rule->ret_index)){
-                        return NULL;
-                }
-                return function_type(get_child_type(&data, type_rule->ret_index), get_child_type(&data, type_rule->param_index));          
-        }
-        else if (type_rule->type == TYPE_RULE_ARRAY){
-                if (!get_child_type(&data, type_rule->element_index)){
-                        return NULL;
-                }
-
-                struct parse_tree *length_tree; load_child_at(length_tree, tree, type_rule->length_index);
-                return array_type(get_child_type(&data, type_rule->element_index), length_tree->data.value);
-        }
-        else if (type_rule->type == TYPE_RULE_ELEMENT){
-                if (!get_child_type(&data, type_rule->array_index)){
-                        return NULL;
-                }
-                return get_child_type(&data, type_rule->array_index)->element_type;
         }
         else if (type_rule->type == TYPE_RULE_DEDUCER){
                 for (size_t i = 0; i < tree->children->len; ++i){
