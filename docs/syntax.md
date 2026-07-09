@@ -84,8 +84,7 @@ $$\begin{align*}
 \text{multexpr} &\rightarrow \text{multexpr MOD unexpr}  \\
 \text{multexpr} &\rightarrow \text{unexpr}  \\
 \text{unexpr} &\rightarrow \text{MINUS unexpr} \\
-\text{unexpr} &\rightarrow \text{addressable LBRACKET expr RBRACKET} \\
-\text{unexpr} &\rightarrow \text{addressable DOT IDENTIFIER} \\
+\text{unexpr} &\rightarrow \text{addressable} \\
 \text{unexpr} &\rightarrow \text{LPAREN expr RPAREN}  \\
 \text{unexpr} &\rightarrow \text{call}\\
 \text{call} &\rightarrow \text{IDENTIFIER LPAREN optargs RPAREN}  \\
@@ -95,7 +94,6 @@ $$\begin{align*}
 \text{args} &\rightarrow \text{expr COMMA args} \\
 \text{unexpr} &\rightarrow \text{INC addressable} \\
 \text{unexpr} &\rightarrow \text{DEC addressable} \\
-\text{unexpr} &\rightarrow \text{IDENTIFIER}  \\
 \text{unexpr} &\rightarrow \text{CONSTANT}  \\
 \text{unexpr} &\rightarrow \text{CHARLIT}
 \end{align*}

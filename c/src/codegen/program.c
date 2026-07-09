@@ -106,6 +106,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         struct parse_tree *expr; load_child_at(expr, tree, 4);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         
+                        assert(!is_composite(expr->type));
                         return concat(5,
                                 find_memory_addr,
                                 push(REG_ADDRESS_RESULT),
@@ -138,8 +139,8 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 find_memory_addr,
                                 push(REG_ADDRESS_RESULT),
                                 expr_code,
-                                pop(REG_ADDRESS_RESULT),
-                                memory_copy(REG_ARITH_RESULT, REG_ADDRESS_RESULT, addressable->type->word_count)
+                                pop(REG_ARITH_RESULT),
+                                memory_copy(REG_ADDRESS_RESULT, REG_ARITH_RESULT, addressable->type->word_count)
                         );
                 }
 
@@ -288,81 +289,20 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         return movi(REG_ARITH_RESULT, imm);
                 }
 
-                if (first == SYMBOL_IDENTIFIER){
-                        struct parse_tree *child = tree->children->head->data;
-                        struct variable var = find_symbol_variable(child);
-                        if (var.type->category == CATEGORY_PRIMITIVE){
-                                return concat(2,
-                                        function_variable_address(within, var),
-                                        ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                                );
+                if (first == SYMBOL_ADDRESSABLE){
+                        char *find_memory_address = generate_from_tree(tree->children->head->data, functions, within);
+
+                        if (is_composite(tree->type)){
+                                return find_memory_address;
                         }
-                        else if (is_composite(var.type)){
-                                return concat(2,
-                                        function_variable_address(within, var),
-                                        mov(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                                );
-                        }
+
+                        return concat(2, find_memory_address, ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT));
                 }
 
                 if (first == SYMBOL_CALL){
                         return generate_from_tree(tree->children->head->data, functions, within);
                 }
 
-                if (first == SYMBOL_ADDRESSABLE){
-                        if (tree->children->len == 4){
-                                struct parse_tree *array; load_child_at(array, tree, 0);
-                                size_t element_size = array->type->element_type->word_count;
-                                char *find_memory_address = generate_from_tree(array, functions, within);
-                                struct parse_tree *expr; load_child_at(expr, tree, 2);
-                                char *expr_code = generate_from_tree(expr, functions, within);
-                                if (array->type->element_type->category == CATEGORY_PRIMITIVE){
-                                        return concat(8,
-                                                find_memory_address,
-                                                push(REG_ADDRESS_RESULT),
-                                                expr_code,
-                                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
-                                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                                pop(REG_ADDRESS_RESULT),
-                                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT),
-                                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                                        );
-                                }
-                                else if (is_composite(array->type->element_type)){
-                                        return concat(7,
-                                                find_memory_address,
-                                                push(REG_ADDRESS_RESULT),
-                                                expr_code,
-                                                movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
-                                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                                pop(REG_ADDRESS_RESULT),
-                                                add(REG_ARITH_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
-                                        ); 
-                                }
-                        }
-                        else if (tree->children->len == 3){
-                                struct parse_tree *record; load_child_at(record, tree, 0);
-                                struct parse_tree *field; load_child_at(field, tree, 2);
-                                const struct type *ftype = field_type(record->type, field->data.value);
-                                size_t offset = record_type_offset(record->type, field->data.value);
-                                char *find_memory_address = generate_from_tree(record, functions, within);
-                                if (ftype->category == CATEGORY_PRIMITIVE){
-                                        return concat(4,
-                                                find_memory_address,
-                                                movi(REG_SCRATCH, 8 * offset),
-                                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_SCRATCH),
-                                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
-                                        );
-                                }
-                                else if (is_composite(ftype)){
-                                        return concat(3,
-                                                find_memory_address,
-                                                movi(REG_SCRATCH, 8 * offset),   // each word is 8 bytes
-                                                add(REG_ARITH_RESULT, REG_ADDRESS_RESULT, REG_SCRATCH)
-                                        ); 
-                                }                                
-                        }
-                }
         } else if (symbol == SYMBOL_CALL){
                 char *id = tree->children->head->data->data.value;
                 struct string s;

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 90
+#define RULE_COUNT 88
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -110,8 +110,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_MULTEXPR, {SYMBOL_MULTEXPR COMMA SYMBOL_MOD COMMA SYMBOL_UNEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_MULTEXPR, {SYMBOL_UNEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_MINUS COMMA SYMBOL_UNEXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_ADDRESSABLE COMMA SYMBOL_LBRACKET COMMA SYMBOL_EXPR COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_ADDRESSABLE COMMA SYMBOL_DOT COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CALL}, i, poppy_grammar); ++i;
         populate(SYMBOL_CALL, {SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_OPTARGS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
@@ -121,7 +120,6 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_ARGS, {SYMBOL_EXPR COMMA SYMBOL_COMMA COMMA SYMBOL_ARGS}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_INC COMMA SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_ADDRESSABLE}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNEXPR, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CONSTANT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CHARLIT}, i, poppy_grammar); ++i;
 
