@@ -15,7 +15,7 @@ char *reg_to_string(enum reg reg){
                         return "fp";
                 case REG_SCRATCH:
                         return "x9";
-                case REG_ARITH_RESULT:
+                case REG_RESULT:
                         return "x10";
                 case REG_ARG_CHUNK_PTR:
                         return "x11";

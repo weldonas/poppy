@@ -102,17 +102,17 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (tree->children->len == 5){
                         struct parse_tree *id; load_child_at(id, tree, 2);
                         struct variable var = find_symbol_variable(id);
-                        char *find_memory_addr = function_variable_address(within, var, REG_ARITH_RESULT);
+                        char *find_memory_addr = function_variable_address(within, var, REG_RESULT);
                         struct parse_tree *expr; load_child_at(expr, tree, 4);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         
                         assert(!is_composite(expr->type));
                         return concat(5,
                                 find_memory_addr,
-                                push(REG_ARITH_RESULT),
+                                push(REG_RESULT),
                                 expr_code,
                                 pop(REG_SCRATCH),
-                                str(REG_ARITH_RESULT, REG_SCRATCH)
+                                str(REG_RESULT, REG_SCRATCH)
                         );
                 }
 
@@ -128,19 +128,19 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (addressable->type->category == CATEGORY_PRIMITIVE){
                         return concat(5,
                                 find_memory_addr,
-                                push(REG_ARITH_RESULT),
+                                push(REG_RESULT),
                                 expr_code,
                                 pop(REG_SCRATCH),
-                                str(REG_ARITH_RESULT, REG_SCRATCH)
+                                str(REG_RESULT, REG_SCRATCH)
                         );
                 }
                 else if (is_composite(addressable->type)){
                         return concat(5,
                                 find_memory_addr,
-                                push(REG_ARITH_RESULT),
+                                push(REG_RESULT),
                                 expr_code,
                                 pop(REG_SCRATCH),
-                                memory_copy(REG_ARITH_RESULT, REG_SCRATCH, addressable->type->word_count)
+                                memory_copy(REG_RESULT, REG_SCRATCH, addressable->type->word_count)
                         );
                 }
 
@@ -178,9 +178,9 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
         } else if (symbol == SYMBOL_UNCOND){
                 if (tree->children->len == 1){
                         if (tree->children->head->data->data.type == SYMBOL_TRUE){
-                                return movi(REG_ARITH_RESULT, 1);
+                                return movi(REG_RESULT, 1);
                         } else if (tree->children->head->data->data.type == SYMBOL_FALSE){
-                                return movi(REG_ARITH_RESULT, 0);
+                                return movi(REG_RESULT, 0);
                         }
 
                         return generate_from_tree(tree->children->head->data, functions, within);
@@ -243,7 +243,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 enum symbol first = tree->children->head->data->data.type;
                 if (first == SYMBOL_MINUS){
                         return subtract(
-                                movi(REG_ARITH_RESULT, 0), 
+                                movi(REG_RESULT, 0), 
                                 generate_from_tree(tree->children->head->next->data, functions, within)
                         );
                 }
@@ -254,10 +254,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                         return concat(5,
                                 find_memory_addr,
-                                ldr(REG_13, REG_ARITH_RESULT),
+                                ldr(REG_13, REG_RESULT),
                                 movi(REG_SCRATCH, 1),
                                 add(REG_13, REG_13, REG_SCRATCH),
-                                str(REG_13, REG_ARITH_RESULT)
+                                str(REG_13, REG_RESULT)
                         );
                 }
 
@@ -267,10 +267,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                         return concat(5,
                                 find_memory_addr,
-                                ldr(REG_13, REG_ARITH_RESULT),
+                                ldr(REG_13, REG_RESULT),
                                 movi(REG_SCRATCH, 1),
                                 sub(REG_13, REG_13, REG_SCRATCH),
-                                str(REG_13, REG_ARITH_RESULT)
+                                str(REG_13, REG_RESULT)
                         );
                 }
 
@@ -280,13 +280,13 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                 if (first == SYMBOL_CONSTANT){
                         long long imm = strtoll(tree->children->head->data->data.value, NULL, 10);
-                        return movi(REG_ARITH_RESULT, imm);
+                        return movi(REG_RESULT, imm);
                 }
 
                 if (first == SYMBOL_CHARLIT){
                         char *data = tree->children->head->data->data.value;
                         long long imm = data[0];
-                        return movi(REG_ARITH_RESULT, imm);
+                        return movi(REG_RESULT, imm);
                 }
 
                 if (first == SYMBOL_ADDRESSABLE){
@@ -296,7 +296,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 return find_memory_address;
                         }
 
-                        return concat(2, find_memory_address, ldr(REG_ARITH_RESULT, REG_ARITH_RESULT));
+                        return concat(2, find_memory_address, ldr(REG_RESULT, REG_RESULT));
                 }
 
                 if (first == SYMBOL_CALL){
@@ -334,7 +334,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
         } else if (symbol == SYMBOL_ADDRESSABLE){
                 if (tree->children->len == 1){
                         struct variable var = find_symbol_variable(tree->children->head->data);
-                        return function_variable_address(within, var, REG_ARITH_RESULT);
+                        return function_variable_address(within, var, REG_RESULT);
                 }
 
                 if (tree->children->head->next->data->data.type == SYMBOL_DOT){
@@ -347,7 +347,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         return concat(3,
                                 find_memory_address,
                                 movi(REG_SCRATCH, 8 * field_offset),
-                                add(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH)
+                                add(REG_RESULT, REG_RESULT, REG_SCRATCH)
                         );
                 }
 
@@ -359,12 +359,12 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         char *expr_code = generate_from_tree(expr, functions, within);
                         return concat(7,
                                 find_memory_address,
-                                push(REG_ARITH_RESULT),
+                                push(REG_RESULT),
                                 expr_code,
                                 movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
-                                mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
+                                mul(REG_RESULT, REG_RESULT, REG_SCRATCH),
                                 pop(REG_SCRATCH),
-                                add(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH)
+                                add(REG_RESULT, REG_RESULT, REG_SCRATCH)
                         );
                 }
 

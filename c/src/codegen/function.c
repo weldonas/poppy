@@ -132,14 +132,14 @@ char *call_function(const struct function *function, char **args){
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
-                                str(REG_ARITH_RESULT, REG_SCRATCH)
+                                str(REG_RESULT, REG_SCRATCH)
                         );
                 }
                 else if (is_composite(param->data->type)) {
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
-                                memory_copy(REG_ARITH_RESULT, REG_SCRATCH, param->data->type->word_count)
+                                memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->word_count)
                         );
                 }
                 else {

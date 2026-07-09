@@ -11,7 +11,7 @@ enum reg {
     REG_7,
     REG_8,
     REG_SCRATCH,
-    REG_ARITH_RESULT,
+    REG_RESULT,
     REG_ARG_CHUNK_PTR,
     REG_SCRATCH2,
     REG_13,
