@@ -73,7 +73,7 @@ char *if_stmt(char* cond, char *then_block, char *else_block) {
                 struct label *after_else = new_label();
                 ret = concat(8,
                         cond,
-                        cmpi(REG_ARITH_RESULT, 1),
+                        cmpi(REG_RESULT, 1),
                         bne(after_then),
                         then_block,
                         b(after_else),
@@ -87,7 +87,7 @@ char *if_stmt(char* cond, char *then_block, char *else_block) {
                 struct label *after_then = new_label();
                 ret = concat(5,
                         cond,
-                        cmpi(REG_ARITH_RESULT, 1),
+                        cmpi(REG_RESULT, 1),
                         bne(after_then),
                         then_block,
                         declare_label(after_then)
@@ -105,7 +105,7 @@ char *while_loop(char *cond, char *body){
         char *ret = concat(7,
                 declare_label(start),
                 cond,
-                cmpi(REG_ARITH_RESULT, 1),
+                cmpi(REG_RESULT, 1),
                 bne(end),
                 body,
                 b(start),

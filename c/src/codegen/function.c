@@ -68,18 +68,20 @@ size_t num_params(const struct function *function){
         return function->params.len;
 }
 
-char *function_variable_address(const struct function *function, struct variable var){
+char *function_variable_address(const struct function *function, struct variable var, enum reg dest){
+        assert(dest != REG_SCRATCH);
+
         if (has_variable(function->frame, var)){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return variable_address(function->frame, var, REG_FP);
+                return variable_address(function->frame, var, REG_FP, dest);
         }
 
         // read from arg chunk pointer
         struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
         char *result = concat(3,
-                variable_address(function->frame, arg_chunk_ptr, REG_FP),
-                ldr(REG_SCRATCH, REG_ADDRESS_RESULT),
-                variable_address(function->param_chunk, var, REG_SCRATCH)
+                variable_address(function->frame, arg_chunk_ptr, REG_FP, dest),
+                ldr(REG_SCRATCH, dest),
+                variable_address(function->param_chunk, var, REG_SCRATCH, dest)
         );
         return result;
 }
@@ -97,19 +99,19 @@ char *declare_function(const struct function *function){
                 declare_label(function->start_label),
                 mov(REG_ARG_CHUNK_PTR, REG_SP),
                 push_chunk(function->frame),
-                variable_address(function->frame, caller_frame_ptr, REG_SP),
-                str(REG_FP, REG_ADDRESS_RESULT),
+                variable_address(function->frame, caller_frame_ptr, REG_SP, REG_SCRATCH),
+                str(REG_FP, REG_SCRATCH),
                 mov(REG_FP, REG_SP),
-                variable_address(function->frame, saved_link, REG_SP),
-                str(REG_LR, REG_ADDRESS_RESULT),
-                variable_address(function->frame, arg_chunk_ptr, REG_SP),
-                str(REG_ARG_CHUNK_PTR, REG_ADDRESS_RESULT),
+                variable_address(function->frame, saved_link, REG_SP, REG_SCRATCH),
+                str(REG_LR, REG_SCRATCH),
+                variable_address(function->frame, arg_chunk_ptr, REG_SP, REG_SCRATCH),
+                str(REG_ARG_CHUNK_PTR, REG_SCRATCH),
                 function->body,
                 declare_label(function->after_body_label),
-                variable_address(function->frame, saved_link, REG_SP),
-                ldr(REG_LR, REG_ADDRESS_RESULT),
-                variable_address(function->frame, caller_frame_ptr, REG_SP),
-                ldr(REG_FP, REG_ADDRESS_RESULT),
+                variable_address(function->frame, saved_link, REG_SP, REG_SCRATCH),
+                ldr(REG_LR, REG_SCRATCH),
+                variable_address(function->frame, caller_frame_ptr, REG_SP, REG_SCRATCH),
+                ldr(REG_FP, REG_SCRATCH),
                 pop_chunk()
         );
 
@@ -129,15 +131,15 @@ char *call_function(const struct function *function, char **args){
                 if (param->data->type->category == CATEGORY_PRIMITIVE){
                         cur_eval = concat(3,
                                 args[i],
-                                variable_address(function->param_chunk, *param->data, REG_SP),
-                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
+                                str(REG_RESULT, REG_SCRATCH)
                         );
                 }
                 else if (is_composite(param->data->type)) {
                         cur_eval = concat(3,
                                 args[i],
-                                variable_address(function->param_chunk, *param->data, REG_SP),
-                                memory_copy(REG_ARITH_RESULT, REG_ADDRESS_RESULT, param->data->type->word_count)
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
+                                memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->word_count)
                         );
                 }
                 else {
