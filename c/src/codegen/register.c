@@ -19,7 +19,7 @@ char *reg_to_string(enum reg reg){
                         return "x10";
                 case REG_ARG_CHUNK_PTR:
                         return "x11";
-                case REG_ADDRESS_RESULT:
+                case REG_SCRATCH2:
                         return "x12";
                 CASE(0)
                 CASE(1)

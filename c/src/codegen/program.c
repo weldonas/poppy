@@ -102,17 +102,17 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (tree->children->len == 5){
                         struct parse_tree *id; load_child_at(id, tree, 2);
                         struct variable var = find_symbol_variable(id);
-                        char *find_memory_addr = function_variable_address(within, var);
+                        char *find_memory_addr = function_variable_address(within, var, REG_ARITH_RESULT);
                         struct parse_tree *expr; load_child_at(expr, tree, 4);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         
                         assert(!is_composite(expr->type));
                         return concat(5,
                                 find_memory_addr,
-                                push(REG_ADDRESS_RESULT),
+                                push(REG_ARITH_RESULT),
                                 expr_code,
-                                pop(REG_ADDRESS_RESULT),
-                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                pop(REG_SCRATCH),
+                                str(REG_ARITH_RESULT, REG_SCRATCH)
                         );
                 }
 
@@ -128,19 +128,19 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 if (addressable->type->category == CATEGORY_PRIMITIVE){
                         return concat(5,
                                 find_memory_addr,
-                                push(REG_ADDRESS_RESULT),
+                                push(REG_ARITH_RESULT),
                                 expr_code,
-                                pop(REG_ADDRESS_RESULT),
-                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                pop(REG_SCRATCH),
+                                str(REG_ARITH_RESULT, REG_SCRATCH)
                         );
                 }
                 else if (is_composite(addressable->type)){
                         return concat(5,
                                 find_memory_addr,
-                                push(REG_ADDRESS_RESULT),
+                                push(REG_ARITH_RESULT),
                                 expr_code,
-                                pop(REG_ARITH_RESULT),
-                                memory_copy(REG_ADDRESS_RESULT, REG_ARITH_RESULT, addressable->type->word_count)
+                                pop(REG_SCRATCH),
+                                memory_copy(REG_ARITH_RESULT, REG_SCRATCH, addressable->type->word_count)
                         );
                 }
 
@@ -254,10 +254,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                         return concat(5,
                                 find_memory_addr,
-                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT),
+                                ldr(REG_13, REG_ARITH_RESULT),
                                 movi(REG_SCRATCH, 1),
-                                add(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                add(REG_13, REG_13, REG_SCRATCH),
+                                str(REG_13, REG_ARITH_RESULT)
                         );
                 }
 
@@ -267,10 +267,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                         return concat(5,
                                 find_memory_addr,
-                                ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT),
+                                ldr(REG_13, REG_ARITH_RESULT),
                                 movi(REG_SCRATCH, 1),
-                                sub(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                str(REG_ARITH_RESULT, REG_ADDRESS_RESULT)
+                                sub(REG_13, REG_13, REG_SCRATCH),
+                                str(REG_13, REG_ARITH_RESULT)
                         );
                 }
 
@@ -296,7 +296,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                                 return find_memory_address;
                         }
 
-                        return concat(2, find_memory_address, ldr(REG_ARITH_RESULT, REG_ADDRESS_RESULT));
+                        return concat(2, find_memory_address, ldr(REG_ARITH_RESULT, REG_ARITH_RESULT));
                 }
 
                 if (first == SYMBOL_CALL){
@@ -334,7 +334,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
         } else if (symbol == SYMBOL_ADDRESSABLE){
                 if (tree->children->len == 1){
                         struct variable var = find_symbol_variable(tree->children->head->data);
-                        return function_variable_address(within, var);
+                        return function_variable_address(within, var, REG_ARITH_RESULT);
                 }
 
                 if (tree->children->head->next->data->data.type == SYMBOL_DOT){
@@ -347,7 +347,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         return concat(3,
                                 find_memory_address,
                                 movi(REG_SCRATCH, 8 * field_offset),
-                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_SCRATCH)
+                                add(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH)
                         );
                 }
 
@@ -359,12 +359,12 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         char *expr_code = generate_from_tree(expr, functions, within);
                         return concat(7,
                                 find_memory_address,
-                                push(REG_ADDRESS_RESULT),
+                                push(REG_ARITH_RESULT),
                                 expr_code,
                                 movi(REG_SCRATCH, 8 * element_size),   // each word is 8 bytes
                                 mul(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH),
-                                pop(REG_ADDRESS_RESULT),
-                                add(REG_ADDRESS_RESULT, REG_ADDRESS_RESULT, REG_ARITH_RESULT)
+                                pop(REG_SCRATCH),
+                                add(REG_ARITH_RESULT, REG_ARITH_RESULT, REG_SCRATCH)
                         );
                 }
 

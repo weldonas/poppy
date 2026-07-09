@@ -14,7 +14,9 @@ void free_chunk(struct chunk *chunk);
 
 void add_variable(struct chunk *chunk, struct variable var);
 bool has_variable(struct chunk *chunk, struct variable var);
-char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_address);
+
+// this does not modify any register other than dest (including chunk_address)
+char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_address, enum reg dest);
 
 char *push_chunk(struct chunk *chunk);
 char *pop_chunk();         
