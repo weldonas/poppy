@@ -364,7 +364,9 @@ const struct type *const apply(const struct type_rule *const type_rule, const st
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(get_child_type(&data, condition->type_index), condition->is_defined);
+                                        const struct type *new_type = get_child_type(&data, condition->type_index);
+                                        new_type = make_assignable(new_type);
+                                        const struct symbol_table_value *new_value = new_symbol_table_value(new_type, condition->is_defined);
 
                                         if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
                                                 free(str);

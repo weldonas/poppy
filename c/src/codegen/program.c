@@ -106,14 +106,24 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         struct parse_tree *expr; load_child_at(expr, tree, 4);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         
-                        assert(!is_composite(expr->type));
-                        return concat(5,
-                                find_memory_addr,
-                                push(REG_RESULT),
-                                expr_code,
-                                pop(REG_SCRATCH),
-                                str(REG_RESULT, REG_SCRATCH)
-                        );
+                        if (expr->type->category == CATEGORY_PRIMITIVE){
+                                return concat(5,
+                                        find_memory_addr,
+                                        push(REG_RESULT),
+                                        expr_code,
+                                        pop(REG_SCRATCH),
+                                        str(REG_RESULT, REG_SCRATCH)
+                                );
+                        }
+                        else if (is_composite(expr->type)){
+                                return concat(5,
+                                        find_memory_addr,
+                                        push(REG_RESULT),
+                                        expr_code,
+                                        pop(REG_SCRATCH),
+                                        memory_copy(REG_RESULT, REG_SCRATCH, expr->type->word_count)
+                                );
+                        }
                 }
 
                 char *ret = (char*) malloc(sizeof(char));
@@ -333,8 +343,14 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 return generate_from_tree(tree->children->head->data, functions, within);
         } else if (symbol == SYMBOL_ADDRESSABLE){
                 if (tree->children->len == 1){
-                        struct variable var = find_symbol_variable(tree->children->head->data);
-                        return function_variable_address(within, var, REG_RESULT);
+                        if (tree->children->head->data->data.type == SYMBOL_IDENTIFIER){
+                                struct variable var = find_symbol_variable(tree->children->head->data);
+                                return function_variable_address(within, var, REG_RESULT);
+                        }
+
+                        if (tree->children->head->data->data.type == SYMBOL_CALL){
+                                return generate_from_tree(tree->children->head->data, functions, within);
+                        }
                 }
 
                 if (tree->children->head->next->data->data.type == SYMBOL_DOT){

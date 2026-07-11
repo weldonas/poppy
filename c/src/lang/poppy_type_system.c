@@ -25,8 +25,8 @@ bool is_non_null_bool_type(const struct type *const type){
         return type && equals_type(type, bool_type());
 }
 
-bool is_non_null_assignable_type(const struct type *const type){
-        return type && is_assignable(type);
+bool is_non_null_in_memory_type(const struct type *const type){
+        return type && (type->word_count != NOT_IN_MEMORY);
 }
 
 bool is_non_null_type(const struct type *const type){
@@ -43,6 +43,10 @@ bool is_non_null_array_type(const struct type *const type){
 
 bool is_non_null_returnable_type(const struct type *const type){
         return type && is_returnable(type);
+}
+
+bool is_non_null_assignable_type(const struct type *const type){
+        return type && type->is_assignable;
 }
 
 const struct parse_tree *find_defn_signature_name(const struct parse_tree *defn){
@@ -111,7 +115,7 @@ const struct type *deduce_record(const struct parse_tree *tree){
                 return NULL;
         }
 
-        name_record_type(field_tree->type, name_tree->data.value);
+        name_record_type((struct type*) field_tree->type, name_tree->data.value);
         return field_tree->type;
 }
 
@@ -397,16 +401,19 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
         conditions[1] = new_types_equal_at_condition(0, 2);
-        rules[i] = new_type_rule(conditions, 2, void_type());
+        conditions[2] = new_type_at_condition(0, is_non_null_assignable_type);
+        rules[i] = new_type_rule(conditions, 3, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
+        conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
         conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
         rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
+        // we don't add a condition for LHS being assignable since this should always be the case
+        // and the variable is not added until after this type rule completes execution
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
@@ -598,7 +605,7 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_length_condition(4);
-        conditions[2] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[2] = new_type_at_condition(0, is_non_null_in_memory_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_array);
         ++i;
 
