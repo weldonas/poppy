@@ -26,7 +26,7 @@ bool is_non_null_bool_type(const struct type *const type){
 }
 
 bool is_non_null_assignable_type(const struct type *const type){
-        return type && is_assignable(type);
+        return type && (type->word_count != UNASSIGNABLE);
 }
 
 bool is_non_null_type(const struct type *const type){

@@ -12,7 +12,6 @@
 #define VOID_CHAR 'v'
 #define BOOL_CHAR 'b'
 #define CHAR_CHAR 'c'
-#define UNASSIGNABLE -1
 
 DEFINE_MAP(string, type);
 
@@ -47,6 +46,7 @@ const struct type* const int_type(){
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
                 int_ptr->word_count = 1;
+                int_ptr->is_assignable = false;
                 add_type(int_ptr);
         }
 
@@ -59,6 +59,7 @@ const struct type* const bool_type(){
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
                 bool_ptr->word_count = 1;
+                bool_ptr->is_assignable = false;
                 add_type(bool_ptr);
         }
 
@@ -71,6 +72,7 @@ const struct type* const void_type(){
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
                 void_ptr->word_count = UNASSIGNABLE;
+                void_ptr->is_assignable = false;
                 add_type(void_ptr);
         }
 
@@ -83,6 +85,7 @@ const struct type* const char_type(){
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
                 char_ptr->word_count = 1;
+                char_ptr->is_assignable = false;
                 add_type(char_ptr);
         }
 
@@ -94,6 +97,7 @@ const struct type* const unit_type(){
                 unit_ptr = (struct type*) malloc(sizeof(struct type));
                 unit_ptr->category = CATEGORY_UNIT;
                 unit_ptr->word_count = UNASSIGNABLE;
+                unit_ptr->is_assignable = false;
                 add_type(unit_ptr);
         }
 
@@ -110,6 +114,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         new->ret_type = ret;
         new->params_type = params;
         new->word_count = UNASSIGNABLE;
+        new->is_assignable = false;
         add_type(new);
         return new;
 }
@@ -118,17 +123,18 @@ struct type* const param_type(){
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
         new->word_count = UNASSIGNABLE;
+        new->is_assignable = false;
         add_type(new);
         return new;
 }
 
 void add_param(struct type *params, const struct type *type_to_add){
-        assert(is_assignable(type_to_add));
+        assert(type_to_add->word_count != UNASSIGNABLE);
         append_list((&params->subtypes), (struct type*) type_to_add, type);
 }
 
 const struct type* const array_type(const struct type *element_type, char *length_str){
-        if (!is_assignable(element_type)){
+        if (element_type->word_count == UNASSIGNABLE){
                 return NULL;
         }
 
@@ -142,6 +148,7 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         new->element_type = element_type;
         new->length = length;
         new->word_count = element_type->word_count * length;
+        new->is_assignable = false;
         add_type(new);
         return new;
 }
@@ -151,13 +158,15 @@ struct type* const record_type(){
         new->category = CATEGORY_RECORD;
         init_list((&new->fields));
         new->word_count = 0;
+        new->is_assignable = false;
+        new->name = NULL;
 
         add_type(new);
         return new;
 }
 
 bool add_field(struct type *record, struct variable *v){
-        if (!v->type || !is_assignable(v->type)){
+        if (!v->type || (v->type->word_count == UNASSIGNABLE)){
                 return false;
         }
         append_list((&record->fields), v, variable);
@@ -173,11 +182,12 @@ const struct type* const return_type(const struct type *type){
         return NULL;
 }
 
-void name_record_type(const struct type *record, char *name){
+void name_record_type(struct type *record, char *name){
         assert(record->category == CATEGORY_RECORD);
         
         struct string *s = (struct string*) malloc(sizeof(struct string));
         s->data = name;
+        record->name = name;
         update_map((&record_map), s, record, string, type);
 }
 
@@ -214,6 +224,40 @@ size_t record_type_offset(const struct type *record, const char *name){
         }
 
         return UNASSIGNABLE;
+}
+
+const struct type *make_assignable(const struct type *type){
+        assert(type->word_count != UNASSIGNABLE);
+
+        struct type *new = (struct type*) malloc(sizeof(struct type));
+        add_type(new);
+
+        memcpy(new, type, sizeof(struct type));
+        new->is_assignable = true;
+
+        switch(type->category){
+                case CATEGORY_PRIMITIVE:
+                        assert(equals_type(type, new));
+                        return new;
+                case CATEGORY_ARRAY:
+                        new->element_type = make_assignable(new->element_type);
+                        assert(equals_type(type, new));
+                        return new;
+                case CATEGORY_RECORD:
+                        init_list((&new->fields));
+                        for (struct LIST_NODE(variable) *node = type->fields.head; node != NULL; node = node->next){
+                                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                                v->type = make_assignable(node->data->type);
+                                v->string = node->data->string;
+                                
+                                append_list((&new->fields), v, variable);
+                        }
+                        assert(equals_type(type, new));
+                        return new;
+                default:
+                        assert(0);
+                        return NULL;
+        }
 }
 
 bool equals_type(const struct type *t1, const struct type *t2){
@@ -257,8 +301,9 @@ bool equals_type(const struct type *t1, const struct type *t2){
 
         else if (t1->category == CATEGORY_RECORD){
                 // unlike other types, we require that records' names are the same (not just their internals)
-                // assuming uniqueness among type names, this is true iff the type pointers are equal
-                return t1 == t2;
+                // assuming uniqueness among type names, this is true iff the names are equal
+
+                return strcmp(t1->name, t2->name) == 0;
         }
 
         else if (t1->category == CATEGORY_UNIT){
@@ -272,12 +317,8 @@ bool is_numeric(const struct type *type){
         return (type->category == CATEGORY_PRIMITIVE) && ((type->repr == INT_CHAR) || (type->repr == CHAR_CHAR));
 }
 
-bool is_assignable(const struct type *type){
-        return type->word_count != UNASSIGNABLE;
-}
-
 bool is_returnable(const struct type *type){
-        return type->category == CATEGORY_PRIMITIVE;
+        return (type->word_count > 0) || (equals_type(type, void_type()));
 }
 
 bool is_composite(const struct type *type){

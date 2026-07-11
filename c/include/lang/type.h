@@ -6,6 +6,8 @@
 
 #include "data/list.h"
 
+#define UNASSIGNABLE -1
+
 enum category {
     CATEGORY_PRIMITIVE,
     CATEGORY_FUNCTION,
@@ -28,6 +30,7 @@ DEFINE_LIST(variable)
 struct type {
     enum category category;
     size_t word_count;
+    bool is_assignable;
     union{
         struct {
             char repr;
@@ -51,6 +54,7 @@ struct type {
 
         struct {
             struct LIST(variable) fields;
+            char *name;
         }; // record
     };
 };
@@ -72,14 +76,15 @@ const struct type* const array_type(const struct type *element_type, char *lengt
 
 struct type* const record_type();
 bool add_field(struct type *record, struct variable *v);
-void name_record_type(const struct type *record, char *name);
+void name_record_type(struct type *record, char *name);
 const struct type *query_record_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);
 
+const struct type *make_assignable(const struct type *type);
+
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);
-bool is_assignable(const struct type *type);
 bool is_returnable(const struct type *type);
 bool is_composite(const struct type *type);
 void free_types();
