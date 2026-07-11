@@ -46,6 +46,7 @@ $$\begin{align*}
 \text{addressable} &\rightarrow \text{LPAREN addressable RPAREN}  \\
 \text{addressable} &\rightarrow \text{addressable LBRACKET expr RBRACKET}  \\
 \text{addressable} &\rightarrow \text{addressable DOT IDENTIFIER} \\
+\text{addressable} &\rightarrow \text{call} \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
