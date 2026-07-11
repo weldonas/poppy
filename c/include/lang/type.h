@@ -6,7 +6,7 @@
 
 #include "data/list.h"
 
-#define UNASSIGNABLE -1
+#define NOT_IN_MEMORY -1
 
 enum category {
     CATEGORY_PRIMITIVE,
