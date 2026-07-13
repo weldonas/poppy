@@ -89,6 +89,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_FIELDS: return "FIELDS";
                 case SYMBOL_FIELD: return "FIELD";
                 case SYMBOL_RECDEFN: return "RECDEFN";
+                case SYMBOL_CAST: return "CAST";
         }
         return 0;
 }

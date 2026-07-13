@@ -325,6 +325,25 @@ bool is_composite(const struct type *type){
         return (type->category == CATEGORY_ARRAY) || (type->category == CATEGORY_RECORD);
 }
 
+bool can_safe_cast(const struct type *src, const struct type *dst){
+        if (src->category != dst->category){
+                return false;
+        }
+
+        if (equals_type(src, dst)){
+                return true;
+        }
+
+        switch (src->category){
+                case CATEGORY_PRIMITIVE:
+                        return is_numeric(src) && is_numeric(dst);
+                case CATEGORY_ARRAY:
+                        return can_safe_cast(src->element_type, dst->element_type);
+                default:
+                        return false; // this is unreachable
+        }
+}
+
 void free_type_list_item(const struct type *type){}
 
 void free_type(const struct type *type){
