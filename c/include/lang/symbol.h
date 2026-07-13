@@ -88,6 +88,7 @@ enum symbol {
         SYMBOL_FIELDS,
         SYMBOL_FIELD,
         SYMBOL_RECDEFN,
+        SYMBOL_CAST,
         SYMBOL_COUNT
 };
 

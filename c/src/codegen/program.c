@@ -313,6 +313,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         return generate_from_tree(tree->children->head->data, functions, within);
                 }
 
+                if (first == SYMBOL_CAST){
+                        return generate_from_tree(tree->children->head->data, functions, within);
+                }
+
         } else if (symbol == SYMBOL_CALL){
                 char *id = tree->children->head->data->data.value;
                 struct string s;
@@ -385,6 +389,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 return generate_from_tree(tree->children->head->next->data, functions, within);
+        }
+        else if (symbol == SYMBOL_CAST){
+                struct parse_tree *src_tree; load_child_at(src_tree, tree, 2);
+                return generate_from_tree(src_tree, functions, within);
         }
 
         assert(0);

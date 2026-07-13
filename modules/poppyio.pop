@@ -49,7 +49,7 @@ int scan(){
     c = scanc();
 
     while (isdigit(c)){
-        let int digit_value = 0 + c - '0';
+        let int digit_value = int(c - '0');
         total = total * 10 + digit_value * sign;
         c = scanc();
     }
