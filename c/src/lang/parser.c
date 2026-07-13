@@ -1,6 +1,7 @@
 #include "lang/parser.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "data/list.h"
@@ -53,8 +54,8 @@ void add_child(struct parse_tree_params *parent, struct parse_tree_params *child
 // Earley item
 struct item {
         struct rule *rule;
-        size_t dot; // position of the dot (occurs before the symbol at this index of rule's RHS)
-        size_t start;
+        uint32_t dot; // position of the dot (occurs before the symbol at this index of rule's RHS)
+        uint32_t start;
         struct parse_tree_params *tree;
 };
 
