@@ -12,10 +12,10 @@
 
 struct type_system {
         const struct type_rule **rules;
-        size_t rules_len;
+        uint8_t rules_len;
 };
 
-enum type_rule_condition_type {
+enum type_rule_condition_type : uint8_t {
         CONDITION_LENGTH,
         CONDITION_PARENT_SYMBOL,
         CONDITION_SYMBOL_AT,
@@ -30,35 +30,35 @@ enum type_rule_condition_type {
 struct type_rule_condition {
         enum type_rule_condition_type type;
         union {
-                size_t length;
+                uint8_t length;
                 enum symbol parent_symbol;
                 struct {
-                        size_t index;
+                        uint8_t index;
                         union {
                                 enum symbol symbol;
                                 bool (*is_valid)(const struct type *);
                         };
                 };
                 struct {
-                        size_t index1;
-                        size_t index2;
+                        uint8_t index1;
+                        uint8_t index2;
                 };
                 struct {
                         union {
-                                size_t name_index;
+                                uint8_t name_index;
                                 const struct parse_tree *(*find_name_tree)(const struct parse_tree *);
                         };
-                        size_t type_index;
+                        uint8_t type_index;
                         bool is_defined;
                 };
                 struct {
-                        size_t return_index;
-                        size_t function_index;
+                        uint8_t return_index;
+                        uint8_t function_index;
                 };
         };
 };
 
-enum type_rule_type {
+enum type_rule_type : uint8_t {
         TYPE_RULE_PRIMITIVE,
         TYPE_RULE_CHILD,
         TYPE_RULE_DEDUCER
@@ -66,11 +66,11 @@ enum type_rule_type {
 
 struct type_rule {
         const struct type_rule_condition *conditions[MAX_CONDITION_COUNT];
-        size_t conditions_len;
+        uint8_t conditions_len;
         enum type_rule_type type;
         union {
                 const struct type *output_type; // primitive
-                size_t output_index; // child
+                uint8_t output_index; // child
                 struct {
                         type_deducer deducer;
                 }; // deducer

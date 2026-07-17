@@ -2,8 +2,9 @@
 #define SYMBOL_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
-enum symbol {
+enum symbol : uint8_t {
         SYMBOL_NULL,
         // terminal symbols
         SYMBOL_LPAREN,     // (
