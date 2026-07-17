@@ -4,17 +4,17 @@
 #include "lang/symbol.h"
 
 struct rule {
-    enum symbol lhs;
     enum symbol *rhs;
-    int rhs_len;
+    enum symbol lhs;
+    uint8_t rhs_len;
 };
 
 struct grammar {
-    enum symbol start;
     struct rule *rules;
-    int rules_len;
     bool nullable[SYMBOL_COUNT];
     bool expanded[SYMBOL_COUNT];
+    enum symbol start;
+    uint8_t rules_len;
 };
 
 #endif

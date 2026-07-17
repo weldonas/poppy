@@ -9,15 +9,15 @@
 #include "data/map.h"
 
 struct index {
-        size_t data;
+        uint32_t data;
 };
 
 DEFINE_MAP(string, index);
 
 struct chunk {
         struct MAP(string, index) offsets; 
-        size_t next_offset;
-        size_t size;
+        uint32_t next_offset;
+        uint32_t size;
 };
 
 void free_chunk_entry(const struct MAP_ENTRY(string, index) *entry){

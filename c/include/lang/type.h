@@ -2,13 +2,14 @@
 #define TYPE_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "data/list.h"
 
 #define NOT_IN_MEMORY -1
 
-enum category {
+enum category : uint8_t {
     CATEGORY_PRIMITIVE,
     CATEGORY_FUNCTION,
     CATEGORY_PARAMS,
@@ -28,8 +29,8 @@ DEFINE_LIST(type);
 DEFINE_LIST(variable)
 
 struct type {
+    uint32_t word_count;
     enum category category;
-    size_t word_count;
     bool is_assignable;
     union{
         struct {
@@ -49,7 +50,7 @@ struct type {
 
         struct {
             const struct type *element_type; // primitive or array
-            size_t length;
+            uint32_t length;
         }; // array
 
         struct {

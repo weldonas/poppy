@@ -1,63 +1,65 @@
 #include "lang/parser.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "data/list.h"
 #include "lang/parse_tree.h"
 #include "lang/symbol.h"
 
-struct parse_tree * new_tree(struct token data){
-        struct parse_tree *ptr = (struct parse_tree*) malloc(sizeof(struct parse_tree));
+size_t trees = 0;
+
+struct parse_tree_params {
+        struct token data;
+        struct LIST(parse_tree_params) *children;
+};
+
+DEFINE_LIST(parse_tree_params);
+
+struct parse_tree_params *new_tree_params(struct token data){
+        struct parse_tree_params *ptr = (struct parse_tree_params*) malloc(sizeof(struct parse_tree_params));
         ptr->data = data;
         ptr->children = NULL;
-        ptr->parent = NULL;
-        ptr->type = NULL;
-        ptr->symbol_table = NULL;
         return ptr;
 }
 
-struct parse_tree * copy_tree(struct parse_tree *tree){
-        struct parse_tree *ptr = (struct parse_tree*) malloc(sizeof(struct parse_tree));
+struct parse_tree_params * copy_tree_params(struct parse_tree_params *tree){
+        struct parse_tree_params *ptr = (struct parse_tree_params*) malloc(sizeof(struct parse_tree_params));
         ptr->data = tree->data;
-        ptr->parent = tree->parent;
-        ptr->type = tree->type;
-        ptr->symbol_table = tree->symbol_table;
         if (tree->children == NULL){
                 ptr->children = NULL;
         } else {
-                ptr->children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
+                ptr->children = (struct LIST(parse_tree_params)*) malloc(sizeof(struct LIST(parse_tree_params)));
                 init_list(ptr->children);
 
-                for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
-                        struct parse_tree *child = copy_tree(node->data);
-                        append_list(ptr->children, child, parse_tree);
-                        child->parent = ptr;
+                for (struct LIST_NODE(parse_tree_params) *node = tree->children->head; node != NULL; node = node->next){
+                        struct parse_tree_params *child = copy_tree_params(node->data);
+                        append_list(ptr->children, child, parse_tree_params);
                 }
         }
 
         return ptr;
 }
 
-void add_child(struct parse_tree *parent, struct parse_tree *child){
+void add_child(struct parse_tree_params *parent, struct parse_tree_params *child){
         if (parent->children == NULL){
-                parent->children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
+                parent->children = (struct LIST(parse_tree_params)*) malloc(sizeof(struct LIST(parse_tree_params)));
                 init_list(parent->children);                
         }
 
-        append_list(parent->children, child, parse_tree);
-        child->parent = parent;
+        append_list(parent->children, child, parse_tree_params);
 }
 
 // Earley item
 struct item {
         struct rule *rule;
-        size_t dot; // position of the dot (occurs before the symbol at this index of rule's RHS)
-        size_t start;
-        struct parse_tree *tree;
+        uint32_t dot; // position of the dot (occurs before the symbol at this index of rule's RHS)
+        uint32_t start;
+        struct parse_tree_params *tree;
 };
 
-struct item * new_item(struct rule *rule, size_t dot, size_t start, struct parse_tree *tree){
+struct item * new_item(struct rule *rule, size_t dot, size_t start, struct parse_tree_params *tree){
         struct item *ptr = (struct item*) malloc(sizeof(struct item));
         ptr->rule = rule;
         ptr->dot = dot;
@@ -66,9 +68,18 @@ struct item * new_item(struct rule *rule, size_t dot, size_t start, struct parse
         return ptr;
 }
 
+void free_parse_tree_params(const struct parse_tree_params *params){
+        if (params->children != NULL) {
+                free_list(params->children, free_parse_tree_params, parse_tree_params);
+                free(params->children);
+        }       
+
+        free((void*) params);
+}
+
 void free_item(struct item *item){
         if (item->tree != NULL){
-                free_parse_tree(item->tree);
+                free_parse_tree_params(item->tree);
         }
         free(item);
 }
@@ -117,6 +128,31 @@ void expand_into_list(struct parse_tree *tree, const struct grammar *grammar, st
         }
 }
 
+struct parse_tree *build_tree(struct parse_tree_params *params, struct parse_tree *parent){
+        struct parse_tree *tree = (struct parse_tree*) malloc(sizeof(struct parse_tree));
+        ++trees;
+        tree->data = params->data;
+        
+        if (params->children){
+                tree->children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
+                init_list(tree->children);
+
+                for (struct LIST_NODE(parse_tree_params) *node = params->children->head; node != NULL; node = node->next){
+                        struct parse_tree *child = build_tree(node->data, tree);
+                        append_list(tree->children, child, parse_tree);
+                }
+        }
+        else {
+                tree->children = NULL;
+        }
+
+        tree->parent = parent;
+        tree->symbol_table = NULL;
+        tree->type = NULL;
+
+        return tree;
+}
+
 void expand_subtrees(struct parse_tree *tree, const struct grammar *grammar){
         if (grammar->expanded[tree->data.type]){
                 struct LIST(parse_tree) *children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
@@ -151,7 +187,7 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
         for (size_t i = 0; i < grammar->rules_len; ++i){
                 if (grammar->rules[i].lhs == grammar->start){
                         struct token t = {grammar->start, NULL};
-                        struct parse_tree *tree = new_tree(t);
+                        struct parse_tree_params *tree = new_tree_params(t);
                         append_list((&state_sets[0]), new_item(&grammar->rules[i], 0, 0, tree), item);
                 }
         }
@@ -166,7 +202,7 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
                                 for (size_t j = 0; j < grammar->rules_len; ++j){
                                         if (grammar->rules[j].lhs == item->rule->rhs[item->dot]){
                                                 struct token t = {item->rule->rhs[item->dot], NULL};
-                                                struct parse_tree *tree = new_tree(t);
+                                                struct parse_tree_params *tree = new_tree_params(t);
                                                 struct item *new = new_item(&grammar->rules[j], 0, i, tree);
                                                 append_if_not_present(&state_sets[i], new);
                                         }
@@ -174,8 +210,8 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
 
                                 if (grammar->nullable[item->rule->rhs[item->dot]]){
                                         struct token t = {item->rule->rhs[item->dot], NULL};
-                                        struct parse_tree *tree = copy_tree(item->tree);
-                                        add_child(tree, new_tree(t));
+                                        struct parse_tree_params *tree = copy_tree_params(item->tree);
+                                        add_child(tree, new_tree_params(t));
                                         struct item *new = new_item(item->rule, item->dot + 1, item->start, tree);
                                         append_if_not_present(&state_sets[i], new);
                                 }
@@ -184,9 +220,9 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
                         // scanning
                         if (!is_done(*item) && is_terminal(item->rule->rhs[item->dot])){
                                 if((token_node != NULL) && (token_node->data->type == item->rule->rhs[item->dot])) {
-                                        struct parse_tree *tree = item->tree; 
+                                        struct parse_tree_params *tree = item->tree; 
                                         item->tree = NULL;
-                                        add_child(tree, new_tree(*token_node->data));
+                                        add_child(tree, new_tree_params(*token_node->data));
                                         struct item *new = new_item(item->rule, item->dot + 1, item->start, tree);
                                         append_if_not_present(&state_sets[i + 1], new);
                                 }
@@ -198,8 +234,8 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
                                     struct item *start_item = start_item_node->data;
                                     
                                     if (!is_done(*start_item) && (start_item->rule->rhs[start_item->dot] == item->rule->lhs) && (start_item->rule->rhs_len != 0)){
-                                        struct parse_tree *tree = copy_tree(start_item->tree);
-                                        add_child(tree, copy_tree(item->tree));
+                                        struct parse_tree_params *tree = copy_tree_params(start_item->tree);
+                                        add_child(tree, copy_tree_params(item->tree));
                                         struct item *new = new_item(start_item->rule, start_item->dot + 1, start_item->start, tree);
                                         append_if_not_present(&state_sets[i], new);
                                     } 
@@ -217,7 +253,7 @@ struct parse_tree * const parse(const struct grammar *grammar, const struct LIST
         for (struct LIST_NODE(item) *node = state_sets[tokens->len].head; node != NULL; node = node->next){
                 struct item *i = node->data;
                 if (is_done(*i) && (i->start == 0) && (i->rule->lhs == grammar->start)){
-                        ret = copy_tree(i->tree);
+                        ret = build_tree(i->tree, NULL);
                         break;
                 }
         }

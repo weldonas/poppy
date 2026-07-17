@@ -282,11 +282,12 @@ char *include(char *module){
 }
 
 char *concat(size_t count, ...){
-        va_list args;
+        va_list args, args2;
         va_start(args, count);
-        char *res = NULL;
+        va_copy(args2, args);
         size_t len = 1; // for terminating with '\0'
 
+        // find total length
         for (size_t i = 0; i < count; ++i){
                 char *cur = va_arg(args, char*);
                 size_t curlen = strlen(cur);
@@ -294,24 +295,29 @@ char *concat(size_t count, ...){
                 if ((curlen >= 1) && (cur[curlen - 1] != '\n')){
                         ++len;
                 }
+        }
+        va_end(args);
 
-                char *temp = (char*) malloc(len * sizeof(char));        
-                if (res == NULL){
-                        strcpy(temp, cur);
-                } else {
-                        strcpy(temp, res);
-                        strcat(temp, cur);
-                }
+        char *res = malloc(len * sizeof(char));
+        char *dst = res;
+
+        // copy strings
+        for (size_t i = 0; i < count; ++i) {
+                char *cur = va_arg(args2, char*);
+                size_t curlen = strlen(cur);
+
+                memcpy(dst, cur, curlen);
+                dst += curlen;
+
                 if ((curlen >= 1) && (cur[curlen - 1] != '\n')){
-                        strcat(temp, "\n");
+                        *dst = '\n';
+                        ++dst;
                 }
 
-                if (res != NULL){
-                        free(res);
-                }
-                res = temp;
                 free(cur);
         }
 
+        *dst = '\0';
+        va_end(args2);
         return res;
 }
