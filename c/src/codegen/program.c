@@ -27,7 +27,7 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
         free((void*) entry);
 }
 
-char *generate_head(struct parse_tree *tree){
+char *generate_head(const struct parse_tree *tree){
         char *head = (char*) malloc(6 * sizeof(char));
         strcpy(head, ".text");
         char *include_utils = (char*) malloc(19 * sizeof(char));
@@ -37,7 +37,7 @@ char *generate_head(struct parse_tree *tree){
         return concat(3, head, include_utils, global_start);
 }
 
-char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
+char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         enum symbol symbol = tree->data.type;
 
         if (symbol == SYMBOL_STMTS){
@@ -55,7 +55,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                 return cur;
         } else if (symbol == SYMBOL_STMT){
-                struct parse_tree *child = tree->children->head->data;
+                const struct parse_tree *child = tree->children->head->data;
                 enum symbol child_symbol = child->data.type;
                 if (child_symbol == SYMBOL_SEMISTMT){
                         enum symbol grandchild_symbol = child->children->head->data->data.type;
@@ -68,42 +68,42 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
                 return generate_from_tree(tree->children->head->data, functions, within);
         } else if (symbol == SYMBOL_IFSTMT){
-                struct parse_tree *cond; load_child_at(cond, tree, 2);
+                const struct parse_tree *cond; load_child_at(cond, tree, 2);
                 char *cond_code = generate_from_tree(cond, functions, within);
-                struct parse_tree *then; load_child_at(then, tree, 5);
+                const struct parse_tree *then; load_child_at(then, tree, 5);
                 char *then_code = generate_from_tree(then, functions, within);
-                struct parse_tree *optelse;  load_child_at(optelse, tree, 7);
+                const struct parse_tree *optelse;  load_child_at(optelse, tree, 7);
 
                 if ((optelse->children == NULL) || (optelse->children->len == 0)){
                         return if_stmt(cond_code, then_code, NULL);
                 }
-                struct parse_tree *else_stmts; load_child_at(else_stmts, optelse, 2);
+                const struct parse_tree *else_stmts; load_child_at(else_stmts, optelse, 2);
                 char *else_code = generate_from_tree(else_stmts, functions, within);
                 return if_stmt(cond_code, then_code, else_code);
         } else if (symbol == SYMBOL_WHILESTMT){
-                struct parse_tree *cond; load_child_at(cond, tree, 2);
+                const struct parse_tree *cond; load_child_at(cond, tree, 2);
                 char *cond_code = generate_from_tree(cond, functions, within);
-                struct parse_tree *stmts; load_child_at(stmts, tree, 5);
+                const struct parse_tree *stmts; load_child_at(stmts, tree, 5);
                 char *stmts_code = generate_from_tree(stmts, functions, within);
                 return while_loop(cond_code, stmts_code);
         } else if (symbol == SYMBOL_FORSTMT){
-                struct parse_tree *init; load_child_at(init, tree, 2);
+                const struct parse_tree *init; load_child_at(init, tree, 2);
                 char *init_code = generate_from_tree(init, functions, within);
-                struct parse_tree *cond; load_child_at(cond, tree, 4);
+                const struct parse_tree *cond; load_child_at(cond, tree, 4);
                 char *cond_code = generate_from_tree(cond, functions, within);
-                struct parse_tree *post; load_child_at(post, tree, 6);
+                const struct parse_tree *post; load_child_at(post, tree, 6);
                 char *post_code = generate_from_tree(post, functions, within);
-                struct parse_tree *body; load_child_at(body, tree, 9);
+                const struct parse_tree *body; load_child_at(body, tree, 9);
                 char *body_code = generate_from_tree(body, functions, within);
                 return for_loop(init_code, cond_code, post_code, body_code);      
         } else if (symbol == SYMBOL_SEMISTMT){
                 return generate_from_tree(tree->children->head->data, functions, within);
         } else if (symbol == SYMBOL_VARDEC){
                 if (tree->children->len == 5){
-                        struct parse_tree *id; load_child_at(id, tree, 2);
+                        const struct parse_tree *id; load_child_at(id, tree, 2);
                         struct variable var = find_symbol_variable(id);
                         char *find_memory_addr = function_variable_address(within, var, REG_RESULT);
-                        struct parse_tree *expr; load_child_at(expr, tree, 4);
+                        const struct parse_tree *expr; load_child_at(expr, tree, 4);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         
                         if (expr->type->category == CATEGORY_PRIMITIVE){
@@ -130,9 +130,9 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 *ret = 0;
                 return ret;
         } else if (symbol == SYMBOL_VARASST){
-                struct parse_tree *addressable; load_child_at(addressable, tree, 0);
+                const struct parse_tree *addressable; load_child_at(addressable, tree, 0);
                 char *find_memory_addr = generate_from_tree(addressable, functions, within);
-                struct parse_tree *expr; load_child_at(expr, tree, 2);
+                const struct parse_tree *expr; load_child_at(expr, tree, 2);
                 char *expr_code = generate_from_tree(expr, functions, within);
 
                 if (addressable->type->category == CATEGORY_PRIMITIVE){
@@ -159,7 +159,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                         return hop(within);
                 }
 
-                struct parse_tree *second; load_child_at(second, tree, 1);
+                const struct parse_tree *second; load_child_at(second, tree, 1);
 
                 if (second->data.type == SYMBOL_TYPE){
                         char *ret = (char*) malloc(sizeof(char));
@@ -259,7 +259,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 if (first == SYMBOL_INC){
-                        struct parse_tree *addressable; load_child_at(addressable, tree, 1);
+                        const struct parse_tree *addressable; load_child_at(addressable, tree, 1);
                         char *find_memory_addr = generate_from_tree(addressable, functions, within);
 
                         return concat(5,
@@ -272,7 +272,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 if (first == SYMBOL_DEC){
-                        struct parse_tree *addressable; load_child_at(addressable, tree, 1);
+                        const struct parse_tree *addressable; load_child_at(addressable, tree, 1);
                         char *find_memory_addr = generate_from_tree(addressable, functions, within);
 
                         return concat(5,
@@ -326,9 +326,9 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 
                 size_t i = 0;
                 
-                struct parse_tree *optargs = tree->children->head->next->next->data;
+                const struct parse_tree *optargs = tree->children->head->next->next->data;
                 if ((optargs->children != NULL) && (optargs->children->len != 0)){
-                        struct parse_tree *args = optargs->children->head->data;
+                        const struct parse_tree *args = optargs->children->head->data;
 
                         for (struct LIST_NODE(parse_tree) *child = args->children->head; child != NULL; child = child->next ? child->next->next : NULL){
                                 args_code[i++] = generate_from_tree(child->data, functions, within);
@@ -358,8 +358,8 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 if (tree->children->head->next->data->data.type == SYMBOL_DOT){
-                        struct parse_tree *record; load_child_at(record, tree, 0);
-                        struct parse_tree *field; load_child_at(field, tree, 2);
+                        const struct parse_tree *record; load_child_at(record, tree, 0);
+                        const struct parse_tree *field; load_child_at(field, tree, 2);
                         size_t field_offset = record_type_offset(record->type, field->data.value);
 
                         char *find_memory_address = generate_from_tree(record, functions, within);
@@ -372,10 +372,10 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 }
 
                 if (tree->children->len == 4){
-                        struct parse_tree *array; load_child_at(array, tree, 0);
+                        const struct parse_tree *array; load_child_at(array, tree, 0);
                         size_t element_size = array->type->element_type->word_count;
                         char *find_memory_address = generate_from_tree(array, functions, within);
-                        struct parse_tree *expr; load_child_at(expr, tree, 2);
+                        const struct parse_tree *expr; load_child_at(expr, tree, 2);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         return concat(7,
                                 find_memory_address,
@@ -391,7 +391,7 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
                 return generate_from_tree(tree->children->head->next->data, functions, within);
         }
         else if (symbol == SYMBOL_CAST){
-                struct parse_tree *src_tree; load_child_at(src_tree, tree, 2);
+                const struct parse_tree *src_tree; load_child_at(src_tree, tree, 2);
                 return generate_from_tree(src_tree, functions, within);
         }
 
@@ -402,11 +402,11 @@ char *generate_from_tree(struct parse_tree *tree, struct MAP(string, function) *
 char *generate_code(const struct parse_tree *tree){
         struct MAP(string, function) functions; init_map((&functions), equals_string, free_string_function_entry, string, function);
         // program -> defndecls END
-        struct parse_tree *defndecls = tree->children->head->data;
+        const struct parse_tree *defndecls = tree->children->head->data;
 
         for (struct LIST_NODE(parse_tree) *node = defndecls->children->head; node != NULL; node = node->next) {
-                struct parse_tree *defndecl = node->data;
-                struct parse_tree *defn = defndecl->children->head->data;
+                const struct parse_tree *defndecl = node->data;
+                const struct parse_tree *defn = defndecl->children->head->data;
 
                 if (defn->data.type != SYMBOL_FNDEFN){
                         continue;
@@ -416,7 +416,7 @@ char *generate_code(const struct parse_tree *tree){
                 struct LIST(variable) locals_list = get_local_variables(defn);
 
                 struct string *s = (struct string*) malloc(sizeof(struct string));
-                struct parse_tree *signature = defn->children->head->data;
+                const struct parse_tree *signature = defn->children->head->data;
                 s->data = signature->children->head->next->data->data.value;
                 bool is_main = strcmp("main", s->data) == 0;
 
@@ -427,19 +427,19 @@ char *generate_code(const struct parse_tree *tree){
         }
 
         for (struct LIST_NODE(parse_tree) *node = defndecls->children->head; node != NULL; node = node->next) {
-                struct parse_tree *defndecl = node->data;
-                struct parse_tree *defn = defndecl->children->head->data;
+                const struct parse_tree *defndecl = node->data;
+                const struct parse_tree *defn = defndecl->children->head->data;
 
                 if (defn->data.type != SYMBOL_FNDEFN){
                         continue;
                 }
 
-                struct parse_tree *signature = defn->children->head->data;
+                const struct parse_tree *signature = defn->children->head->data;
                 struct string s;
                 s.data = signature->children->head->next->data->data.value;;
                 const struct function *fn; query_map((&functions), (&s), fn, string, function);
 
-                struct parse_tree *stmts; load_child_at(stmts, defn, 2);
+                const struct parse_tree *stmts; load_child_at(stmts, defn, 2);
                 set_body((struct function*) fn, generate_from_tree(stmts, &functions, fn));
         }
 
