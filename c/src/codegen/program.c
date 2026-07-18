@@ -238,7 +238,7 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                                 return sum(op1, op2);
                         case SYMBOL_MINUS:
                                 return subtract(op1, op2);
-                        case SYMBOL_TIMES:
+                        case SYMBOL_STAR:
                                 return multiply(op1, op2);
                         case SYMBOL_DIVIDE:
                                 return divide(op1, op2);

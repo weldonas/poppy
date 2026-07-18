@@ -258,7 +258,7 @@ struct LIST(token)* lex(FILE *file){
                                 data.val_len = 1;
                                 break;
                         case '*':
-                                data.type = SYMBOL_TIMES;
+                                data.type = SYMBOL_STAR;
                                 data.val_len = 1;
                                 break;
                         case '/':
@@ -312,7 +312,7 @@ struct LIST(token)* lex(FILE *file){
                                 data = find_prefixed_type(file, '-', SYMBOL_MINUS, SYMBOL_DEC, val);
                                 break;
                         case '&':
-                                data = find_prefixed_type(file, '&', SYMBOL_NULL, SYMBOL_AND, val);
+                                data = find_prefixed_type(file, '&', SYMBOL_REF, SYMBOL_AND, val);
                                 break;                        
                         case '|':
                                 data = find_prefixed_type(file, '|', SYMBOL_NULL, SYMBOL_OR, val);
