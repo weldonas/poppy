@@ -15,7 +15,8 @@ enum category : uint8_t {
     CATEGORY_PARAMS,
     CATEGORY_ARRAY,
     CATEGORY_UNIT,
-    CATEGORY_RECORD
+    CATEGORY_RECORD,
+    CATEGORY_POINTER
 };
 
 struct variable {
@@ -49,7 +50,7 @@ struct type {
         }; // params
 
         struct {
-            const struct type *element_type; // primitive or array
+            const struct type *element_type;
             uint32_t length;
         }; // array
 
@@ -57,6 +58,10 @@ struct type {
             struct LIST(variable) fields;
             char *name;
         }; // record
+
+        struct {
+            const struct type *referenced_type;
+        }; // pointer
     };
 };
 
@@ -81,6 +86,8 @@ void name_record_type(struct type *record, char *name);
 const struct type *query_record_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);
+
+const struct type* const pointer_type(const struct type *type);
 
 const struct type *make_assignable(const struct type *type);
 

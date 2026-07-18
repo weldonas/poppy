@@ -128,14 +128,7 @@ char *call_function(const struct function *function, char **args){
         size_t i = 0;
         for (struct LIST_NODE(variable) *param = function->params.head; param != NULL; param = param->next, ++i) {
                 char *cur_eval;
-                if (param->data->type->category == CATEGORY_PRIMITIVE){
-                        cur_eval = concat(3,
-                                args[i],
-                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
-                                str(REG_RESULT, REG_SCRATCH)
-                        );
-                }
-                else if (is_composite(param->data->type)) {
+                if (is_composite(param->data->type)) {
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
@@ -143,7 +136,11 @@ char *call_function(const struct function *function, char **args){
                         );
                 }
                 else {
-                        assert(0);
+                        cur_eval = concat(3,
+                                args[i],
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
+                                str(REG_RESULT, REG_SCRATCH)
+                        );
                 }
 
                 if (arg_evals == NULL){

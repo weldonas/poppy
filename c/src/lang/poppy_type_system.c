@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 77
+#define RULE_COUNT 81
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -47,6 +47,10 @@ bool is_non_null_returnable_type(const struct type *const type){
 
 bool is_non_null_assignable_type(const struct type *const type){
         return type && type->is_assignable;
+}
+
+bool is_non_null_pointer_type(const struct type *const type){
+        return type && (type->category == CATEGORY_POINTER);
 }
 
 const struct parse_tree *find_defn_signature_name(const struct parse_tree *defn){
@@ -210,6 +214,17 @@ const struct type *deduce_cast(const struct parse_tree *tree){
         return NULL;
 }
 
+const struct type *deduce_reference(const struct parse_tree *tree){
+        const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
+
+        return pointer_type(type_tree->type);
+}
+
+const struct type *deduce_dereference(const struct parse_tree *tree){
+        const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
+        return type_tree->type->referenced_type;
+}
+
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
                 return poppy_type_system;
@@ -226,6 +241,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_RECORD);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_record_type);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
+        rules[i] = new_child_type_rule(conditions, 2, 1);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CHAR);
@@ -614,10 +634,28 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
         ++i;
 
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_REF);
+        conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_STAR);
+        conditions[2] = new_type_at_condition(1, is_non_null_pointer_type);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_dereference);
+        ++i;
+
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_in_memory_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_array);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_REF);
+        conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);

@@ -106,22 +106,22 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                         const struct parse_tree *expr; load_child_at(expr, tree, 4);
                         char *expr_code = generate_from_tree(expr, functions, within);
                         
-                        if (expr->type->category == CATEGORY_PRIMITIVE){
-                                return concat(5,
-                                        find_memory_addr,
-                                        push(REG_RESULT),
-                                        expr_code,
-                                        pop(REG_SCRATCH),
-                                        str(REG_RESULT, REG_SCRATCH)
-                                );
-                        }
-                        else if (is_composite(expr->type)){
+                        if (is_composite(expr->type)){
                                 return concat(5,
                                         find_memory_addr,
                                         push(REG_RESULT),
                                         expr_code,
                                         pop(REG_SCRATCH),
                                         memory_copy(REG_RESULT, REG_SCRATCH, expr->type->word_count)
+                                );
+                        }
+                        else {
+                                return concat(5,
+                                        find_memory_addr,
+                                        push(REG_RESULT),
+                                        expr_code,
+                                        pop(REG_SCRATCH),
+                                        str(REG_RESULT, REG_SCRATCH)
                                 );
                         }
                 }
@@ -135,22 +135,22 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                 const struct parse_tree *expr; load_child_at(expr, tree, 2);
                 char *expr_code = generate_from_tree(expr, functions, within);
 
-                if (addressable->type->category == CATEGORY_PRIMITIVE){
+                if (is_composite(expr->type)){
+                        return concat(5,
+                                find_memory_addr,
+                                push(REG_RESULT),
+                                expr_code,
+                                pop(REG_SCRATCH),
+                                memory_copy(REG_RESULT, REG_SCRATCH, expr->type->word_count)
+                        );
+                }
+                else {
                         return concat(5,
                                 find_memory_addr,
                                 push(REG_RESULT),
                                 expr_code,
                                 pop(REG_SCRATCH),
                                 str(REG_RESULT, REG_SCRATCH)
-                        );
-                }
-                else if (is_composite(addressable->type)){
-                        return concat(5,
-                                find_memory_addr,
-                                push(REG_RESULT),
-                                expr_code,
-                                pop(REG_SCRATCH),
-                                memory_copy(REG_RESULT, REG_SCRATCH, addressable->type->word_count)
                         );
                 }
 
@@ -238,7 +238,7 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                                 return sum(op1, op2);
                         case SYMBOL_MINUS:
                                 return subtract(op1, op2);
-                        case SYMBOL_TIMES:
+                        case SYMBOL_STAR:
                                 return multiply(op1, op2);
                         case SYMBOL_DIVIDE:
                                 return divide(op1, op2);
@@ -302,7 +302,7 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                 if (first == SYMBOL_ADDRESSABLE){
                         char *find_memory_address = generate_from_tree(tree->children->head->data, functions, within);
 
-                        if (is_composite(tree->type)){
+                        if (is_composite(tree->type) || (tree->type->category == CATEGORY_POINTER)){
                                 return find_memory_address;
                         }
 
@@ -355,6 +355,18 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                         if (tree->children->head->data->data.type == SYMBOL_CALL){
                                 return generate_from_tree(tree->children->head->data, functions, within);
                         }
+                }
+
+                if (tree->children->head->data->data.type == SYMBOL_REF){
+                        return generate_from_tree(tree->children->head->next->data, functions, within);
+                }
+
+                if (tree->children->head->data->data.type == SYMBOL_STAR){
+                        char *find_memory_address = generate_from_tree(tree->children->head->next->data, functions, within);
+                        return concat(2,
+                                find_memory_address,
+                                ldr(REG_RESULT, REG_RESULT)
+                        );
                 }
 
                 if (tree->children->head->next->data->data.type == SYMBOL_DOT){

@@ -24,6 +24,8 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{BOOL}\\
 \text{type} &\rightarrow \text{RECORD IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
+\text{type} &\rightarrow \text{REF type}\\
+\text{type} &\rightarrow \text{LPAREN type RPAREN}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
 \text{params} &\rightarrow \text{param COMMA params}  \\
@@ -47,6 +49,8 @@ $$\begin{align*}
 \text{addressable} &\rightarrow \text{addressable LBRACKET expr RBRACKET}  \\
 \text{addressable} &\rightarrow \text{addressable DOT IDENTIFIER} \\
 \text{addressable} &\rightarrow \text{call} \\
+\text{addressable} &\rightarrow \text{REF addressable} \\
+\text{addressable} &\rightarrow \text{STAR addressable} \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
@@ -80,7 +84,7 @@ $$\begin{align*}
 \text{addexpr} &\rightarrow \text{addexpr PLUS multexpr}  \\
 \text{addexpr} &\rightarrow \text{addexpr MINUS multexpr}  \\
 \text{addexpr} &\rightarrow \text{multexpr}  \\
-\text{multexpr} &\rightarrow \text{multexpr TIMES unexpr}  \\
+\text{multexpr} &\rightarrow \text{multexpr STAR unexpr}  \\
 \text{multexpr} &\rightarrow \text{multexpr DIVIDE unexpr}  \\
 \text{multexpr} &\rightarrow \text{multexpr MOD unexpr}  \\
 \text{multexpr} &\rightarrow \text{unexpr}  \\

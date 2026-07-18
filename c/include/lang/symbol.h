@@ -18,7 +18,7 @@ enum symbol : uint8_t {
         SYMBOL_NOT,        // !
         SYMBOL_PLUS,       // +
         SYMBOL_MINUS,      // -
-        SYMBOL_TIMES,      // *
+        SYMBOL_STAR,       // *
         SYMBOL_DIVIDE,     // /
         SYMBOL_MOD,        // %
         SYMBOL_LT,         // <
@@ -33,6 +33,7 @@ enum symbol : uint8_t {
         SYMBOL_LBRACKET,   // [
         SYMBOL_RBRACKET,   // ]
         SYMBOL_DOT,        // .
+        SYMBOL_REF,        // &
         SYMBOL_ASM,
         SYMBOL_BOOL,
         SYMBOL_CHAR,

@@ -128,6 +128,16 @@ struct type* const param_type(){
         return new;
 }
 
+const struct type* const pointer_type(const struct type *type){
+        struct type *new = (struct type*) malloc(sizeof(struct type));
+        new->category = CATEGORY_POINTER;
+        new->referenced_type = type;
+        new->word_count = 1;
+        new->is_assignable = true;
+        add_type(new);
+        return new;
+}
+
 void add_param(struct type *params, const struct type *type_to_add){
         assert(type_to_add->word_count != NOT_IN_MEMORY);
         append_list((&params->subtypes), (struct type*) type_to_add, type);
@@ -254,6 +264,10 @@ const struct type *make_assignable(const struct type *type){
                         }
                         assert(equals_type(type, new));
                         return new;
+                case CATEGORY_POINTER:
+                        new->referenced_type = make_assignable(new->referenced_type);
+                        assert(equals_type(type, new));
+                        return new;
                 default:
                         assert(0);
                         return NULL;
@@ -309,6 +323,9 @@ bool equals_type(const struct type *t1, const struct type *t2){
         else if (t1->category == CATEGORY_UNIT){
                 return true;
         }
+        else if (t1->category == CATEGORY_POINTER){
+                return equals_type(t1->referenced_type, t2->referenced_type);
+        }
 
         return false;
 }
@@ -339,6 +356,8 @@ bool can_safe_cast(const struct type *src, const struct type *dst){
                         return is_numeric(src) && is_numeric(dst);
                 case CATEGORY_ARRAY:
                         return can_safe_cast(src->element_type, dst->element_type);
+                case CATEGORY_POINTER:
+                        return can_safe_cast(src->referenced_type, dst->referenced_type);
                 default:
                         return false; // this is unreachable
         }

@@ -18,7 +18,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_NOT: return "!";
                 case SYMBOL_PLUS: return "+";
                 case SYMBOL_MINUS: return "-";
-                case SYMBOL_TIMES: return "*";
+                case SYMBOL_STAR: return "*";
                 case SYMBOL_DIVIDE: return "/";
                 case SYMBOL_MOD: return "%";
                 case SYMBOL_LT: return "<";
@@ -33,6 +33,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_LBRACKET: return "[";
                 case SYMBOL_RBRACKET: return "]";
                 case SYMBOL_DOT: return ".";
+                case SYMBOL_REF: return "&";
                 case SYMBOL_ELSE: return "else";
                 case SYMBOL_FOR: return "for";
                 case SYMBOL_HOP: return "hop";
