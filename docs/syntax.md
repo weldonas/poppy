@@ -25,6 +25,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{RECORD IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
 \text{type} &\rightarrow \text{REF type}\\
+\text{type} &\rightarrow \text{LPAREN type RPAREN}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
 \text{params} &\rightarrow \text{param COMMA params}  \\

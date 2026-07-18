@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 80
+#define RULE_COUNT 81
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -241,6 +241,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_RECORD);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_record_type);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
+        rules[i] = new_child_type_rule(conditions, 2, 1);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CHAR);
