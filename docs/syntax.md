@@ -43,14 +43,7 @@ $$\begin{align*}
 \text{vardec} &\rightarrow \text{LET type IDENTIFIER ASSIGN expr}  \\
 \text{vardec} &\rightarrow \text{LET type IDENTIFIER}  \\
 \text{semistmt} &\rightarrow \text{varasst}  \\
-\text{varasst} &\rightarrow \text{addressable ASSIGN expr}  \\
-\text{addressable} &\rightarrow \text{IDENTIFIER}  \\
-\text{addressable} &\rightarrow \text{LPAREN addressable RPAREN}  \\
-\text{addressable} &\rightarrow \text{addressable LBRACKET expr RBRACKET}  \\
-\text{addressable} &\rightarrow \text{addressable DOT IDENTIFIER} \\
-\text{addressable} &\rightarrow \text{call} \\
-\text{addressable} &\rightarrow \text{REF addressable} \\
-\text{addressable} &\rightarrow \text{STAR addressable} \\
+\text{varasst} &\rightarrow \text{expr ASSIGN expr}  \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
@@ -89,7 +82,6 @@ $$\begin{align*}
 \text{multexpr} &\rightarrow \text{multexpr MOD unexpr}  \\
 \text{multexpr} &\rightarrow \text{unexpr}  \\
 \text{unexpr} &\rightarrow \text{MINUS unexpr} \\
-\text{unexpr} &\rightarrow \text{addressable} \\
 \text{unexpr} &\rightarrow \text{LPAREN expr RPAREN}  \\
 \text{unexpr} &\rightarrow \text{call}\\
 \text{call} &\rightarrow \text{IDENTIFIER LPAREN optargs RPAREN}  \\
@@ -99,8 +91,13 @@ $$\begin{align*}
 \text{args} &\rightarrow \text{expr COMMA args} \\
 \text{unexpr} &\rightarrow \text{cast} \\
 \text{cast} &\rightarrow \text{type LPAREN expr RPAREN} \\
-\text{unexpr} &\rightarrow \text{INC addressable} \\
-\text{unexpr} &\rightarrow \text{DEC addressable} \\
+\text{unexpr} &\rightarrow \text{IDENTIFIER}  \\
+\text{unexpr} &\rightarrow \text{expr LBRACKET expr RBRACKET}  \\
+\text{unexpr} &\rightarrow \text{expr DOT IDENTIFIER} \\
+\text{unexpr} &\rightarrow \text{REF expr} \\
+\text{unexpr} &\rightarrow \text{STAR expr} \\
+\text{unexpr} &\rightarrow \text{INC expr} \\
+\text{unexpr} &\rightarrow \text{DEC expr} \\
 \text{unexpr} &\rightarrow \text{CONSTANT}  \\
 \text{unexpr} &\rightarrow \text{CHARLIT}
 \end{align*}
