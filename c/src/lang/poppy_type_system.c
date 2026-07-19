@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 81
+#define RULE_COUNT 79
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -614,17 +614,7 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 1, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
-        conditions[1] = new_length_condition(1);
-        rules[i] = new_child_type_rule(conditions, 2, 0);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
-        conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
-        rules[i] = new_child_type_rule(conditions, 2, 1);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
         ++i;
@@ -634,13 +624,13 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_REF);
         conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_STAR);
         conditions[2] = new_type_at_condition(1, is_non_null_pointer_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_dereference);
@@ -658,7 +648,7 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ADDRESSABLE);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_array_type);
         conditions[3] = new_type_at_condition(2, is_non_null_int_type);
