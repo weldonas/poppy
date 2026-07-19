@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 79
+#define RULE_COUNT 78
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -216,7 +216,6 @@ const struct type *deduce_cast(const struct parse_tree *tree){
 
 const struct type *deduce_reference(const struct parse_tree *tree){
         const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
-
         return pointer_type(type_tree->type);
 }
 
@@ -620,13 +619,8 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
-        conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
-        rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_REF);
-        conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
+        conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;
 
