@@ -86,7 +86,6 @@ enum symbol : uint8_t {
         SYMBOL_SIGNATURE,
         SYMBOL_DECL,
         SYMBOL_DEFNDECL,
-        SYMBOL_ADDRESSABLE,
         SYMBOL_FIELDS,
         SYMBOL_FIELD,
         SYMBOL_RECDEFN,
