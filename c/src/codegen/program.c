@@ -185,8 +185,13 @@ char *generate_ret(const struct parse_tree *tree, struct MAP(string, function) *
                 return ret;
         }
         
-        char *expr_code = generate_from_tree(second, functions, within);
-        return concat(2, expr_code, hop(within));
+        if (is_composite(second->type)){
+                char *address = generate_address(second, functions, within);
+                return concat(2, address, hop(within));
+        }
+
+        char *value = generate_value(second, functions, within);
+        return concat(2, value, hop(within));
 }
 char *generate_andcond(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         if (tree->children->len == 1){
@@ -407,6 +412,10 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
         
         if (tree->children->len == 1){
                 return generate_address(tree->children->head->data, functions, within);
+        }
+
+        if (tree->data.type == SYMBOL_CALL){
+                return generate_call(tree, functions, within);
         }
 
         if (tree->data.type == SYMBOL_CAST){
