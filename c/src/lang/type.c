@@ -133,7 +133,7 @@ const struct type* const pointer_type(const struct type *type){
         new->category = CATEGORY_POINTER;
         new->referenced_type = type;
         new->word_count = 1;
-        new->is_assignable = true;
+        new->is_assignable = false;
         add_type(new);
         return new;
 }
