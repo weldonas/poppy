@@ -1,7 +1,6 @@
 # Poppy 2.0.0
 
-Poppy supports 64-bit integer, character, and Boolean variables, basic arithmetic operations, and control flow constructs in the form of conditional statements, loops, and functions. As well, it supports arrays of arbitrary dimension. These can be assigned to and passed as parameters to functions, but cannot be returned from functions.
-
+Poppy supports 64-bit integer, character, and Boolean variables, basic arithmetic operations, and control flow constructs in the form of conditional statements, loops, and functions. As well, it supports arrays of arbitrary dimension, pointers, and record types
 Entry is via a `main` function that takes no arguments and does not return anything.
 
 Comments start with `!!-` and imports of modules are done with `!!munch`.
