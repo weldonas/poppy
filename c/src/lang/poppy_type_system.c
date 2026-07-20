@@ -78,6 +78,40 @@ const struct type *deduce_from_last_child(const struct parse_tree *tree){
         return current;
 }
 
+bool is_hop(const struct parse_tree *tree){
+        if (tree->data.type == SYMBOL_RET){
+                return true;
+        }
+
+        if ((tree->children) && (tree->children->len >= 1)){
+                return is_hop(tree->children->head->data);
+        }
+
+        return false;
+}
+
+const struct type *deduce_stmts(const struct parse_tree *tree){
+        const struct type *last_type = tree->children->tail->data->type;
+        if (!last_type){
+                return NULL;
+        }
+
+        const struct type *current;
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                current = node->data->type;
+                if (!current){
+                        return NULL;
+                }
+
+                // return NULL if this type doesn't equal the last type and doesn't equal void
+                if (!equals_type(current, last_type) && (!equals_type(current, void_type()) || is_hop(node->data))){
+                        return NULL;
+                }
+        }
+
+        return current;
+}
+
 const struct type *deduce_params(const struct parse_tree *tree){
         struct type *params = param_type();
 
@@ -375,7 +409,7 @@ const struct type_system *const get_poppy_type_system(){
 
         // Statements
         conditions[0] = new_parent_symbol_condition(SYMBOL_STMTS);
-        rules[i] = new_deducer_type_rule(conditions, 1, deduce_from_last_child);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_stmts);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_BODY);
