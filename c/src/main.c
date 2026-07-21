@@ -43,8 +43,6 @@ int main(int argc, char *argv[]){
                 return 0;
         }
 
-        // print_parse_tree(pt);
-
         printf("parsed\n");
 
         const struct type_system *const system = get_poppy_type_system();

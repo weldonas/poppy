@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 92
+#define RULE_COUNT 93
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -63,7 +63,6 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_STMTS, {SYMBOL_STMT}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMTS, {SYMBOL_STMT COMMA SYMBOL_STMTS}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMT, {SYMBOL_SEMISTMT COMMA SYMBOL_SEMICOLON}, i, poppy_grammar); ++i;
-        populate(SYMBOL_SEMISTMT, {SYMBOL_ASM COMMA SYMBOL_LPAREN COMMA SYMBOL_STRINGLIT COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_VARDEC}, i, poppy_grammar); ++i;
         populate(SYMBOL_VARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_VARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
@@ -117,6 +116,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_ARGS, {SYMBOL_EXPR COMMA SYMBOL_COMMA COMMA SYMBOL_ARGS}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CAST}, i, poppy_grammar); ++i;
         populate(SYMBOL_CAST, {SYMBOL_TYPE COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_CAST, {SYMBOL_UNSAFE COMMA SYMBOL_TYPE COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_EXPR COMMA SYMBOL_LBRACKET COMMA SYMBOL_EXPR COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_EXPR COMMA SYMBOL_DOT COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
@@ -126,6 +126,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CONSTANT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CHARLIT}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_ASM COMMA SYMBOL_LPAREN COMMA SYMBOL_STRINGLIT COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
 
         // this assumes a symbol is nullable if and only if it's the LHS of a rule with an empty RHS
         for (size_t i = 0; i < RULE_COUNT; ++i){

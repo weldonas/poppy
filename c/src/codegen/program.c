@@ -62,18 +62,7 @@ char *generate_stmts(const struct parse_tree *tree, struct MAP(string, function)
 }
 
 char *generate_stmt(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        const struct parse_tree *child = tree->children->head->data;
-        enum symbol child_symbol = child->data.type;
-        if (child_symbol == SYMBOL_SEMISTMT){
-                enum symbol grandchild_symbol = child->children->head->data->data.type;
-                if (grandchild_symbol == SYMBOL_ASM){
-                        char *instr = child->children->head->next->next->data->data.value;
-                        char *ret = (char*) malloc((strlen(instr) + 1) * sizeof(char));
-                        strcpy(ret, instr);
-                        return ret;
-                }
-        }
-        return generate_from_tree(tree->children->head->data, functions, within);
+        return generate_first_child(tree, functions, within);
 }
 
 char *generate_ifstmt(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
@@ -354,6 +343,13 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
                 );
         }
 
+        if (tree->children->head->data->data.type == SYMBOL_ASM){
+                const struct parse_tree *instr_tree; load_child_at(instr_tree, tree, 2);
+                char *ret = (char*) malloc((strlen(instr_tree->data.value) + 1) * sizeof(char));
+                strcpy(ret, instr_tree->data.value);
+                return ret;
+        }
+
         if (tree->children->head->next->data->data.type == SYMBOL_DOT){
                 char *address = generate_address(tree, functions, within);
                 return concat(2, address, ldr(REG_RESULT, REG_RESULT));
@@ -400,7 +396,14 @@ char *generate_call(const struct parse_tree *tree, struct MAP(string, function) 
 }
 
 char *generate_cast(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        const struct parse_tree *src_tree; load_child_at(src_tree, tree, 2);
+        const struct parse_tree *src_tree; 
+        if (tree->children->len == 4){
+                load_child_at(src_tree, tree, 2);
+        }
+        else {
+                load_child_at(src_tree, tree, 3);
+        }
+
         return generate_from_tree(src_tree, functions, within);
 }
 

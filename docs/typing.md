@@ -64,6 +64,9 @@ $$\frac{\Gamma \vdash E: \tau \quad \gamma_\tau(\text s) = \sigma}{\Gamma \vdash
 
 $$\frac{\Gamma \vdash E:\tau \quad (\tau, \sigma) \in C}{\Gamma \vdash \sigma(E) : \sigma}$$
 
+$$\frac{\Gamma \vdash E:\tau }{\Gamma \vdash \text{unsafe } \sigma(E) : \sigma}$$
+
+
 ## Statements
 
 $$\frac{\Gamma \vdash E_1: \tau_1 \quad \Gamma \vdash E_2: \tau_2 \quad E_1, E_2 \in \text{stmt}}{

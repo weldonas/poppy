@@ -53,6 +53,7 @@ enum symbol : uint8_t {
         SYMBOL_STRINGLIT,
         SYMBOL_DECLARE,
         SYMBOL_RECORD,
+        SYMBOL_UNSAFE,
         SYMBOL_END,         // end of input
         // non-terminal symbols
         SYMBOL_PROGRAM,

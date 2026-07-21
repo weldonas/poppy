@@ -104,6 +104,8 @@ struct lex_data find_alphanumeric_value (FILE* file, char *val){
                 ret.type = SYMBOL_RECORD;
         } else if ((ret.val_len == 4) && (strncmp(val, "true", 4) == 0)){
                 ret.type = SYMBOL_TRUE;
+        } else if ((ret.val_len == 6) && (strncmp(val, "unsafe", 6) == 0)){
+                ret.type = SYMBOL_UNSAFE;
         } else if ((ret.val_len == 4) && (strncmp(val, "void", 4) == 0)){
                 ret.type = SYMBOL_VOID;
         } else if ((ret.val_len == 5) && (strncmp(val, "while", 3) == 0)){
