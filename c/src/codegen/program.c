@@ -400,7 +400,14 @@ char *generate_call(const struct parse_tree *tree, struct MAP(string, function) 
 }
 
 char *generate_cast(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        const struct parse_tree *src_tree; load_child_at(src_tree, tree, 2);
+        const struct parse_tree *src_tree; 
+        if (tree->children->len == 4){
+                load_child_at(src_tree, tree, 2);
+        }
+        else {
+                load_child_at(src_tree, tree, 3);
+        }
+
         return generate_from_tree(src_tree, functions, within);
 }
 

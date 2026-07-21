@@ -91,6 +91,7 @@ $$\begin{align*}
 \text{args} &\rightarrow \text{expr COMMA args} \\
 \text{unexpr} &\rightarrow \text{cast} \\
 \text{cast} &\rightarrow \text{type LPAREN expr RPAREN} \\
+\text{cast} &\rightarrow \text{UNSAFE type LPAREN expr RPAREN} \\
 \text{unexpr} &\rightarrow \text{IDENTIFIER}  \\
 \text{unexpr} &\rightarrow \text{expr LBRACKET expr RBRACKET}  \\
 \text{unexpr} &\rightarrow \text{expr DOT IDENTIFIER} \\
