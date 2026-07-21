@@ -62,18 +62,7 @@ char *generate_stmts(const struct parse_tree *tree, struct MAP(string, function)
 }
 
 char *generate_stmt(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        const struct parse_tree *child = tree->children->head->data;
-        enum symbol child_symbol = child->data.type;
-        if (child_symbol == SYMBOL_SEMISTMT){
-                enum symbol grandchild_symbol = child->children->head->data->data.type;
-                if (grandchild_symbol == SYMBOL_ASM){
-                        char *instr = child->children->head->next->next->data->data.value;
-                        char *ret = (char*) malloc((strlen(instr) + 1) * sizeof(char));
-                        strcpy(ret, instr);
-                        return ret;
-                }
-        }
-        return generate_from_tree(tree->children->head->data, functions, within);
+        return generate_first_child(tree, functions, within);
 }
 
 char *generate_ifstmt(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
@@ -352,6 +341,13 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
                         find_memory_address,
                         ldr(REG_RESULT, REG_RESULT)
                 );
+        }
+
+        if (tree->children->head->data->data.type == SYMBOL_ASM){
+                const struct parse_tree *instr_tree; load_child_at(instr_tree, tree, 2);
+                char *ret = (char*) malloc((strlen(instr_tree->data.value) + 1) * sizeof(char));
+                strcpy(ret, instr_tree->data.value);
+                return ret;
         }
 
         if (tree->children->head->next->data->data.type == SYMBOL_DOT){

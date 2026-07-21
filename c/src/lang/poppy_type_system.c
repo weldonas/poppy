@@ -505,7 +505,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         // inline assembly
-        conditions[0] = new_parent_symbol_condition(SYMBOL_SEMISTMT);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_ASM);
         rules[i] = new_type_rule(conditions, 2, void_type());
         ++i;
