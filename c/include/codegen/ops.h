@@ -17,4 +17,10 @@ char *ge(char *op1, char *op2);
 char *cnjtn(char *op1, char *op2); // conjunction (AND)
 char *dsjtn( char *op1, char *op2); // disjunction (OR)
 char *ngtn(char *op); // negation (NOT)
+char *band(char *op1, char *op2);
+char *bor(char *op1, char *op2);
+char *bxor(char *op1, char *op2);
+char *bleft(char *op1, char *op2);
+char *bright(char *op1, char *op2);
+char *bnot(char *op);
 #endif

@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 78
+#define RULE_COUNT 84
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -390,7 +390,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
-        conditions[1] = new_symbol_at_condition(0, SYMBOL_REF);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_AMP);
         conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;
@@ -646,6 +646,53 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 3, 1);
         ++i;
 
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_AMP);
+        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 5, int_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BOR);
+        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 5, int_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BXOR);
+        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 5, int_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BLEFT);
+        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 5, int_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BRIGHT);
+        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 5, int_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[1] = new_length_condition(2);
+        conditions[2] = new_symbol_at_condition(0, SYMBOL_BNOT);
+        conditions[3] = new_type_at_condition(1, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 4, int_type());
+        ++i;
+
         // Literals
         conditions[0] = new_parent_symbol_condition(SYMBOL_CONSTANT);
         rules[i] = new_type_rule(conditions, 1, int_type()); 
@@ -691,7 +738,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
-        conditions[1] = new_symbol_at_condition(0, SYMBOL_REF);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_AMP);
         conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;

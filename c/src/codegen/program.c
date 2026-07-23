@@ -243,9 +243,14 @@ char *generate_uncond(const struct parse_tree *tree, struct MAP(string, function
         }
 }
 
-char *generate_addmultexpr(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
+char *generate_addmultbitexpr(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         if (tree->children->len == 1){
                 return generate_from_tree(tree->children->head->data, functions, within);
+        }
+
+        if (tree->children->head->data->data.type == SYMBOL_BNOT){
+                char *op = generate_value(tree->children->head->next->data, functions, within);
+                return bnot(op);
         }
 
         char *op1 = generate_value(tree->children->head->data, functions, within);
@@ -262,6 +267,16 @@ char *generate_addmultexpr(const struct parse_tree *tree, struct MAP(string, fun
                         return divide(op1, op2);
                 case SYMBOL_MOD:
                         return modulo(op1, op2);
+                case SYMBOL_AMP:
+                        return band(op1, op2);
+                case SYMBOL_BOR:
+                        return bor(op1, op2);
+                case SYMBOL_BXOR:
+                        return bxor(op1, op2);
+                case SYMBOL_BLEFT:
+                        return bleft(op1, op2);
+                case SYMBOL_BRIGHT:
+                        return bright(op1, op2);
                 default:
                         assert(0);
                         return NULL;
@@ -331,7 +346,11 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
                 return concat(2, address, ldr(REG_RESULT, REG_RESULT));
         }
 
-        if (tree->children->head->data->data.type == SYMBOL_REF){
+        if (tree->children->len == 1){
+                return generate_first_child(tree, functions, within);
+        }
+
+        if (tree->children->head->data->data.type == SYMBOL_AMP){
                 return generate_address(tree->children->head->next->data, functions, within);
         }
 
@@ -509,8 +528,8 @@ char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, funct
                 return generate_uncond(tree, functions, within);
         } else if (symbol == SYMBOL_EXPR){
                 return generate_first_child(tree, functions, within);
-        } else if ((symbol == SYMBOL_ADDEXPR) || (symbol == SYMBOL_MULTEXPR)){
-                return generate_addmultexpr(tree, functions, within);
+        } else if ((symbol == SYMBOL_ADDEXPR) || (symbol == SYMBOL_MULTEXPR) || (symbol == SYMBOL_BITEXPR)){
+                return generate_addmultbitexpr(tree, functions, within);
         } else if (symbol == SYMBOL_UNEXPR){          
                 return generate_unexpr(tree, functions, within);
         } else if (symbol == SYMBOL_CALL){

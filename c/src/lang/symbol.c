@@ -33,7 +33,12 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_LBRACKET: return "[";
                 case SYMBOL_RBRACKET: return "]";
                 case SYMBOL_DOT: return ".";
-                case SYMBOL_REF: return "&";
+                case SYMBOL_AMP: return "&";
+                case SYMBOL_BOR: return "|";
+                case SYMBOL_BXOR: return "^";
+                case SYMBOL_BLEFT: return "<<";
+                case SYMBOL_BRIGHT: return ">>";
+                case SYMBOL_BNOT: return "~";
                 case SYMBOL_ELSE: return "else";
                 case SYMBOL_FOR: return "for";
                 case SYMBOL_HOP: return "hop";
@@ -63,6 +68,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_ADDEXPR: return "ADDEXPR";
                 case SYMBOL_MULTEXPR: return "MULTEXPR";
                 case SYMBOL_UNEXPR: return "UNEXPR";
+                case SYMBOL_BITEXPR: return "BITEXPR";
                 case SYMBOL_OPTARGS: return "OPTARGS";
                 case SYMBOL_ARGS: return "ARGS";
                 case SYMBOL_VARDEC: return "VARDEC";

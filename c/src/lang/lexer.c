@@ -22,7 +22,12 @@ struct lex_data {
         int val_len;
 };
 
-struct lex_data find_prefixed_type(FILE* file, char expected_second, enum symbol not_second, enum symbol if_second, char *val){
+struct character_symbol_map {
+        char expected;
+        enum symbol if_expected;
+};
+
+struct lex_data find_prefixed_type(FILE* file, struct character_symbol_map *map, size_t map_len, enum symbol not_second, char *val){
         struct lex_data ret;
         ret.excess = 0;
         ret.val_len = 1;
@@ -33,14 +38,17 @@ struct lex_data find_prefixed_type(FILE* file, char expected_second, enum symbol
         }
         
         char second = fgetc(file);
-        if (second == expected_second){
-                val[1] = second;
-                ret.val_len = 2;
-                ret.type = if_second;
-        } else {
-                ret.excess = second;        
+        for (size_t i = 0; i < map_len; ++i){
+                if (second == map[i].expected){
+                        val[1] = second;
+                        ret.val_len = 2;
+                        ret.type = map[i].if_expected;
+
+                        return ret;
+                }
         }
 
+        ret.excess = second;        
         return ret;
 
 }
@@ -238,6 +246,8 @@ struct LIST(token)* lex(FILE *file){
                         continue;
                 }
 
+                struct character_symbol_map map[2];
+
                 switch (val[0]){
                         case -1:
                                 data.type = SYMBOL_END;
@@ -291,6 +301,14 @@ struct LIST(token)* lex(FILE *file){
                                 data.type = SYMBOL_DOT;
                                 data.val_len = 1;
                                 break;
+                        case '^':
+                                data.type = SYMBOL_BXOR;
+                                data.val_len = 1;
+                                break;
+                        case '~':
+                                data.type = SYMBOL_BNOT;
+                                data.val_len = 1;
+                                break;
                         case '\'':
                                 data.val_len = 1;
                                 if(lex_char_literal(file, val)){
@@ -308,29 +326,45 @@ struct LIST(token)* lex(FILE *file){
                                 }
                                 break;
                         case '+':
-                                data = find_prefixed_type(file, '+', SYMBOL_PLUS, SYMBOL_INC, val);
+                                map[0] = (struct character_symbol_map){.expected = '+', .if_expected = SYMBOL_INC};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_PLUS, val);
                                 break;
                         case '-':
-                                data = find_prefixed_type(file, '-', SYMBOL_MINUS, SYMBOL_DEC, val);
+                                map[0] = (struct character_symbol_map){.expected = '-', .if_expected = SYMBOL_DEC};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_MINUS, val);
                                 break;
+
                         case '&':
-                                data = find_prefixed_type(file, '&', SYMBOL_REF, SYMBOL_AND, val);
-                                break;                        
-                        case '|':
-                                data = find_prefixed_type(file, '|', SYMBOL_NULL, SYMBOL_OR, val);
-                                break;   
-                        case '!':
-                                data = find_prefixed_type(file, '=', SYMBOL_NOT, SYMBOL_NE, val);
-                                break;      
-                        case '>':
-                                data = find_prefixed_type(file, '=', SYMBOL_GT, SYMBOL_GE, val);
-                                break;      
-                        case '<':
-                                data = find_prefixed_type(file, '=', SYMBOL_LT, SYMBOL_LE, val);
+                                map[0] = (struct character_symbol_map){.expected = '&', .if_expected = SYMBOL_AND};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_AMP, val);
                                 break;
+
+                        case '|':
+                                map[0] = (struct character_symbol_map){.expected = '|', .if_expected = SYMBOL_OR};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_BOR, val);
+                                break;
+
+                        case '!':
+                                map[0] = (struct character_symbol_map){.expected = '=', .if_expected = SYMBOL_NE};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_NOT, val);
+                                break;
+
+                        case '>':
+                                map[0] = (struct character_symbol_map){.expected = '=', .if_expected = SYMBOL_GE};
+                                map[1] = (struct character_symbol_map){.expected = '>', .if_expected = SYMBOL_BRIGHT};
+                                data = find_prefixed_type(file, map, 2, SYMBOL_GT, val);
+                                break;
+
+                        case '<':
+                                map[0] = (struct character_symbol_map){.expected = '=', .if_expected = SYMBOL_LE};
+                                map[1] = (struct character_symbol_map){.expected = '<', .if_expected = SYMBOL_BLEFT};
+                                data = find_prefixed_type(file, map, 2, SYMBOL_LT, val);
+                                break;
+
                         case '=':
-                                data = find_prefixed_type(file, '=', SYMBOL_ASSIGN, SYMBOL_EQ, val);
-                                break; 
+                                map[0] = (struct character_symbol_map){.expected = '=', .if_expected = SYMBOL_EQ};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_ASSIGN, val);
+                                break;
                         default:
                                 if (is_alphabetic(val[0])){
                                         data = find_alphanumeric_value(file, val);

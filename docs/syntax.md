@@ -2,7 +2,7 @@
 
 Terminal symbols: all tokens for the language.
 
-Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl, addressable, fields, field, cast}\}$
+Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, cond, andcond, orcond, uncond, optelse, addexpr, multexpr, unexpr, bitexpr, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl, addressable, fields, field, cast}\}$
 
 Start symbol: $\text{program}$
 
@@ -24,7 +24,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{BOOL}\\
 \text{type} &\rightarrow \text{RECORD IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
-\text{type} &\rightarrow \text{REF type}\\
+\text{type} &\rightarrow \text{AMP type}\\
 \text{type} &\rightarrow \text{LPAREN type RPAREN}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
@@ -94,7 +94,14 @@ $$\begin{align*}
 \text{unexpr} &\rightarrow \text{IDENTIFIER}  \\
 \text{unexpr} &\rightarrow \text{expr LBRACKET expr RBRACKET}  \\
 \text{unexpr} &\rightarrow \text{expr DOT IDENTIFIER} \\
-\text{unexpr} &\rightarrow \text{REF expr} \\
+\text{unexpr} &\rightarrow \text{AMP expr} \\
+\text{unexpr} &\rightarrow \text{bitexpr} \\
+\text{bitexpr} &\rightarrow \text{expr AMP expr} \\
+\text{bitexpr} &\rightarrow \text{expr BOR expr} \\
+\text{bitexpr} &\rightarrow \text{expr BXOR expr} \\
+\text{bitexpr} &\rightarrow \text{expr BLEFT expr} \\
+\text{bitexpr} &\rightarrow \text{expr BRIGHT expr} \\
+\text{bitexpr} &\rightarrow \text{BNOT expr} \\
 \text{unexpr} &\rightarrow \text{STAR expr} \\
 \text{unexpr} &\rightarrow \text{INC expr} \\
 \text{unexpr} &\rightarrow \text{DEC expr} \\

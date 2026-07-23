@@ -124,6 +124,10 @@ $$\frac{\Gamma \vdash E : \tau \quad \tau^a \in \{\text{int}, \text{char}\}}{\te
 
 $$\frac{\Gamma \vdash E: \text{int}}{\Gamma \vdash -E:\tau}$$
 
+$$\frac{\Gamma \vdash E_1: \text{int}\quad \Gamma \vdash E_2: \text{int}}{
+    \Gamma \vdash E_1 \text{ \& } E_2 : \text{int} \quad     \Gamma \vdash E_1 \text{ | }  E_2 : \text{int} \quad     \Gamma \vdash E_1 \text{ \^ } E_2 : \text{int} \quad \Gamma \vdash E_1 \text{ << } E_2 : \text{int} \quad \Gamma \vdash E_1 \text{ >> } E_2 : \text{int}
+    \quad \Gamma \vdash \text{\~ } E_1 : \text{int}
+}$$
 
 
 ## Literals
