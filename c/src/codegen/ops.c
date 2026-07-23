@@ -1,7 +1,9 @@
 #include "codegen/ops.h"
 
 #include "codegen/assem.h"
+#include "codegen/register.h"
 
+// op1 in REG_SCRATCH, op2 in REG_RESULT
 char *binop(char *op1, char *op2, char *operation){
         return concat(5,
                 op1,
@@ -30,11 +32,11 @@ char *divide(char *op1, char *op2){
 
 char *modulo(char *op1, char *op2){
         // initially, x9 has original number (n), x10 has divisor (d)
-        // x8 <- n / d
+        // x12 <- n / d
         // x10 <- n - d * (n / d)
         return binop(op1, op2, concat(2,
-             sdiv(REG_8, REG_SCRATCH, REG_RESULT),
-             msub(REG_RESULT, REG_RESULT, REG_8, REG_SCRATCH)
+             sdiv(REG_SCRATCH2, REG_SCRATCH, REG_RESULT),
+             msub(REG_RESULT, REG_RESULT, REG_SCRATCH2, REG_SCRATCH)
         ));
 }
 
@@ -92,4 +94,28 @@ char *dsjtn(char *op1, char *op2){
 
 char *ngtn(char *op){
         return concat(2, op, not(REG_RESULT, REG_RESULT));
+}
+
+char *band(char *op1, char *op2){
+        return cnjtn(op1, op2);
+}
+
+char *bor(char *op1, char *op2){
+        return dsjtn(op1, op2);
+}
+
+char *bxor(char *op1, char *op2){
+        return binop(op1, op2, eor(REG_RESULT, REG_SCRATCH, REG_RESULT));
+}
+
+char *bleft(char *op1, char *op2){
+        return binop(op1, op2, lsl(REG_RESULT, REG_SCRATCH, REG_RESULT));
+}
+
+char *bright(char *op1, char *op2){
+        return binop(op1, op2, lsr(REG_RESULT, REG_SCRATCH, REG_RESULT));
+}
+
+char *bnot(char *op){
+        return concat(2, op, mvn(REG_RESULT, REG_RESULT));
 }

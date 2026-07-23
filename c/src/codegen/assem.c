@@ -200,6 +200,48 @@ char *orr(enum reg dest, enum reg src1, enum reg src2){
         return instr;
 }
 
+char *eor(enum reg dest, enum reg src1, enum reg src2){
+        char *instr = (char*) malloc(18 * sizeof(char));
+        strcpy(instr, "eor ");
+        strcat(instr, reg_to_string(dest));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src1));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src2));
+        return instr;
+}
+
+char *lsl(enum reg dest, enum reg src1, enum reg src2){
+        char *instr = (char*) malloc(18 * sizeof(char));
+        strcpy(instr, "lsl ");
+        strcat(instr, reg_to_string(dest));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src1));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src2));
+        return instr;
+}
+
+char *lsr(enum reg dest, enum reg src1, enum reg src2){
+        char *instr = (char*) malloc(18 * sizeof(char));
+        strcpy(instr, "lsr ");
+        strcat(instr, reg_to_string(dest));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src1));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src2));
+        return instr;
+}
+
+char *mvn(enum reg dest, enum reg src){
+        char *instr = (char*) malloc(13 * sizeof(char));
+        strcpy(instr, "mvn ");
+        strcat(instr, reg_to_string(dest));
+        strcat(instr, ", ");
+        strcat(instr, reg_to_string(src));
+        return instr;
+}
+
 char *not(enum reg dest, enum reg src){
         char *instr = (char*) malloc(17 * sizeof(char));
         strcpy(instr, "eor ");
