@@ -28,13 +28,16 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
 }
 
 char *generate_head(const struct parse_tree *tree){
-        char *head = (char*) malloc(6 * sizeof(char));
-        strcpy(head, ".text");
-        char *include_utils = (char*) malloc(19 * sizeof(char));
-        strcpy(include_utils, ".include \"utils.s\"");
-        char *global_start = (char*) malloc(15 * sizeof(char));
-        strcpy(global_start, ".global _start");
-        return concat(3, head, include_utils, global_start);
+        return concat(8,
+                literal(".bss"),
+                literal("heapmeta:"),
+                literal(".skip 8192"),
+                literal("heap:"),
+                literal(".skip 65536"),
+                literal(".text"),
+                literal(".include \"utils.s\""),
+                literal(".global _start")
+        );
 }
 
 char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within);

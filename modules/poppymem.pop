@@ -1,0 +1,201 @@
+!!- 65536 B of heap space and 32 B minimum per block -> 2048 possible blocks
+!!- so we need 2048 bits (256 B or 32 words) in total for an entire bitmap
+!!- we have 12 layers of blocks (sizes 2^5 to 2^16 B) -> 12 pointers to free lists
+
+int HEAP_SIZE(){ hop 65536; }
+int MIN_SIZE(){ hop 32; }
+int NUM_ORDERS(){ hop 12; }
+int NULL(){ hop -1; }
+
+record metadata (
+        int[12] free_head,
+        int[256] order_of,      !!- 2048 / 8
+        int[32] is_free         !!- 2048 / 64
+)
+
+&record metadata metadata_ptr(){
+        hop unsafe &record metadata(asm("ldr x10, =heapmeta"));
+}
+
+int heap(){
+        hop unsafe int(asm("ldr x10, =heap"));
+}
+
+record free_node (
+        int next,
+        int prev
+)
+
+&record free_node node_at(int index){
+        let int ptr = heap() + index * MIN_SIZE();
+        hop unsafe &record free_node(ptr);
+}
+
+bool bit_test(int index){
+        !!- word size is 64 = 2^6 bits
+        let &record metadata m = metadata_ptr();
+        let int result = (*m.is_free[index >> 6] >> (index & 63)) & 1;
+        hop unsafe bool(result);
+}
+
+void bit_set(int index){
+        let &record metadata m = metadata_ptr();
+        let int word_index = index >> 6;
+        let int original = *m.is_free[word_index];
+        *m.is_free[word_index] = original | (1 << (index & 63));
+}
+
+void bit_clear(int index){
+        let &record metadata m = metadata_ptr();
+        let int word_index = index >> 6;
+        let int original = *m.is_free[word_index];
+        *m.is_free[word_index] = original & ~(1 << (index & 63));
+}
+
+void order_set(int index, int order){
+        let &record metadata m = metadata_ptr();
+        let int word_index = index >> 3;
+        let int original = *m.order_of[word_index];
+        original = original & ~(63 << (8 * (index & 7)));
+        original = original | (order << (8 * (index & 7)));
+        *m.order_of[word_index] = original;
+}
+
+int order_get(int index){
+        let &record metadata m = metadata_ptr();
+        let int word_index = index >> 3;
+        let int original = *m.order_of[word_index];
+        original = original & (63 << (8 * (index & 7)));
+        hop original >> (8 * (index & 7));
+}
+
+void list_push(int order, int index){
+        let &record metadata m = metadata_ptr();
+        let &record free_node n = node_at(index);
+
+        *n.prev = NULL();
+        *n.next = *m.free_head[order];
+
+        if (*n.next != NULL()){
+                let &record free_node next = node_at(*n.next);
+                *next.prev = index;
+        }
+
+        *m.free_head[order] = index;
+        order_set(index, order);
+        bit_set(index);
+}
+
+void list_remove(int order, int index){
+        let &record metadata m = metadata_ptr();
+        let &record free_node n = node_at(index);
+
+        if (*n.prev != NULL()){
+                let &record free_node prev = node_at(*n.prev);
+                *prev.next = *n.next;
+        }
+        else {
+                *m.free_head[order] = *n.next;
+        }
+
+        if (*n.next != NULL()){
+                let &record free_node next = node_at(*n.next);
+                *next.prev = *n.prev;
+        }
+
+        bit_clear(index);
+}
+
+void meminit(){
+        let &record metadata m = metadata_ptr();
+        !!- set all memory for metadata to 0 initially
+        for (let int i = 0; i < 12 + 256 + 32; ++i){
+                let &int ptr = unsafe &int(unsafe int(m) + 8 * i);
+                *ptr = 0;
+        }
+
+        for (let int o = 0; o < NUM_ORDERS(); ++o){
+                *m.free_head[o] = NULL();
+        }
+
+        list_push(NUM_ORDERS() - 1, 0);
+}
+
+int order_for_size(int size){
+        if (size == 0 || size > HEAP_SIZE()){
+                hop -1;
+        }
+
+        let int order = 0;
+        let int block = MIN_SIZE();
+        while (block < size){
+                block = block << 1;
+                ++order;
+        }
+
+        if (order > NUM_ORDERS() - 1){
+                hop -1;
+        }
+
+        hop order;
+}
+
+&int memalloc(int size){
+        let &record metadata m = metadata_ptr();
+
+        let int order = order_for_size(size);
+        if (order < 0){
+                hop unsafe &int(0);
+        }
+
+        let int o = order;
+        while (o <= NUM_ORDERS() - 1 && *m.free_head[o] == NULL()){
+                ++o;
+        }
+
+        if (o > NUM_ORDERS() - 1){
+                hop unsafe &int(0);
+        }
+
+        let int index = *m.free_head[o];
+        list_remove(o, index);
+
+        while (o > order){
+                --o;
+                let int buddy = index + (1 << o);
+                list_push(o, buddy);
+        }
+
+        order_set(index, order);
+        bit_clear(index);
+
+        let int ptr = heap() + index * MIN_SIZE();
+        hop unsafe &int(ptr);
+}
+
+void memfree(&int ptr){
+        if (unsafe int(ptr) == 0){
+                hop;
+        }
+
+        let int index = (unsafe int(ptr) - heap()) / MIN_SIZE();
+        let int order = order_get(index);
+
+        let bool done = false;
+        while (!done && order < NUM_ORDERS() - 1){
+                let int buddy = index ^ (1 << order);
+
+                if (!bit_test(buddy) || (order_get(buddy) != order)){
+                        done = true;
+                }
+                else {
+                        list_remove(order, buddy);
+                        if (buddy < index){
+                                index = buddy;
+                        }
+                        ++order;
+                }
+        }
+
+        list_push(order, index);
+}
