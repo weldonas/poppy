@@ -315,6 +315,12 @@ char *comment(char *text){
     return val;
 }
 
+char *literal(char *text){
+        char *val = (char*) malloc((strlen(text) + 1) * sizeof(char));
+        strcpy(val, text);
+        return val;
+}
+
 char *include(char *module){
         char *instr = (char*) malloc((strlen(module) + 14) * sizeof(char));
         strcpy(instr, ".include \"");

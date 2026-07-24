@@ -30,6 +30,7 @@ char *str(enum reg src, enum reg addr);
 char *memory_copy(enum reg src, enum reg dest, long long words);
 char *ret();
 char *comment(char *text);
+char *literal(char *text);
 char *include(char *module);
 char *concat(size_t count, ...);
 #endif
