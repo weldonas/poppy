@@ -452,8 +452,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
         }
 
         if (tree->children->head->data->data.type == SYMBOL_STAR){
-                char *referenced = generate_address(tree->children->head->next->data, functions, within);
-                return concat(2, referenced, ldr(REG_RESULT, REG_RESULT));
+                return generate_value(tree->children->head->next->data, functions, within);
         }
 
         if (tree->children->head->next->data->data.type == SYMBOL_DOT){

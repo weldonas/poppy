@@ -33,8 +33,7 @@ record free_node (
 
 bool bit_test(int index){
         !!- word size is 64 = 2^6 bits
-        let &record metadata m = metadata_ptr();
-        let int result = (*m.is_free[index >> 6] >> (index & 63)) & 1;
+        let int result = (*metadata_ptr().is_free[index >> 6] >> (index & 63)) & 1;
         hop unsafe bool(result);
 }
 
@@ -62,9 +61,8 @@ void order_set(int index, int order){
 }
 
 int order_get(int index){
-        let &record metadata m = metadata_ptr();
         let int word_index = index >> 3;
-        let int original = *m.order_of[word_index];
+        let int original = *metadata_ptr().order_of[word_index];
         original = original & (63 << (8 * (index & 7)));
         hop original >> (8 * (index & 7));
 }
