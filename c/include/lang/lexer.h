@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "data/list.h"
+#include "data/result.h"
 #include "lang/symbol.h"
 
 struct token {
@@ -14,6 +15,8 @@ struct token {
 void free_token(struct token *t);
 
 DEFINE_LIST(token);
-struct LIST(token) * lex(FILE *file);
+DEFINE_RESULT(token_list);
+
+struct RESULT(token_list) lex(FILE *file);
 
 #endif

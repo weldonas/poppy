@@ -23,13 +23,17 @@ int main(int argc, char *argv[]){
         preprocess(argv[1], intermediate_file);
         printf("preprocessed\n");
         FILE *in = fopen(intermediate_file, "r");
-        struct LIST(token) *list = lex(in);
+        struct RESULT(token_list) list_result = lex(in);
         fclose(in);
         remove(intermediate_file);
 
-        if (list == NULL){
+        if (!list_result.is_ok){
+                printf("error: %s\n", list_result.error);
+                free(list_result.error);
                 return 0;
         }
+
+        struct LIST(token) *list = list_result.value;
 
         printf("lexed\n");
 

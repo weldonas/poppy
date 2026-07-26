@@ -1,4 +1,5 @@
 #include "lang/lexer.h"
+#include "data/result.h"
 #include "lang/symbol.h"
 
 #include <ctype.h>
@@ -226,11 +227,14 @@ bool lex_string_literal(FILE *file, char val[MAX_TOKEN_LENGTH + 1]){
         return true;
 }
 
-struct LIST(token)* lex(FILE *file){
+
+struct RESULT(token_list) lex(FILE *file){
         char val[MAX_TOKEN_LENGTH + 1];
         val[0] = 0;
         struct LIST(token) *list = (struct LIST(token)*) malloc(sizeof(struct LIST(token)));
         init_list(list);
+        struct RESULT(token_list) result;
+        make_ok(result, list);
 
         while (!feof(file)){
                 if (val[0] == 0){
@@ -238,7 +242,6 @@ struct LIST(token)* lex(FILE *file){
                 }
 
                 struct lex_data data;
-                data.type = SYMBOL_NULL;
                 data.excess = 0;
 
                 if (isspace(val[0])){
@@ -314,7 +317,7 @@ struct LIST(token)* lex(FILE *file){
                                 if(lex_char_literal(file, val)){
                                         data.type = SYMBOL_CHARLIT;
                                 } else {
-                                        data.type = SYMBOL_NULL;
+                                        make_error_lit(result, "Invalid character literal");
                                 }
                                 break;
                         case '\"':
@@ -322,7 +325,7 @@ struct LIST(token)* lex(FILE *file){
                                         data.type = SYMBOL_STRINGLIT;
                                         data.val_len = strlen(val);
                                 } else {
-                                        data.type = SYMBOL_NULL;
+                                        make_error_lit(result, "Invalid string literal");
                                 }
                                 break;
                         case '+':
@@ -370,14 +373,19 @@ struct LIST(token)* lex(FILE *file){
                                         data = find_alphanumeric_value(file, val);
                                 } else if (is_numeric_char(val[0])){
                                         data = find_numeric_value(file, val);
+                                } else {
+                                        char *lit = "Unrecognized character ";
+                                        char *err = (char *) malloc((strlen(lit) + 2) * sizeof(char));
+                                        strcpy(err, lit);
+                                        strcat(err, val);
+                                        make_error(result, err);
                                 }
                 }
 
-
-                if (data.type == SYMBOL_NULL){
+                if (!result.is_ok){
                         free_list(list, free_token, token);
                         free(list);
-                        return NULL;
+                        return result;
                 }
 
                 struct token *new_token = (struct token*) malloc(sizeof(struct token));
@@ -392,9 +400,9 @@ struct LIST(token)* lex(FILE *file){
                 data.excess = 0;
         }
 
-        return list;
+        make_ok(result, list);
+        return result;
 }
-
 
 void free_token(struct token *t){
         free(t->value);
