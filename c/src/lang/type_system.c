@@ -158,8 +158,6 @@ void find_types(const struct type_system *const system, struct parse_tree *tree)
         }
 }
 
-#define MAX_CHILDREN 16
-
 size_t get_priority(enum type_rule_condition_type type){
         switch(type){
                 case CONDITION_LENGTH:

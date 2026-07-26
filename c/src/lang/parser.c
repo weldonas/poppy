@@ -1,5 +1,6 @@
 #include "lang/parser.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -8,11 +9,11 @@
 #include "lang/parse_tree.h"
 #include "lang/symbol.h"
 
-size_t trees = 0;
-
 struct parse_tree_params {
         struct token data;
-        struct LIST(parse_tree_params) *children;
+        struct parse_tree_params *last_child;
+        struct parse_tree_params *prev_sibling;
+        struct parse_tree_params *first_child_not_to_free;
 };
 
 DEFINE_LIST(parse_tree_params);
@@ -20,35 +21,24 @@ DEFINE_LIST(parse_tree_params);
 struct parse_tree_params *new_tree_params(struct token data){
         struct parse_tree_params *ptr = (struct parse_tree_params*) malloc(sizeof(struct parse_tree_params));
         ptr->data = data;
-        ptr->children = NULL;
+        ptr->last_child = NULL;
+        ptr->first_child_not_to_free = NULL;
         return ptr;
 }
 
 struct parse_tree_params * copy_tree_params(struct parse_tree_params *tree){
         struct parse_tree_params *ptr = (struct parse_tree_params*) malloc(sizeof(struct parse_tree_params));
         ptr->data = tree->data;
-        if (tree->children == NULL){
-                ptr->children = NULL;
-        } else {
-                ptr->children = (struct LIST(parse_tree_params)*) malloc(sizeof(struct LIST(parse_tree_params)));
-                init_list(ptr->children);
-
-                for (struct LIST_NODE(parse_tree_params) *node = tree->children->head; node != NULL; node = node->next){
-                        struct parse_tree_params *child = copy_tree_params(node->data);
-                        append_list(ptr->children, child, parse_tree_params);
-                }
-        }
+        ptr->last_child = tree->last_child;
+        ptr->prev_sibling = tree->prev_sibling;
+        ptr->first_child_not_to_free = tree->last_child;
 
         return ptr;
 }
 
 void add_child(struct parse_tree_params *parent, struct parse_tree_params *child){
-        if (parent->children == NULL){
-                parent->children = (struct LIST(parse_tree_params)*) malloc(sizeof(struct LIST(parse_tree_params)));
-                init_list(parent->children);                
-        }
-
-        append_list(parent->children, child, parse_tree_params);
+        child->prev_sibling = parent->last_child;
+        parent->last_child = child;
 }
 
 // Earley item
@@ -69,10 +59,13 @@ struct item * new_item(struct rule *rule, size_t dot, size_t start, struct parse
 }
 
 void free_parse_tree_params(const struct parse_tree_params *params){
-        if (params->children != NULL) {
-                free_list(params->children, free_parse_tree_params, parse_tree_params);
-                free(params->children);
-        }       
+        struct parse_tree_params *cur = params->last_child;
+
+        while ((cur != NULL) && (cur != params->first_child_not_to_free)){
+                struct parse_tree_params *prev = cur->prev_sibling;
+                free_parse_tree_params(cur);
+                cur = prev;
+        }
 
         free((void*) params);
 }
@@ -130,15 +123,25 @@ void expand_into_list(struct parse_tree *tree, const struct grammar *grammar, st
 
 struct parse_tree *build_tree(struct parse_tree_params *params, struct parse_tree *parent){
         struct parse_tree *tree = (struct parse_tree*) malloc(sizeof(struct parse_tree));
-        ++trees;
         tree->data = params->data;
         
-        if (params->children){
+        struct parse_tree_params *stack[MAX_PARSE_CHILDREN];
+
+        int8_t child_count = 0;
+        struct parse_tree_params *cur = params->last_child;
+        while (cur != NULL){
+                assert(child_count < MAX_PARSE_CHILDREN);
+                stack[child_count] = cur;
+                ++child_count;
+                cur = cur->prev_sibling;
+        }
+
+        if (child_count > 0){
                 tree->children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
                 init_list(tree->children);
-
-                for (struct LIST_NODE(parse_tree_params) *node = params->children->head; node != NULL; node = node->next){
-                        struct parse_tree *child = build_tree(node->data, tree);
+                
+                for (int8_t i = child_count - 1; i >= 0; --i){
+                        struct parse_tree *child = build_tree(stack[i], tree);
                         append_list(tree->children, child, parse_tree);
                 }
         }

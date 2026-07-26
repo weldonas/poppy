@@ -6,6 +6,8 @@
 #include "lang/lexer.h"
 #include "lang/type.h"
 
+#define MAX_PARSE_CHILDREN 16
+
 struct string {
         const char *data;
 };
