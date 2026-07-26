@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 84
+#define RULE_COUNT 94
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -362,9 +362,10 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
-        conditions[1] = new_types_equal_at_condition(0, 2);
-        conditions[2] = new_type_at_condition(0, is_non_null_assignable_type);
-        rules[i] = new_type_rule(conditions, 3, void_type());
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_types_equal_at_condition(0, 2);
+        conditions[3] = new_type_at_condition(0, is_non_null_assignable_type);
+        rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_IDENTIFIER);
@@ -691,6 +692,96 @@ const struct type_system *const get_poppy_type_system(){
         conditions[2] = new_symbol_at_condition(0, SYMBOL_BNOT);
         conditions[3] = new_type_at_condition(1, is_non_null_int_type);
         rules[i] = new_type_rule(conditions, 4, int_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_PLUS);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_MINUS);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_STAR);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_DIVIDE);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_MOD);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_AMP);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BXOR);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BOR);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BLEFT);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
+        conditions[1] = new_length_condition(4);
+        conditions[2] = new_symbol_at_condition(1, SYMBOL_BRIGHT);
+        conditions[3] = new_types_equal_at_condition(0, 3);
+        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[5] = new_type_at_condition(0, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
 
         // Literals

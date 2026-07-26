@@ -50,7 +50,8 @@ int scan(){
 
     while (isdigit(c)){
         let int digit_value = int(c - '0');
-        total = total * 10 + digit_value * sign;
+        total *= 10;
+        total += digit_value * sign;
         c = scanc();
     }
     hop total;
