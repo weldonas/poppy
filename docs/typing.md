@@ -129,6 +129,14 @@ $$\frac{\Gamma \vdash E_1: \text{int}\quad \Gamma \vdash E_2: \text{int}}{
     \quad \Gamma \vdash \text{\~ } E_1 : \text{int}
 }$$
 
+$$\frac{\Gamma \vdash E_1: \tau^a\quad \Gamma \vdash E_2: \tau\quad \tau\in \{\text{int, char}\}}{
+    \Gamma \vdash E_1 += E_2 : \text{void} \quad \Gamma \vdash E_1 -= E_2 : \text{void}\quad \Gamma \vdash E_1 *= E_2 : \text{void} \quad \Gamma \vdash E_1 \text{ /= }E_2 : \text{void} \quad \Gamma \vdash E_1 
+    \text{ \%= } E_2 : \text{void}
+}$$
+
+$$\frac{\Gamma \vdash E_1: \text{int}^a\quad \Gamma \vdash E_2: \text{int}}{
+    \Gamma \vdash E_1 \text{ \&= } E_2 : \text{void}\quad     \Gamma \vdash E_1 \text{ |= }  E_2 : \text{void} \quad     \Gamma \vdash E_1 \text{ \^ = } E_2 : \text{void} \quad \Gamma \vdash E_1 \text{ <<= } E_2 : \text{void} \quad \Gamma \vdash E_1 \text{ >>= } E_2 : \text{void}
+}$$
 
 ## Literals
 

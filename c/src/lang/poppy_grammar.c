@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 100
+#define RULE_COUNT 110
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -68,6 +68,16 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_VARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_VARASST}, i, poppy_grammar); ++i;
         populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_PLUS COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_MINUS COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_STAR COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_DIVIDE COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_MOD COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_BLEFT COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_BRIGHT COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_AMP COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_BXOR COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_VARASST, {SYMBOL_EXPR COMMA SYMBOL_BOR COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_SEMISTMT, {SYMBOL_RET}, i, poppy_grammar); ++i;
         populate(SYMBOL_RET, {SYMBOL_HOP COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_RET, {SYMBOL_HOP}, i, poppy_grammar); ++i;

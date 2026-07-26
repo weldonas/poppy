@@ -40,24 +40,20 @@ bool bit_test(int index){
 void bit_set(int index){
         let &record metadata m = metadata_ptr();
         let int word_index = index >> 6;
-        let int original = *m.is_free[word_index];
-        *m.is_free[word_index] = original | (1 << (index & 63));
+        *m.is_free[word_index] |= (1 << (index & 63));
 }
 
 void bit_clear(int index){
         let &record metadata m = metadata_ptr();
         let int word_index = index >> 6;
-        let int original = *m.is_free[word_index];
-        *m.is_free[word_index] = original & ~(1 << (index & 63));
+        *m.is_free[word_index] &= ~(1 << (index & 63));
 }
 
 void order_set(int index, int order){
         let &record metadata m = metadata_ptr();
         let int word_index = index >> 3;
-        let int original = *m.order_of[word_index];
-        original = original & ~(63 << (8 * (index & 7)));
-        original = original | (order << (8 * (index & 7)));
-        *m.order_of[word_index] = original;
+        *m.order_of[word_index] &= ~(63 << (8 * (index & 7)));
+        *m.order_of[word_index] |= (order << (8 * (index & 7)));
 }
 
 int order_get(int index){
@@ -127,7 +123,7 @@ int order_for_size(int size){
         let int order = 0;
         let int block = MIN_SIZE();
         while (block < size){
-                block = block << 1;
+                block <<= 1;
                 ++order;
         }
 

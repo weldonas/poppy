@@ -43,6 +43,16 @@ $$\begin{align*}
 \text{vardec} &\rightarrow \text{LET type IDENTIFIER}  \\
 \text{semistmt} &\rightarrow \text{varasst}  \\
 \text{varasst} &\rightarrow \text{expr ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr PLUS ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr MINUS ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr STAR ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr DIVIDE ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr MOD ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr BLEFT ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr BRIGHT ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr AMP ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr BXOR ASSIGN expr}  \\
+\text{varasst} &\rightarrow \text{expr BOR ASSIGN expr}  \\
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\

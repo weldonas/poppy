@@ -137,7 +137,7 @@ char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function
 }
 
 
-char *generate_varasst(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
+char *generate_plain_varasst(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         const struct parse_tree *addressable; load_child_at(addressable, tree, 0);
         char *find_memory_addr = generate_address(addressable, functions, within);
         const struct parse_tree *expr; load_child_at(expr, tree, 2);
@@ -163,6 +163,72 @@ char *generate_varasst(const struct parse_tree *tree, struct MAP(string, functio
                 );
         }
 }
+
+char *generate_compound_varasst(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
+        const struct parse_tree *addressable; load_child_at(addressable, tree, 0);
+        char *find_memory_addr = generate_address(addressable, functions, within);
+        const struct parse_tree *expr; load_child_at(expr, tree, 3);
+        assert(!is_composite(expr->type));
+
+        char *value_code = generate_value(expr, functions, within);
+
+        char *compound_op;
+        enum symbol operator = tree->children->head->next->data->data.type;
+        char *deref = ldr(REG_RESULT, REG_RESULT);
+        switch(operator){
+                case SYMBOL_PLUS:
+                        compound_op = sum(deref, value_code);
+                        break;
+                case SYMBOL_MINUS:
+                        compound_op = subtract(deref, value_code);
+                        break;
+                case SYMBOL_STAR:
+                        compound_op = multiply(deref, value_code);
+                        break;
+                case SYMBOL_DIVIDE:
+                        compound_op = divide(deref, value_code);
+                        break;
+                case SYMBOL_MOD:
+                        compound_op = modulo(deref, value_code);
+                        break;
+                case SYMBOL_AMP:
+                        compound_op = band(deref, value_code);
+                        break;
+                case SYMBOL_BOR:
+                        compound_op = bor(deref, value_code);
+                        break;
+                case SYMBOL_BXOR:
+                        compound_op = bxor(deref, value_code);
+                        break;
+                case SYMBOL_BLEFT:
+                        compound_op = bleft(deref, value_code);
+                        break;
+                case SYMBOL_BRIGHT:
+                        compound_op = bright(deref, value_code);
+                        break;
+                default:
+                        assert(0);
+        }
+
+        return concat(5,
+                find_memory_addr,
+                push(REG_RESULT),
+                compound_op,
+                pop(REG_SCRATCH),
+                str(REG_RESULT, REG_SCRATCH)
+        );
+}
+
+char *generate_varasst(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
+        if (tree->children->len == 3){
+                return generate_plain_varasst(tree, functions, within);
+        }
+        else if (tree->children->len == 4){
+                return generate_compound_varasst(tree, functions, within);
+        }
+        assert(0);
+}
+
 
 char *generate_ret(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         if (tree->children->len == 1){
