@@ -23,30 +23,44 @@ int main(int argc, char *argv[]){
         preprocess(argv[1], intermediate_file);
         printf("preprocessed\n");
         FILE *in = fopen(intermediate_file, "r");
-        struct LIST(token) *list = lex(in);
+        struct RESULT(token_list) list_result = lex(in);
         fclose(in);
         remove(intermediate_file);
 
-        if (list == NULL){
+        if (!list_result.is_ok){
+                printf("error: %s\n", list_result.error);
+                free((void*) list_result.error);
                 return 0;
         }
+
+        const struct LIST(token) *list = list_result.value;
 
         printf("lexed\n");
 
         const struct grammar *poppy_grammar = get_poppy_grammar();
-        struct parse_tree *pt = parse(poppy_grammar, list);
+        struct RESULT(parse_tree) pt_result = parse(poppy_grammar, list);
         free_poppy_grammar();
 
-        if (pt == NULL) {
+        if (!pt_result.is_ok) {
                 free_list(list, free_token, token);
-                free(list);
+                free((void*) list);
+                printf("error: %s\n", pt_result.error);
+                free((void*) pt_result.error);
                 return 0;
         }
 
         printf("parsed\n");
 
+        struct parse_tree *pt = (struct parse_tree*) pt_result.value;
         const struct type_system *const system = get_poppy_type_system();
-        find_types(system, pt);
+        struct RESULT(unit) types_result = find_types(system, pt);
+
+        if (!types_result.is_ok){
+                printf("error: %s\n", types_result.error);
+                free((void*) types_result.error);
+                return 0;
+        }
+
         if (pt->type != NULL){
                 printf("typed\n");
                 char *code = generate_code(pt);
@@ -64,7 +78,7 @@ int main(int argc, char *argv[]){
         free_poppy_type_system();
         free_types();
         free_list(list, free_token, token);
-        free(list);
+        free((void*) list);
 
         return 0;
 }

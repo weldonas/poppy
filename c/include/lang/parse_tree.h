@@ -34,6 +34,8 @@ struct parse_tree {
 
 void free_parse_tree(const struct parse_tree *tree);
 void print_parse_tree(const struct parse_tree *tree);
+char *parse_tree_string(const struct parse_tree *tree);
+
 struct MAP(string, symbol_table_value) *new_symbol_table();
 
 #define load_child_at(var, tree, n)                                        \

@@ -2,6 +2,7 @@
 #define TYPE_SYSTEM_H
 
 #include "data/map.h"
+#include "data/result.h"
 #include "lang/parser.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
@@ -10,7 +11,10 @@ struct type_rule;
 struct type_rule_condition;
 struct type_system;
 
-void find_types(const struct type_system *const system, struct parse_tree *tree);
+struct unit{};
+DEFINE_RESULT(unit);
+
+struct RESULT(unit) find_types(const struct type_system *const system, struct parse_tree *tree);
 
 #define MAX_CONDITION_COUNT 16
 
