@@ -2,10 +2,13 @@
 #define PARSER_H
 
 #include "data/list.h"
+#include "data/result.h"
 #include "lang/grammar.h"
 #include "lang/lexer.h"
 #include "lang/parse_tree.h"
 
-struct parse_tree * const parse(const struct grammar *grammar, const struct LIST(token) *head);
+DEFINE_RESULT(parse_tree);
+
+struct RESULT(parse_tree) parse(const struct grammar *grammar, const struct LIST(token) *head);
 
 #endif

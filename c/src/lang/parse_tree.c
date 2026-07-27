@@ -1,5 +1,7 @@
 #include "lang/parse_tree.h"
 
+#include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -60,6 +62,45 @@ void print_parse_tree_rec(const struct parse_tree *tree, size_t depth) {
 void print_parse_tree(const struct parse_tree *tree){
         print_parse_tree_rec(tree, 0);
         printf("\n");
+}
+
+void buf_append(char **buf, size_t *len, size_t *cap, const char *str) {
+        size_t slen = strlen(str);
+
+        if (*len + slen + 1 > *cap) {
+                while (*len + slen + 1 > *cap) {
+                        *cap *= 2;
+                }
+                *buf = realloc(*buf, *cap);
+        }
+
+        memcpy(*buf + *len, str, slen);
+        *len += slen;
+        (*buf)[*len] = 0;
+}
+
+
+void tree_concat(const struct parse_tree *tree, char **buf, size_t *len, size_t *cap) {
+        if (tree->children) {
+                for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next) {
+                        tree_concat(node->data, buf, len, cap);
+                }
+        } 
+        else if (is_terminal(tree->data.type)) {
+                assert(tree->data.value);
+                buf_append(buf, len, cap, tree->data.value);
+        }
+}
+
+char *parse_tree_string(const struct parse_tree *tree) {
+        size_t cap = 16;
+        size_t len = 0;
+
+        char *buf = malloc(cap);
+        buf[0] = 0;
+        
+        tree_concat(tree, &buf, &len, &cap);
+        return buf;
 }
 
 struct variable find_symbol_variable(const struct parse_tree *tree){

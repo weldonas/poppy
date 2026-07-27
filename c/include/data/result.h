@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#define DEFINE_RESULT(type) struct type##_result {bool is_ok; union {struct type *value; char *error;};};
+#define DEFINE_RESULT(type) struct type##_result {bool is_ok; union {const struct type *value; const char *error;};};
 #define RESULT(type) type##_result
 
 #define make_ok(result, val)            \
