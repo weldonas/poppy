@@ -3,7 +3,7 @@
 
 struct label;
 
-struct label *new_label();
+struct label *new_label(const char *name);
 void free_label(struct label *l);
 
 char *declare_label(struct label *l);

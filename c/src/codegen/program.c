@@ -30,9 +30,9 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
 char *generate_head(const struct parse_tree *tree){
         return concat(8,
                 literal(".bss"),
-                literal("heapmeta:"),
+                literal("__heapmeta:"),
                 literal(".skip 8192"),
-                literal("heap:"),
+                literal("__heap:"),
                 literal(".skip 65536"),
                 literal(".text"),
                 literal(".include \"utils.s\""),
@@ -227,6 +227,7 @@ char *generate_varasst(const struct parse_tree *tree, struct MAP(string, functio
                 return generate_compound_varasst(tree, functions, within);
         }
         assert(0);
+        return NULL;
 }
 
 
@@ -633,7 +634,7 @@ char *generate_code(const struct parse_tree *tree){
                 s->data = signature->children->head->next->data->data.value;
                 bool is_main = strcmp("main", s->data) == 0;
 
-                struct function *fn = new_function(params_list, locals_list, is_main);
+                struct function *fn = new_function(params_list, locals_list, is_main, s->data);
                 free_list((&locals_list), free_variable, variable);
 
                 update_map((&functions), s, fn, string, function);

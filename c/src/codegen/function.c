@@ -23,7 +23,7 @@ struct function {
         bool is_main;
 };
 
-struct function *new_function(struct LIST(variable) params, struct LIST(variable) vars, bool is_main){
+struct function *new_function(struct LIST(variable) params, struct LIST(variable) vars, bool is_main, const char *name){
         struct chunk *frame = new_chunk();
         struct chunk *param_chunk = new_chunk();
 
@@ -46,8 +46,8 @@ struct function *new_function(struct LIST(variable) params, struct LIST(variable
         struct function *ptr = (struct function*) malloc(sizeof(struct function));
         ptr->body = NULL;
         ptr->params = params;
-        ptr->start_label = new_label();
-        ptr->after_body_label = new_label();
+        ptr->start_label = new_label(name);
+        ptr->after_body_label = new_label(NULL);
         ptr->frame = frame;
         ptr->param_chunk = param_chunk;
         ptr->is_main = is_main;

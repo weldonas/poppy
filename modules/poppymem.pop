@@ -14,11 +14,11 @@ record metadata (
 )
 
 &record metadata metadata_ptr(){
-        hop unsafe &record metadata(asm("ldr x10, =heapmeta"));
+        hop unsafe &record metadata(asm("ldr x10, =__heapmeta"));
 }
 
-int heap(){
-        hop unsafe int(asm("ldr x10, =heap"));
+int heap_ptr(){
+        hop unsafe int(asm("ldr x10, =__heap"));
 }
 
 record free_node (
@@ -27,7 +27,7 @@ record free_node (
 )
 
 &record free_node node_at(int index){
-        let int ptr = heap() + index * MIN_SIZE();
+        let int ptr = heap_ptr() + index * MIN_SIZE();
         hop unsafe &record free_node(ptr);
 }
 
@@ -163,7 +163,7 @@ int order_for_size(int size){
         order_set(index, order);
         bit_clear(index);
 
-        let int ptr = heap() + index * MIN_SIZE();
+        let int ptr = heap_ptr() + index * MIN_SIZE();
         hop unsafe &int(ptr);
 }
 
@@ -172,7 +172,7 @@ void memfree(&int ptr){
                 hop;
         }
 
-        let int index = (unsafe int(ptr) - heap()) / MIN_SIZE();
+        let int index = (unsafe int(ptr) - heap_ptr()) / MIN_SIZE();
         let int order = order_get(index);
 
         let bool done = false;

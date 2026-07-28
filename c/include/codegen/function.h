@@ -11,7 +11,7 @@
 
 struct function;
 
-struct function *new_function(struct LIST(variable) params, struct LIST(variable) vars, bool is_main);
+struct function *new_function(struct LIST(variable) params, struct LIST(variable) vars, bool is_main, const char *name);
 void free_function(const struct function* function);
 
 size_t num_params(const struct function *function);

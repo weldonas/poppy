@@ -13,15 +13,23 @@ struct label {
         char *name;
 };
 
-struct label *new_label(){
+struct label *new_label(const char *name){
         ++label_count;
-        char *name = (char*) malloc((MAX_LABEL_INDEX_LENGTH + 7) * sizeof(char));
 
-        strcpy(name, "label");
-        sprintf(name + 5, "%zu", label_count);
+        char *label_name;
+
+        if (name){
+                label_name = (char*) malloc((strlen(name) + 1) * sizeof(char));
+                strcpy(label_name, name);
+        }
+        else {
+                label_name = (char*) malloc((MAX_LABEL_INDEX_LENGTH + 4) * sizeof(char));
+                strcpy(label_name, ".L");
+                sprintf(label_name + 2, "%zu", label_count);
+        }
 
         struct label *l = (struct label*) malloc(sizeof(struct label));
-        l->name = name;
+        l->name = label_name;
         return l;
 }
 
@@ -31,35 +39,35 @@ void free_label(struct label *l){
 }
 
 char *declare_label(struct label *l){
-        char *instr = (char*) malloc(sizeof(l->name) + sizeof(char));
+        char *instr = (char*) malloc((strlen(l->name) + 2) * sizeof(char));
         strcpy(instr, l->name);
         strcat(instr, ":");
         return instr;
 }
 
 char *b(struct label *l){
-        char *instr = (char*) malloc(sizeof(l->name) + 2 * sizeof(char));
+        char *instr = (char*) malloc((strlen(l->name) + 3) * sizeof(char));
         strcpy(instr, "b ");
         strcat(instr, l->name);
         return instr;
 }
 
 char *bl(struct label *l){
-        char *instr = (char*) malloc(sizeof(l->name) + 3 * sizeof(char));
+        char *instr = (char*) malloc((strlen(l->name) + 4) * sizeof(char));
         strcpy(instr, "bl ");
         strcat(instr, l->name);
         return instr;
 }
 
 char *beq(struct label *l){
-        char *instr = (char*) malloc(sizeof(l->name) + 4 * sizeof(char));
+        char *instr = (char*) malloc((strlen(l->name) + 5) * sizeof(char));
         strcpy(instr, "beq ");
         strcat(instr, l->name);
         return instr;
 }
 
 char *bne(struct label *l){
-        char *instr = (char*) malloc(sizeof(l->name) + 4 * sizeof(char));
+        char *instr = (char*) malloc((strlen(l->name) + 5) * sizeof(char));
         strcpy(instr, "bne ");
         strcat(instr, l->name);
         return instr;
@@ -69,8 +77,8 @@ char *if_stmt(char* cond, char *then_block, char *else_block) {
         char* ret;
 
         if (else_block){
-                struct label *after_then = new_label();
-                struct label *after_else = new_label();
+                struct label *after_then = new_label(NULL);
+                struct label *after_else = new_label(NULL);
                 ret = concat(8,
                         cond,
                         cmpi(REG_RESULT, 1),
@@ -84,7 +92,7 @@ char *if_stmt(char* cond, char *then_block, char *else_block) {
                 free_label(after_then);
                 free_label(after_else);
         } else {
-                struct label *after_then = new_label();
+                struct label *after_then = new_label(NULL);
                 ret = concat(5,
                         cond,
                         cmpi(REG_RESULT, 1),
@@ -99,8 +107,8 @@ char *if_stmt(char* cond, char *then_block, char *else_block) {
 }
 
 char *while_loop(char *cond, char *body){
-        struct label *start = new_label();
-        struct label *end = new_label();
+        struct label *start = new_label(NULL);
+        struct label *end = new_label(NULL);
 
         char *ret = concat(7,
                 declare_label(start),
