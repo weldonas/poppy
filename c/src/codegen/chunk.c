@@ -54,7 +54,7 @@ void add_variable(struct chunk *chunk, struct variable var){
         }
 
         // chunk->next_offset holds the next available offset, which is also the size of the chunk
-        chunk->next_offset += var.type->word_count * 8;
+        chunk->next_offset += var.type->byte_count * 8;
 
         if ((chunk->next_offset % 16) == 0){
                 chunk->size = chunk->next_offset;

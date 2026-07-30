@@ -116,7 +116,7 @@ char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function
                                 push(REG_RESULT),
                                 address_code,
                                 pop(REG_SCRATCH),
-                                memory_copy(REG_RESULT, REG_SCRATCH, expr->type->word_count)
+                                memory_copy(REG_RESULT, REG_SCRATCH, expr->type->byte_count)
                         );
                 }
                 else {
@@ -149,7 +149,7 @@ char *generate_plain_varasst(const struct parse_tree *tree, struct MAP(string, f
                         push(REG_RESULT),
                         address_code,
                         pop(REG_SCRATCH),
-                        memory_copy(REG_RESULT, REG_SCRATCH, expr->type->word_count)
+                        memory_copy(REG_RESULT, REG_SCRATCH, expr->type->byte_count)
                 );
         }
         else {
@@ -539,7 +539,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
         if (tree->children->head->next->data->data.type == SYMBOL_LBRACKET){
                 const struct parse_tree *array_tree; load_child_at(array_tree, tree, 0);
                 const struct parse_tree *index_tree; load_child_at(index_tree, tree, 2);
-                uint32_t element_size = array_tree->type->element_type->word_count;
+                uint32_t element_size = array_tree->type->element_type->byte_count;
                 char *array_address = generate_address(array_tree, functions, within);
                 char *index = generate_value(index_tree, functions, within);
 
@@ -560,7 +560,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
 }
 
 char *generate_value(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        assert(tree->type->word_count == 1);
+        assert(tree->type->byte_count == 1);
         return generate_from_tree(tree, functions, within);
 
         print_parse_tree(tree);

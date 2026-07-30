@@ -45,7 +45,7 @@ const struct type* const int_type(){
                 int_ptr = (struct type*) malloc(sizeof(struct type));
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
-                int_ptr->word_count = 1;
+                int_ptr->byte_count = 1;
                 int_ptr->is_assignable = false;
                 add_type(int_ptr);
         }
@@ -58,7 +58,7 @@ const struct type* const bool_type(){
                 bool_ptr = (struct type*) malloc(sizeof(struct type));
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
-                bool_ptr->word_count = 1;
+                bool_ptr->byte_count = 1;
                 bool_ptr->is_assignable = false;
                 add_type(bool_ptr);
         }
@@ -71,7 +71,7 @@ const struct type* const void_type(){
                 void_ptr = (struct type*) malloc(sizeof(struct type));
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
-                void_ptr->word_count = NOT_IN_MEMORY;
+                void_ptr->byte_count = NOT_IN_MEMORY;
                 void_ptr->is_assignable = false;
                 add_type(void_ptr);
         }
@@ -84,7 +84,7 @@ const struct type* const char_type(){
                 char_ptr = (struct type*) malloc(sizeof(struct type));
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
-                char_ptr->word_count = 1;
+                char_ptr->byte_count = 1;
                 char_ptr->is_assignable = false;
                 add_type(char_ptr);
         }
@@ -96,7 +96,7 @@ const struct type* const unit_type(){
         if (unit_ptr == NULL){
                 unit_ptr = (struct type*) malloc(sizeof(struct type));
                 unit_ptr->category = CATEGORY_UNIT;
-                unit_ptr->word_count = NOT_IN_MEMORY;
+                unit_ptr->byte_count = NOT_IN_MEMORY;
                 unit_ptr->is_assignable = false;
                 add_type(unit_ptr);
         }
@@ -113,7 +113,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         new->category = CATEGORY_FUNCTION;
         new->ret_type = ret;
         new->params_type = params;
-        new->word_count = NOT_IN_MEMORY;
+        new->byte_count = NOT_IN_MEMORY;
         new->is_assignable = false;
         add_type(new);
         return new;
@@ -122,7 +122,7 @@ struct type* const param_type(){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
-        new->word_count = NOT_IN_MEMORY;
+        new->byte_count = NOT_IN_MEMORY;
         new->is_assignable = false;
         add_type(new);
         return new;
@@ -132,19 +132,19 @@ const struct type* const pointer_type(const struct type *type){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_POINTER;
         new->referenced_type = type;
-        new->word_count = 1;
+        new->byte_count = 1;
         new->is_assignable = false;
         add_type(new);
         return new;
 }
 
 void add_param(struct type *params, const struct type *type_to_add){
-        assert(type_to_add->word_count != NOT_IN_MEMORY);
+        assert(type_to_add->byte_count != NOT_IN_MEMORY);
         append_list((&params->subtypes), (struct type*) type_to_add, type);
 }
 
 const struct type* const array_type(const struct type *element_type, char *length_str){
-        if (element_type->word_count == NOT_IN_MEMORY){
+        if (element_type->byte_count == NOT_IN_MEMORY){
                 return NULL;
         }
 
@@ -157,7 +157,7 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         new->category = CATEGORY_ARRAY;
         new->element_type = element_type;
         new->length = length;
-        new->word_count = element_type->word_count * length;
+        new->byte_count = element_type->byte_count * length;
         new->is_assignable = false;
         add_type(new);
         return new;
@@ -167,7 +167,7 @@ struct type* const record_type(){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
         init_list((&new->fields));
-        new->word_count = 0;
+        new->byte_count = 0;
         new->is_assignable = false;
         new->name = NULL;
 
@@ -176,11 +176,11 @@ struct type* const record_type(){
 }
 
 bool add_field(struct type *record, struct variable *v){
-        if (!v->type || (v->type->word_count == NOT_IN_MEMORY)){
+        if (!v->type || (v->type->byte_count == NOT_IN_MEMORY)){
                 return false;
         }
         append_list((&record->fields), v, variable);
-        record->word_count += v->type->word_count;
+        record->byte_count += v->type->byte_count;
         return true;
 }
 
@@ -230,14 +230,14 @@ size_t record_type_offset(const struct type *record, const char *name){
                         return current;
                 }
 
-                current += node->data->type->word_count;
+                current += node->data->type->byte_count;
         }
 
         return NOT_IN_MEMORY;
 }
 
 const struct type *make_assignable(const struct type *type){
-        assert(type->word_count != NOT_IN_MEMORY);
+        assert(type->byte_count != NOT_IN_MEMORY);
 
         struct type *new = (struct type*) malloc(sizeof(struct type));
         add_type(new);
@@ -335,7 +335,7 @@ bool is_numeric(const struct type *type){
 }
 
 bool is_returnable(const struct type *type){
-        return (type->word_count > 0) || (equals_type(type, void_type()));
+        return (type->byte_count > 0) || (equals_type(type, void_type()));
 }
 
 bool is_composite(const struct type *type){

@@ -30,7 +30,7 @@ DEFINE_LIST(type);
 DEFINE_LIST(variable)
 
 struct type {
-    uint32_t word_count;
+    uint32_t byte_count;
     enum category category;
     bool is_assignable;
     union{

@@ -14,7 +14,7 @@ enum reg {
     REG_RESULT,
     REG_ARG_CHUNK_PTR,
     REG_SCRATCH2,
-    REG_13,
+    REG_BYTE_INDEX,
     REG_14,
     REG_15,
     REG_16,

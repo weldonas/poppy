@@ -132,7 +132,7 @@ char *call_function(const struct function *function, char **args){
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
-                                memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->word_count)
+                                memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->byte_count)
                         );
                 }
                 else {

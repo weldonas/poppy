@@ -26,7 +26,7 @@ bool is_non_null_bool_type(const struct type *const type){
 }
 
 bool is_non_null_in_memory_type(const struct type *const type){
-        return type && (type->word_count != NOT_IN_MEMORY);
+        return type && (type->byte_count != NOT_IN_MEMORY);
 }
 
 bool is_non_null_type(const struct type *const type){
