@@ -45,7 +45,7 @@ const struct type* const int_type(){
                 int_ptr = (struct type*) malloc(sizeof(struct type));
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
-                int_ptr->byte_count = 1;
+                int_ptr->byte_count = 8;
                 int_ptr->is_assignable = false;
                 add_type(int_ptr);
         }
@@ -132,7 +132,7 @@ const struct type* const pointer_type(const struct type *type){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_POINTER;
         new->referenced_type = type;
-        new->byte_count = 1;
+        new->byte_count = 8;
         new->is_assignable = false;
         add_type(new);
         return new;
@@ -153,11 +153,14 @@ const struct type* const array_type(const struct type *element_type, char *lengt
                 return NULL;
         }
 
+        uint32_t byte_count = element_type->byte_count * length;
+        byte_count = ((byte_count + 7) / 8) * 8;
+
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_ARRAY;
         new->element_type = element_type;
         new->length = length;
-        new->byte_count = element_type->byte_count * length;
+        new->byte_count = byte_count;
         new->is_assignable = false;
         add_type(new);
         return new;
@@ -175,7 +178,10 @@ struct type* const record_type(){
         return new;
 }
 
+// TODO fix this logic
 bool add_field(struct type *record, struct variable *v){
+        assert(v->type->byte_count > 0);
+
         if (!v->type || (v->type->byte_count == NOT_IN_MEMORY)){
                 return false;
         }

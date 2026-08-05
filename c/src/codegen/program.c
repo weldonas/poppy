@@ -531,7 +531,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
 
                 return concat(3,
                         record,
-                        movi(REG_SCRATCH, 8 * field_offset),
+                        movi(REG_SCRATCH, field_offset),
                         add(REG_RESULT, REG_RESULT, REG_SCRATCH)
                 );
         }
@@ -547,7 +547,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
                         array_address,
                         push(REG_RESULT),
                         index,
-                        movi(REG_SCRATCH, 8 * element_size),
+                        movi(REG_SCRATCH, element_size),
                         mul(REG_RESULT, REG_RESULT, REG_SCRATCH),
                         pop(REG_SCRATCH),
                         add(REG_RESULT, REG_RESULT, REG_SCRATCH)
@@ -560,7 +560,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
 }
 
 char *generate_value(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        assert(tree->type->byte_count == 1);
+        assert(tree->type->byte_count <= 8);
         return generate_from_tree(tree, functions, within);
 
         print_parse_tree(tree);

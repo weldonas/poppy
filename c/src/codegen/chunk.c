@@ -9,7 +9,8 @@
 #include "data/map.h"
 
 struct index {
-        uint32_t data;
+        uint32_t offset;
+        uint32_t size;
 };
 
 DEFINE_MAP(string, index);
@@ -43,25 +44,22 @@ void add_variable(struct chunk *chunk, struct variable var){
         struct string *v = (struct string*) malloc(sizeof(struct string));
         v->data = var.string;
         struct index *i = (struct index*) malloc(sizeof(struct index));
-        i->data = chunk->next_offset;
+
+        if ((chunk->next_offset % 8) + var.type->byte_count > 8){
+                chunk->next_offset = ((chunk->next_offset + 7) / 8) * 8;
+        }
+
+        i->offset = chunk->next_offset;
+        i->size = var.type->byte_count;
         update_map((&chunk->offsets), v, i, string, index);
 
-        size_t num_vars = chunk->offsets.list->len;
-        // if we have an even number of variables, we use an odd number of words
-        // and we have to increment by 16 to keep the stack pointer aligned
-        if (num_vars % 2 == 0){
-                chunk->size += 16;
-        }
-
         // chunk->next_offset holds the next available offset, which is also the size of the chunk
-        chunk->next_offset += var.type->byte_count * 8;
+        chunk->next_offset += var.type->byte_count;
 
-        if ((chunk->next_offset % 16) == 0){
-                chunk->size = chunk->next_offset;
+        if (chunk->next_offset > chunk->size){
+                chunk->size = ((chunk->next_offset + 15) / 16) * 16;
         }
-        else {
-                chunk->size = chunk->next_offset + 8;
-        }
+        
         assert(!(chunk->size % 16));
 }
 
@@ -77,7 +75,7 @@ char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_
         const struct index *result;
         query_map((&chunk->offsets), &v, result, string, index);
         return concat(2, 
-                movi(dest, result->data), 
+                movi(dest, result->offset), 
                 add(dest,  chunk_address, dest)
         );
 }
