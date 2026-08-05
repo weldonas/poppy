@@ -27,7 +27,7 @@ char *not(enum reg dest, enum reg src);
 char *cmpi(enum reg reg, long long imm);
 char *ldr(enum reg dest, enum reg addr);
 char *str(enum reg src, enum reg addr);
-char *memory_copy(enum reg src, enum reg dest, long long words);
+char *memory_copy(enum reg src, enum reg dest, long long bytes);
 char *ret();
 char *comment(char *text);
 char *literal(char *text);

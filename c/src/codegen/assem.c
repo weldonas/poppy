@@ -284,7 +284,9 @@ char *str(enum reg src, enum reg addr){
         return instr;   
 }
 
-char *memory_copy(enum reg src, enum reg dest, long long words){
+char *memory_copy(enum reg src, enum reg dest, long long bytes){
+        assert((bytes % 8) == 0);
+        long long words = bytes / 8;
         char *store_lr = (char*) malloc(20 * sizeof(char));
         strcpy(store_lr, "str lr, [sp, #-16]!");
         char *bl = (char*) malloc(10 * sizeof(char));
