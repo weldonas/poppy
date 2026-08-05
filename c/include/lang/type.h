@@ -94,7 +94,6 @@ const struct type *make_assignable(const struct type *type);
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);
 bool is_returnable(const struct type *type);
-bool is_composite(const struct type *type);
 bool can_safe_cast(const struct type *src, const struct type *dst);
 void free_types();
 #endif

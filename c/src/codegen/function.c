@@ -128,7 +128,7 @@ char *call_function(const struct function *function, char **args){
         size_t i = 0;
         for (struct LIST_NODE(variable) *param = function->params.head; param != NULL; param = param->next, ++i) {
                 char *cur_eval;
-                if (is_composite(param->data->type)) {
+                if (param->data->type->byte_count > 8) {
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),

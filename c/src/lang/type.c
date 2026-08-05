@@ -344,10 +344,6 @@ bool is_returnable(const struct type *type){
         return (type->byte_count > 0) || (equals_type(type, void_type()));
 }
 
-bool is_composite(const struct type *type){
-        return (type->category == CATEGORY_ARRAY) || (type->category == CATEGORY_RECORD);
-}
-
 bool can_safe_cast(const struct type *src, const struct type *dst){
         if (src->category != dst->category){
                 return false;

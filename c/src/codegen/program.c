@@ -109,7 +109,7 @@ char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function
                 char *find_memory_addr = generate_address(addressable, functions, within);
                 const struct parse_tree *expr; load_child_at(expr, tree, 4);
 
-                if (is_composite(expr->type)){
+                if (expr->type->byte_count > 8){
                         char *address_code = generate_address(expr, functions, within);
                         return concat(5,
                                 find_memory_addr,
@@ -142,7 +142,7 @@ char *generate_plain_varasst(const struct parse_tree *tree, struct MAP(string, f
         char *find_memory_addr = generate_address(addressable, functions, within);
         const struct parse_tree *expr; load_child_at(expr, tree, 2);
 
-        if (is_composite(expr->type)){
+        if (expr->type->byte_count > 8){
                 char *address_code = generate_address(expr, functions, within);
                 return concat(5,
                         find_memory_addr,
@@ -168,7 +168,7 @@ char *generate_compound_varasst(const struct parse_tree *tree, struct MAP(string
         const struct parse_tree *addressable; load_child_at(addressable, tree, 0);
         char *find_memory_addr = generate_address(addressable, functions, within);
         const struct parse_tree *expr; load_child_at(expr, tree, 3);
-        assert(!is_composite(expr->type));
+        assert(expr->type->byte_count <= 8);
 
         char *value_code = generate_value(expr, functions, within);
 
@@ -244,7 +244,7 @@ char *generate_ret(const struct parse_tree *tree, struct MAP(string, function) *
                 return ret;
         }
         
-        if (is_composite(second->type)){
+        if (second->type->byte_count > 8){
                 char *address = generate_address(second, functions, within);
                 return concat(2, address, hop(within));
         }
@@ -468,12 +468,12 @@ char *generate_call(const struct parse_tree *tree, struct MAP(string, function) 
                 const struct parse_tree *args = optargs->children->head->data;
 
                 for (struct LIST_NODE(parse_tree) *child = args->children->head; child != NULL; child = child->next ? child->next->next : NULL){
-                        args_code[i++] = is_composite(child->data->type)
+                        args_code[i++] = child->data->type->byte_count > 8
                                 ? generate_address(child->data, functions, within)
                                 : generate_value(child->data, functions, within);
                 }
         }
-
+        
         if (num_params(f) == 0){
                 free(args_code);
                 return call_function(f, NULL);
