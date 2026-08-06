@@ -15,7 +15,7 @@ struct function *new_function(struct LIST(variable) params, struct LIST(variable
 void free_function(const struct function* function);
 
 size_t num_params(const struct function *function);
-char *function_variable_address(const struct function *function, struct variable var, enum reg dest);
+char *function_variable_address(const struct function *function, struct variable var, enum reg dest, uint8_t *byte_offset);
 void set_body(struct function *function, char *body);
 char *declare_function(const struct function *function);
 char *call_function(const struct function *function, char **args);

@@ -70,12 +70,23 @@ bool has_variable(struct chunk *chunk, struct variable var){
         return result != NULL;
 }
 
-char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_address, enum reg dest){
+char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_address, enum reg dest, uint8_t *byte_offset){
         struct string v = {var.string};
         const struct index *result;
         query_map((&chunk->offsets), &v, result, string, index);
+
+        uint8_t bytes = result->offset % 8;
+        uint32_t words = result->offset - bytes;
+
+        if (byte_offset){
+                *byte_offset = bytes;
+        }
+        else {
+                assert(bytes == 0);
+        }
+
         return concat(2, 
-                movi(dest, result->offset), 
+                movi(dest, words), 
                 add(dest,  chunk_address, dest)
         );
 }

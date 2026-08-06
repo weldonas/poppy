@@ -304,6 +304,93 @@ char *memory_copy(enum reg src, enum reg dest, long long bytes){
         );
 }
 
+char *get_bytes(enum reg dest, enum reg src, uint8_t starting_byte, uint8_t count){
+        assert(starting_byte + count <= 8);
+        assert(dest != src);
+        uint64_t mask = 0x0;
+
+        for (uint8_t i = 0; i < count; ++i){
+                mask += 0xFF;
+                mask <<= 8;
+        }
+
+        mask <<= 8 * starting_byte;
+
+        char shift_imm[3];
+        sprintf(shift_imm, "%d", 8 * starting_byte);
+
+        char *literal = (char*) malloc(13 * sizeof(char));
+        strcpy(literal, "lsr ");
+        strcat(literal, reg_to_string(dest));
+        strcat(literal, ", #");
+        strcat(literal, shift_imm);
+
+        return concat(3,
+                movi(dest, mask),
+                and(dest, dest, src),
+                literal
+        );
+}
+
+char *get_bytes_addr(enum reg dest, enum reg addr, uint8_t starting_byte, uint8_t count){
+        if ((starting_byte == 0) && (count == 8)){
+                return ldr(dest, addr);
+        }
+        
+        return concat(2,
+                ldr(addr, addr),
+                get_bytes(dest, addr, starting_byte, count)
+        );
+}
+
+char *set_bytes(enum reg dest, enum reg src, uint8_t starting_byte, uint8_t count){
+        assert((dest != REG_SCRATCH2) && (src != REG_SCRATCH2));
+        assert(starting_byte + count <= 8);
+        uint64_t mask = 0x0;
+
+        for (uint8_t i = 0; i < count; ++i){
+                mask += 0xFF;
+                mask <<= 8;
+        }
+
+        mask <<= 8 * starting_byte;
+        mask = ~mask;
+
+        char shift_imm[3];
+        sprintf(shift_imm, "%d", 8 * starting_byte);
+
+        char *literal = (char*) malloc(13 * sizeof(char));
+        strcpy(literal, "lsl ");
+        strcat(literal, reg_to_string(src));
+        strcat(literal, ", #");
+        strcat(literal, shift_imm);
+
+        return concat(4,
+                // shift bits from src right so they line up with where they need to go in dest
+                literal,
+
+                // remove only bits in mask from dest
+                movi(REG_SCRATCH2, mask),
+                and(dest, dest, REG_SCRATCH2),
+
+                // combine dest and src
+                orr(dest, dest, src)
+        );
+}
+
+char *set_bytes_addr(enum reg src, enum reg addr, uint8_t starting_byte, uint8_t count){
+        if ((starting_byte == 0) && (count == 8)){
+                return str(src, addr);
+        }
+
+        assert((src != REG_SCRATCH3) && (addr != REG_SCRATCH3) && (src != addr));
+        return concat(3,
+                ldr(REG_SCRATCH3, addr),
+                set_bytes(REG_SCRATCH3, src, starting_byte, count),
+                str(REG_SCRATCH3, addr)
+        );
+}
+
 char *ret(){
         char *instr = (char*) malloc(4 * sizeof(char));
         strcpy(instr, "ret");

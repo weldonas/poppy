@@ -21,7 +21,7 @@ char *reg_to_string(enum reg reg){
                         return "x11";
                 case REG_SCRATCH2:
                         return "x12";
-                case REG_BYTE_INDEX:
+                case REG_SCRATCH3:
                         return "x13";
                 CASE(0)
                 CASE(1)
