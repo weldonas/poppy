@@ -42,7 +42,7 @@ char *generate_head(const struct parse_tree *tree){
 
 char *generate_from_tree(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within);
 char *generate_value(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within);
-char *generate_address(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within, uint8_t *byte_offset);
+char *generate_address(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within);
 
 char *generate_first_child(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         return generate_from_tree(tree->children->head->data, functions, within);
@@ -105,13 +105,12 @@ char *generate_forstmt(const struct parse_tree *tree, struct MAP(string, functio
 
 char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         if (tree->children->len == 5){
-                uint8_t byte_offset;
                 const struct parse_tree *addressable; load_child_at(addressable, tree, 2);
-                char *find_memory_addr = generate_address(addressable, functions, within, &byte_offset);
+                char *find_memory_addr = generate_address(addressable, functions, within);
                 const struct parse_tree *expr; load_child_at(expr, tree, 4);
 
                 if (expr->type->byte_count > 8){
-                        char *address_code = generate_address(expr, functions, within, NULL);
+                        char *address_code = generate_address(expr, functions, within);
                         return concat(5,
                                 find_memory_addr,
                                 push(REG_RESULT),
@@ -137,7 +136,7 @@ char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function
                                 push(REG_RESULT),
                                 value_code,
                                 pop(REG_SCRATCH),
-                                set_bytes_addr(REG_RESULT, REG_SCRATCH, byte_offset, expr->type->byte_count)
+                                set_bytes_addr(REG_RESULT, REG_SCRATCH, expr->type->byte_count)
                         );
                 }
         }
@@ -149,12 +148,11 @@ char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function
 
 
 char *generate_plain_varasst(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        uint8_t byte_offset;
         const struct parse_tree *addressable; load_child_at(addressable, tree, 0);
-        char *find_memory_addr = generate_address(addressable, functions, within, &byte_offset);
+        char *find_memory_addr = generate_address(addressable, functions, within);
         const struct parse_tree *expr; load_child_at(expr, tree, 2);
         if (expr->type->byte_count > 8){
-                char *address_code = generate_address(expr, functions, within, NULL);
+                char *address_code = generate_address(expr, functions, within);
                 return concat(5,
                         find_memory_addr,
                         push(REG_RESULT),
@@ -180,15 +178,14 @@ char *generate_plain_varasst(const struct parse_tree *tree, struct MAP(string, f
                         push(REG_RESULT),
                         value_code,
                         pop(REG_SCRATCH),
-                        set_bytes_addr(REG_RESULT, REG_SCRATCH, byte_offset, expr->type->byte_count)
+                        set_bytes_addr(REG_RESULT, REG_SCRATCH, expr->type->byte_count)
                 );
         }
 }
 
 char *generate_compound_varasst(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
-        uint8_t byte_offset;
         const struct parse_tree *addressable; load_child_at(addressable, tree, 0);
-        char *find_memory_addr = generate_address(addressable, functions, within, &byte_offset);
+        char *find_memory_addr = generate_address(addressable, functions, within);
         const struct parse_tree *expr; load_child_at(expr, tree, 3);
         assert(expr->type->byte_count <= 8);
 
@@ -247,7 +244,7 @@ char *generate_compound_varasst(const struct parse_tree *tree, struct MAP(string
                         push(REG_RESULT),
                         compound_op,
                         pop(REG_SCRATCH),
-                        set_bytes_addr(REG_RESULT, REG_SCRATCH, byte_offset, expr->type->byte_count)
+                        set_bytes_addr(REG_RESULT, REG_SCRATCH, expr->type->byte_count)
                 );
         }
         else{
@@ -282,7 +279,7 @@ char *generate_ret(const struct parse_tree *tree, struct MAP(string, function) *
         }
         
         if (second->type->byte_count > 8){
-                char *address = generate_address(second, functions, within, NULL);
+                char *address = generate_address(second, functions, within);
                 return concat(2, address, hop(within));
         }
 
@@ -400,30 +397,28 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
         }
 
         if (first == SYMBOL_INC){
-                uint8_t byte_offset;
                 const struct parse_tree *addressable; load_child_at(addressable, tree, 1);
-                char *find_memory_addr = generate_address(addressable, functions, within, &byte_offset);
+                char *find_memory_addr = generate_address(addressable, functions, within);
 
                 return concat(5,
                         find_memory_addr,
                         ldr(REG_SCRATCH2, REG_RESULT),
                         movi(REG_SCRATCH, 1),
                         add(REG_SCRATCH, REG_SCRATCH2, REG_SCRATCH),
-                        set_bytes_addr(REG_SCRATCH, REG_RESULT, byte_offset, addressable->type->byte_count)
+                        set_bytes_addr(REG_SCRATCH, REG_RESULT, addressable->type->byte_count)
                 );
         }
 
         if (first == SYMBOL_DEC){
-                uint8_t byte_offset;
                 const struct parse_tree *addressable; load_child_at(addressable, tree, 1);
-                char *find_memory_addr = generate_address(addressable, functions, within, &byte_offset);
+                char *find_memory_addr = generate_address(addressable, functions, within);
 
                 return concat(5,
                         find_memory_addr,
                         ldr(REG_SCRATCH2, REG_RESULT),
                         movi(REG_SCRATCH, 1),
                         sub(REG_SCRATCH, REG_SCRATCH2, REG_SCRATCH),
-                        set_bytes_addr(REG_SCRATCH, REG_RESULT, byte_offset, addressable->type->byte_count)
+                        set_bytes_addr(REG_SCRATCH, REG_RESULT,addressable->type->byte_count)
                 );
         }
 
@@ -451,12 +446,11 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
         }
 
         if ((tree->children->len == 1) && (tree->children->head->data->data.type == SYMBOL_IDENTIFIER)){
-                uint8_t byte_offset;
-                char *address = generate_address(tree, functions, within, &byte_offset);
+                char *address = generate_address(tree, functions, within);
                 return concat(3, 
                         address, 
                         mov(REG_SCRATCH, REG_RESULT),
-                        get_bytes_addr(REG_RESULT, REG_SCRATCH, byte_offset, tree->type->byte_count) 
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH,tree->type->byte_count) 
                 );
         }
 
@@ -465,8 +459,7 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
         }
 
         if (tree->children->head->data->data.type == SYMBOL_AMP){
-                // TODO fix
-                return generate_address(tree->children->head->next->data, functions, within, NULL);
+                return generate_address(tree->children->head->next->data, functions, within);
         }
 
         if (tree->children->head->data->data.type == SYMBOL_STAR){
@@ -485,23 +478,20 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
         }
 
         if (tree->children->head->next->data->data.type == SYMBOL_DOT){
-                uint8_t byte_offset;
-                char *address = generate_address(tree, functions, within, &byte_offset);
+                char *address = generate_address(tree, functions, within);
                 return concat(3, 
                         address, 
                         mov(REG_SCRATCH, REG_RESULT),
-                        get_bytes_addr(REG_RESULT, REG_SCRATCH, byte_offset, tree->type->byte_count) 
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH, tree->type->byte_count) 
                 );
         }
 
         if (tree->children->len == 4){
-                uint8_t byte_offset;
-                char *address = generate_address(tree, functions, within, &byte_offset);
-                assert(byte_offset <= 8);
+                char *address = generate_address(tree, functions, within);
                 return concat(3, 
                         address, 
                         mov(REG_SCRATCH, REG_RESULT),
-                        get_bytes_addr(REG_RESULT, REG_SCRATCH, byte_offset, tree->type->byte_count) 
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH, tree->type->byte_count) 
                 );
         }
 
@@ -525,7 +515,7 @@ char *generate_call(const struct parse_tree *tree, struct MAP(string, function) 
 
                 for (struct LIST_NODE(parse_tree) *child = args->children->head; child != NULL; child = child->next ? child->next->next : NULL){
                         args_code[i++] = child->data->type->byte_count > 8
-                                ? generate_address(child->data, functions, within, NULL)
+                                ? generate_address(child->data, functions, within)
                                 : generate_value(child->data, functions, within);
                 }
         }
@@ -552,14 +542,14 @@ char *generate_cast(const struct parse_tree *tree, struct MAP(string, function) 
         return generate_from_tree(src_tree, functions, within);
 }
 
-char *generate_address(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within, uint8_t *byte_offset){
+char *generate_address(const struct parse_tree *tree, struct MAP(string, function) *functions, const struct function *within){
         if (tree->data.type == SYMBOL_IDENTIFIER){
                 struct variable var = find_symbol_variable(tree);
-                return function_variable_address(within, var, REG_RESULT, byte_offset);
+                return function_variable_address(within, var, REG_RESULT);
         }
         
         if (tree->children->len == 1){
-                return generate_address(tree->children->head->data, functions, within, byte_offset);
+                return generate_address(tree->children->head->data, functions, within);
         }
 
         if (tree->data.type == SYMBOL_CALL){
@@ -567,11 +557,11 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
         }
 
         if (tree->data.type == SYMBOL_CAST){
-                return generate_address(tree->children->head->next->next->data, functions, within, byte_offset);
+                return generate_address(tree->children->head->next->next->data, functions, within);
         }
 
         if (tree->children->head->data->data.type == SYMBOL_LPAREN){
-                return generate_address(tree->children->head->next->data, functions, within, byte_offset);
+                return generate_address(tree->children->head->next->data, functions, within);
         }
 
         if (tree->children->head->data->data.type == SYMBOL_STAR){
@@ -583,7 +573,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
                 const struct parse_tree *field_tree; load_child_at(field_tree, tree, 2);
                 size_t field_offset = record_type_offset(record_tree->type, field_tree->data.value);
 
-                char *record = generate_address(record_tree, functions, within, NULL);
+                char *record = generate_address(record_tree, functions, within);
 
                 return concat(3,
                         record,
@@ -596,7 +586,7 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
                 const struct parse_tree *array_tree; load_child_at(array_tree, tree, 0);
                 const struct parse_tree *index_tree; load_child_at(index_tree, tree, 2);
                 uint32_t element_size = array_tree->type->element_type->byte_count;
-                char *array_address = generate_address(array_tree, functions, within, byte_offset);
+                char *array_address = generate_address(array_tree, functions, within);
                 char *index = generate_value(index_tree, functions, within);
 
                 return concat(7,

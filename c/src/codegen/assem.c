@@ -304,89 +304,84 @@ char *memory_copy(enum reg src, enum reg dest, long long bytes){
         );
 }
 
-char *get_bytes(enum reg dest, enum reg src, uint8_t starting_byte, uint8_t count){
-        assert(starting_byte + count <= 8);
+char *get_bytes(enum reg dest, enum reg src, enum reg byte_offset, uint8_t count) {
+        assert(count <= 8);
         assert(dest != src);
-        uint64_t mask = 0x0;
 
-        for (uint8_t i = 0; i < count; ++i){
-                mask += 0xFF;
-                mask <<= 8;
-        }
+        uint64_t mask = 0;
+        for (uint8_t i = 0; i < count; ++i)
+                mask = (mask << 8) | 0xFF;
 
-        mask <<= 8 * starting_byte;
+        return concat(5,
+                // convert byte offset to bit offset
+                movi(REG_SCRATCH2, 3),
+                lsl(byte_offset, byte_offset, REG_SCRATCH2),
 
-        char shift_imm[3];
-        sprintf(shift_imm, "%d", 8 * starting_byte);
+                // shift desired bytes down to LSBs
+                lsr(dest, src, byte_offset),
 
-        char *literal = (char*) malloc(13 * sizeof(char));
-        strcpy(literal, "lsr ");
-        strcat(literal, reg_to_string(dest));
-        strcat(literal, ", #");
-        strcat(literal, shift_imm);
-
-        return concat(3,
-                movi(dest, mask),
-                and(dest, dest, src),
-                literal
+                // keep only the requested bytes
+                movi(REG_SCRATCH2, mask),
+                and(dest, dest, REG_SCRATCH2)
         );
 }
 
-char *get_bytes_addr(enum reg dest, enum reg addr, uint8_t starting_byte, uint8_t count){
-        if ((starting_byte == 0) && (count == 8)){
+char *get_bytes_addr(enum reg dest, enum reg addr, uint32_t count) {
+        if (count == 8) {
                 return ldr(dest, addr);
         }
-        
-        return concat(2,
-                ldr(addr, addr),
-                get_bytes(dest, addr, starting_byte, count)
+
+        return concat(5,
+                movi(REG_SCRATCH2, 7),
+                and(REG_BYTE_OFFSET, addr, REG_SCRATCH2),
+                sub(addr, addr, REG_BYTE_OFFSET),
+                ldr(addr, addr),              // load aligned 8-byte word
+                get_bytes(dest, addr, REG_BYTE_OFFSET, count)
         );
 }
 
-char *set_bytes(enum reg dest, enum reg src, uint8_t starting_byte, uint8_t count){
+char *set_bytes(enum reg dest, enum reg src, enum reg byte_offset, uint8_t count){
         assert((dest != REG_SCRATCH2) && (src != REG_SCRATCH2));
-        assert(starting_byte + count <= 8);
-        uint64_t mask = 0x0;
+        assert(byte_offset != REG_SCRATCH2);
+
+        uint64_t mask = 0;
 
         for (uint8_t i = 0; i < count; ++i){
-                mask += 0xFF;
-                mask <<= 8;
+                mask = (mask << 8) | 0xFF;
         }
 
-        mask <<= 8 * starting_byte;
-        mask = ~mask;
+        return concat(9,
+                // multiply byte_offset by 8 and shift src accordingly
+                movi(REG_SCRATCH2, 3),
+                lsl(byte_offset, byte_offset, REG_SCRATCH2),
+                lsl(src, src, byte_offset),
 
-        char shift_imm[3];
-        sprintf(shift_imm, "%d", 8 * starting_byte);
-
-        char *literal = (char*) malloc(13 * sizeof(char));
-        strcpy(literal, "lsl ");
-        strcat(literal, reg_to_string(src));
-        strcat(literal, ", #");
-        strcat(literal, shift_imm);
-
-        return concat(4,
-                // shift bits from src right so they line up with where they need to go in dest
-                literal,
-
-                // remove only bits in mask from dest
+                // shift mask into position
                 movi(REG_SCRATCH2, mask),
+                lsl(REG_SCRATCH2, REG_SCRATCH2, byte_offset),
+                mvn(REG_SCRATCH2, REG_SCRATCH2),
+
+                // clear destination bits
                 and(dest, dest, REG_SCRATCH2),
 
-                // combine dest and src
+                // insert source bits
                 orr(dest, dest, src)
         );
 }
 
-char *set_bytes_addr(enum reg src, enum reg addr, uint8_t starting_byte, uint8_t count){
-        if ((starting_byte == 0) && (count == 8)){
+char *set_bytes_addr(enum reg src, enum reg addr, uint32_t count){
+        if (count == 8){
                 return str(src, addr);
         }
 
         assert((src != REG_SCRATCH3) && (addr != REG_SCRATCH3) && (src != addr));
-        return concat(3,
+
+        return concat(6,
+                movi(REG_SCRATCH2, 7),
+                and(REG_BYTE_OFFSET, addr, REG_SCRATCH2),
+                sub(addr, addr, REG_BYTE_OFFSET),
                 ldr(REG_SCRATCH3, addr),
-                set_bytes(REG_SCRATCH3, src, starting_byte, count),
+                set_bytes(REG_SCRATCH3, src, REG_BYTE_OFFSET, count),
                 str(REG_SCRATCH3, addr)
         );
 }

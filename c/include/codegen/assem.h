@@ -29,14 +29,10 @@ char *cmpi(enum reg reg, long long imm);
 char *ldr(enum reg dest, enum reg addr);
 char *str(enum reg src, enum reg addr);
 char *memory_copy(enum reg src, enum reg dest, long long bytes);
-// extract selected bytes from src into the LSBs of dest
-char *get_bytes(enum reg dest, enum reg src, uint8_t starting_byte, uint8_t count);
-// put selected bytes from src into the specified location in dest (while preserving the rest of dest)
-char *set_bytes(enum reg dest, enum reg src, uint8_t starting_byte, uint8_t count);
 // extract selected bytes from value at addr into the LSBs of dest
-char *get_bytes_addr(enum reg dest, enum reg addr, uint8_t starting_byte, uint8_t count);
+char *get_bytes_addr(enum reg dest, enum reg addr, uint32_t count);
 // put selected bytes from src into the specified location in the value at addr (while preserving the rest)
-char *set_bytes_addr(enum reg src, enum reg addr, uint8_t starting_byte, uint8_t count);
+char *set_bytes_addr(enum reg src, enum reg addr, uint32_t count);
 char *ret();
 char *comment(char *text);
 char *literal(char *text);

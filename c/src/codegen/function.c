@@ -69,24 +69,22 @@ size_t num_params(const struct function *function){
         return function->params.len;
 }
 
-char *function_variable_address(const struct function *function, struct variable var, enum reg dest, uint8_t *byte_offset){
+char *function_variable_address(const struct function *function, struct variable var, enum reg dest){
         assert(dest != REG_SCRATCH);
 
         if (has_variable(function->frame, var)){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                char *result = variable_address(function->frame, var, REG_FP, dest, byte_offset);
-                assert(*byte_offset <= 8);
+                char *result = variable_address(function->frame, var, REG_FP, dest);
                 return result;
         }
 
         // read from arg chunk pointer
         struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
         char *result = concat(3,
-                variable_address(function->frame, arg_chunk_ptr, REG_FP, dest, NULL),
+                variable_address(function->frame, arg_chunk_ptr, REG_FP, dest),
                 ldr(REG_SCRATCH, dest),
-                variable_address(function->param_chunk, var, REG_SCRATCH, dest, byte_offset)
+                variable_address(function->param_chunk, var, REG_SCRATCH, dest)
         );
-        assert(*byte_offset <= 8);
         return result;
 }
 
@@ -103,18 +101,18 @@ char *declare_function(const struct function *function){
                 declare_label(function->start_label),
                 mov(REG_ARG_CHUNK_PTR, REG_SP),
                 push_chunk(function->frame),
-                variable_address(function->frame, caller_frame_ptr, REG_SP, REG_SCRATCH, NULL),
+                variable_address(function->frame, caller_frame_ptr, REG_SP, REG_SCRATCH),
                 str(REG_FP, REG_SCRATCH),
                 mov(REG_FP, REG_SP),
-                variable_address(function->frame, saved_link, REG_SP, REG_SCRATCH, NULL),
+                variable_address(function->frame, saved_link, REG_SP, REG_SCRATCH),
                 str(REG_LR, REG_SCRATCH),
-                variable_address(function->frame, arg_chunk_ptr, REG_SP, REG_SCRATCH, NULL),
+                variable_address(function->frame, arg_chunk_ptr, REG_SP, REG_SCRATCH),
                 str(REG_ARG_CHUNK_PTR, REG_SCRATCH),
                 function->body,
                 declare_label(function->after_body_label),
-                variable_address(function->frame, saved_link, REG_SP, REG_SCRATCH, NULL),
+                variable_address(function->frame, saved_link, REG_SP, REG_SCRATCH),
                 ldr(REG_LR, REG_SCRATCH),
-                variable_address(function->frame, caller_frame_ptr, REG_SP, REG_SCRATCH, NULL),
+                variable_address(function->frame, caller_frame_ptr, REG_SP, REG_SCRATCH),
                 ldr(REG_FP, REG_SCRATCH),
                 pop_chunk()
         );
@@ -135,25 +133,22 @@ char *call_function(const struct function *function, char **args){
                 if (param->data->type->byte_count > 8) {
                         cur_eval = concat(3,
                                 args[i],
-                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH, NULL),
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
                                 memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->byte_count)
                         );
                 }
                 else if (param->data->type->byte_count == 8){
                         cur_eval = concat(3,
                                 args[i],
-                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH, NULL),
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
                                 str(REG_RESULT, REG_SCRATCH)
                         );
                 }
                 else {
-                        uint8_t byte_offset;
-                        cur_eval = concat(5,
+                        cur_eval = concat(3,
                                 args[i],
-                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH, &byte_offset),
-                                ldr(REG_SCRATCH3, REG_SCRATCH),
-                                set_bytes(REG_SCRATCH3, REG_RESULT, byte_offset, param->data->type->byte_count),
-                                str(REG_SCRATCH3, REG_SCRATCH)
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
+                                set_bytes_addr(REG_RESULT, REG_SCRATCH, param->data->type->byte_count)
                         );
                 }
 
