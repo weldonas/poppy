@@ -350,7 +350,7 @@ char *set_bytes(enum reg dest, enum reg src, enum reg byte_offset, uint8_t count
                 mask = (mask << 8) | 0xFF;
         }
 
-        return concat(9,
+        return concat(8,
                 // multiply byte_offset by 8 and shift src accordingly
                 movi(REG_SCRATCH2, 3),
                 lsl(byte_offset, byte_offset, REG_SCRATCH2),

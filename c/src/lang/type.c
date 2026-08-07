@@ -170,7 +170,7 @@ struct type* const record_type(){
         struct type *new = (struct type*) malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
         init_list((&new->fields));
-        new->byte_count = 0;
+        new->byte_count = 8;
         new->is_assignable = false;
         new->name = NULL;
 
@@ -178,15 +178,43 @@ struct type* const record_type(){
         return new;
 }
 
-// TODO fix this logic
 bool add_field(struct type *record, struct variable *v){
         assert(v->type->byte_count > 0);
 
         if (!v->type || (v->type->byte_count == NOT_IN_MEMORY)){
                 return false;
         }
-        append_list((&record->fields), v, variable);
-        record->byte_count += v->type->byte_count;
+
+        uint32_t prev_offset = 0; 
+        uint32_t prev_size = 0; 
+        if (record->fields.len > 0){
+                prev_offset = record->fields.tail->data->offset;
+                prev_size = record->fields.tail->data->var->type->byte_count;
+        }
+
+        uint32_t offset = prev_offset + prev_size;
+        uint32_t size = v->type->byte_count;
+
+        // align fields larger than 8 bytes
+        if (size > 8) {
+                offset = (offset + 7) & ~7U;
+        }
+        else {
+                // prevent small fields crossing an 8-byte boundary
+                if ((offset & 7) + size > 8) {
+                        offset = (offset + 7) & ~7U;
+                }
+        }
+
+        struct field *field = (struct field*) malloc(sizeof(struct field));
+        field->var = v;
+        field->offset = offset;
+
+        append_list((&record->fields), field, field);
+
+        record->byte_count = offset + size;
+        record->byte_count = (record->byte_count + 7) & ~7U;
+
         return true;
 }
 
@@ -219,9 +247,9 @@ const struct type *query_record_type(const char *name){
 }
 
 const struct type *field_type(const struct type *record, const char *name){
-        for (struct LIST_NODE(variable) *node = record->fields.head; node != NULL; node = node->next){
-                if (strcmp(node->data->string, name) == 0){
-                        return node->data->type;
+        for (struct LIST_NODE(field) *node = record->fields.head; node != NULL; node = node->next){
+                if (strcmp(node->data->var->string, name) == 0){
+                        return node->data->var->type;
                 }
         }
 
@@ -229,14 +257,10 @@ const struct type *field_type(const struct type *record, const char *name){
 }
 
 size_t record_type_offset(const struct type *record, const char *name){
-        size_t current = 0;
-
-        for (struct LIST_NODE(variable) *node = record->fields.head; node != NULL; node = node->next){
-                if (strcmp(node->data->string, name) == 0){
-                        return current;
+        for (struct LIST_NODE(field) *node = record->fields.head; node != NULL; node = node->next){
+                if (strcmp(node->data->var->string, name) == 0){
+                        return node->data->offset;
                 }
-
-                current += node->data->type->byte_count;
         }
 
         return NOT_IN_MEMORY;
@@ -261,12 +285,14 @@ const struct type *make_assignable(const struct type *type){
                         return new;
                 case CATEGORY_RECORD:
                         init_list((&new->fields));
-                        for (struct LIST_NODE(variable) *node = type->fields.head; node != NULL; node = node->next){
-                                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
-                                v->type = make_assignable(node->data->type);
-                                v->string = node->data->string;
+                        for (struct LIST_NODE(field) *node = type->fields.head; node != NULL; node = node->next){
+                                struct field *f = (struct field*) malloc(sizeof(struct field));
+                                f->var = (struct variable*) malloc(sizeof(struct variable));
+                                f->var->type = make_assignable(node->data->var->type);
+                                f->var->string = node->data->var->string;
+                                f->offset = node->data->offset;
                                 
-                                append_list((&new->fields), v, variable);
+                                append_list((&new->fields), f, field);
                         }
                         assert(equals_type(type, new));
                         return new;
@@ -373,7 +399,7 @@ void free_type(const struct type *type){
         }
 
         else if (type->category == CATEGORY_RECORD){
-                free_list((&type->fields), free_variable, variable);
+                free_list((&type->fields), free_field, field);
         }
 
         free((void*) type);
@@ -391,4 +417,9 @@ void free_types(){
 
 void free_variable(struct variable *v){
         free(v);
+}
+
+void free_field(struct field *f){
+        free_variable(f->var);
+        free(f);
 }

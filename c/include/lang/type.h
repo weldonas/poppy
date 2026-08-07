@@ -24,10 +24,17 @@ struct variable {
         const struct type *type;
 };
 
+struct field {
+    struct variable *var;
+    uint32_t offset;
+};
+
 void free_variable(struct variable *v);
+void free_field(struct field *f);
 
 DEFINE_LIST(type);
-DEFINE_LIST(variable)
+DEFINE_LIST(variable);
+DEFINE_LIST(field);
 
 struct type {
     uint32_t byte_count;
@@ -55,7 +62,7 @@ struct type {
         }; // array
 
         struct {
-            struct LIST(variable) fields;
+            struct LIST(field) fields;
             char *name;
         }; // record
 

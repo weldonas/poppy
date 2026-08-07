@@ -45,21 +45,30 @@ void add_variable(struct chunk *chunk, struct variable var){
         v->data = var.string;
         struct index *i = (struct index*) malloc(sizeof(struct index));
 
-        if ((chunk->next_offset % 8) + var.type->byte_count > 8){
-                chunk->next_offset = ((chunk->next_offset + 7) / 8) * 8;
+        uint32_t size = var.type->byte_count;
+
+        // align variables larger than 8 bytes to an 8-byte boundary
+        if (size > 8) {
+                chunk->next_offset = (chunk->next_offset + 7) & ~7ULL;
+        }
+        else {
+                // if it would cross an 8-byte boundary, move to next word
+                if ((chunk->next_offset & 7) + size > 8) {
+                        chunk->next_offset = (chunk->next_offset + 7) & ~7ULL;
+                }
         }
 
         i->offset = chunk->next_offset;
-        i->size = var.type->byte_count;
+        i->size = size;
+
         update_map((&chunk->offsets), v, i, string, index);
 
-        // chunk->next_offset holds the next available offset, which is also the size of the chunk
-        chunk->next_offset += var.type->byte_count;
+        chunk->next_offset += size;
 
-        if (chunk->next_offset > chunk->size){
-                chunk->size = ((chunk->next_offset + 15) / 16) * 16;
+        if (chunk->next_offset > chunk->size) {
+                chunk->size = (chunk->next_offset + 15) & ~15ULL;
         }
-        
+
         assert(!(chunk->size % 16));
 }
 
