@@ -29,18 +29,11 @@ struct type *void_ptr = NULL;
 struct type *bool_ptr = NULL;
 struct type *char_ptr = NULL;
 struct type *unit_ptr = NULL;
+struct type *string_ptr = NULL;
 
-void initialize_types(){
-        assert(!initialized);
-        init_list((&types));
-        init_map((&record_map), equals_string, free_record_map_entry, string, type);
-        initialized = true;
-}
-
-void add_type(struct type *new);
 
 void add_builtin_types(){
-        struct type *string_ptr = record_type();
+        string_ptr = record_type();
 
         struct variable *ptr = malloc(sizeof(struct variable));
         ptr->string = "ptr";
@@ -54,10 +47,18 @@ void add_builtin_types(){
         name_record_type(string_ptr, "string");
 }
 
+void initialize_types(){
+        assert(!initialized);
+        initialized = true;
+        init_list((&types));
+        init_map((&record_map), equals_string, free_record_map_entry, string, type);
+
+        add_builtin_types();
+}
+
 void add_type(struct type *new) {
         if (!initialized){
                 initialize_types();
-                add_builtin_types();
         }
 
         append_list((&types), new, type);
@@ -125,6 +126,14 @@ const struct type* const unit_type(){
         }
 
         return unit_ptr;
+}
+
+const struct type* const string_type(){
+        if (string_ptr == NULL){
+                initialize_types();
+        }
+
+        return string_ptr;
 }
 
 const struct type* const function_type(const struct type *ret, const struct type *params){

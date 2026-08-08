@@ -9,11 +9,25 @@
 #include "codegen/function.h"
 #include "codegen/ops.h"
 #include "codegen/register.h"
+#include "data/list.h"
 #include "lang/parse_tree.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 
 DEFINE_MAP(string, function);
+
+
+struct literal {
+        char *value;
+};
+
+DEFINE_LIST(literal);
+
+void free_literal(struct literal *l){
+        free(l);
+}
+
+struct LIST(literal) literals;
 
 const char *tail = "mov x0, #0\n"
                   "mov w8, #93\n"
@@ -27,13 +41,38 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
         free((void*) entry);
 }
 
-char *generate_head(const struct parse_tree *tree){
-        return concat(8,
+char *generate_head(){
+        // see if we can make this readonly
+        char *literal_declare = literal(".data");
+
+        uint64_t i = 0;
+        for (struct LIST_NODE(literal) *node = literals.head; node != NULL; node = node->next){
+                char *cur = malloc((43 + strlen(node->data->value)) * sizeof(char));
+                *cur = 0;
+
+                char i_str[20];
+                sprintf(i_str, "%lu", i);
+
+                strcat(cur, "__stringlit");
+                strcat(cur, i_str);
+                strcat(cur, ": .ascii \"");
+                strcat(cur, node->data->value);
+                strcat(cur, "\"");
+
+                literal_declare = concat(2, literal_declare, cur);
+
+                ++i;
+        }
+
+        return concat(11,
                 literal(".bss"),
                 literal("__heapmeta:"),
                 literal(".skip 8192"),
                 literal("__heap:"),
                 literal(".skip 65536"),
+                literal("__stringlittemp:"),
+                literal(".skip 16"),
+                literal_declare,
                 literal(".text"),
                 literal(".include \"utils.s\""),
                 literal(".global _start")
@@ -548,6 +587,30 @@ char *generate_address(const struct parse_tree *tree, struct MAP(string, functio
                 return function_variable_address(within, var, REG_RESULT);
         }
         
+        if (tree->data.type == SYMBOL_STRINGLIT){
+                struct literal *l = malloc(sizeof(struct literal));
+                l->value = tree->data.value;
+
+                char *load = malloc(42 * sizeof(char));
+                strcpy(load, "ldr x9, =__stringlit");
+                char len[20];
+                sprintf(len, "%u", literals.len);
+
+                strcat(load, len);
+
+                char *ret = concat(5,
+                        literal("ldr x10, =__stringlittemp"),
+                        load,
+                        str(REG_SCRATCH, REG_RESULT),
+                        movi(REG_SCRATCH, strlen(l->value)),
+                        literal("str x9, [x10, #8]")
+                );
+
+                append_list((&literals), l, literal);
+        
+                return ret;
+        }
+
         if (tree->children->len == 1){
                 return generate_address(tree->children->head->data, functions, within);
         }
@@ -705,7 +768,7 @@ char *generate_code(const struct parse_tree *tree){
 
         // char *prog = malloc(44 * sizeof(char));
         // strcpy(prog, head);
-        char *prog = generate_head(tree->children->head->data);
+        char *prog = generate_head();
         
         for (struct string_function_map_entry_list_node *node = functions.list->head; node != NULL; node = node->next){
                 if (strcmp(node->data->key->data, "main") == 0){
@@ -731,5 +794,6 @@ char *generate_code(const struct parse_tree *tree){
         strcpy(t, tail);
         prog = concat(4, prog, sl, declare_function(main), t);
         free_map((&functions), string, function);
+        free_list((&literals), free_literal, literal);
         return prog;
 }

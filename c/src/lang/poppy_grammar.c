@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 110
+#define RULE_COUNT 111
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -143,6 +143,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_UNEXPR, {SYMBOL_DEC COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CONSTANT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_CHARLIT}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNEXPR, {SYMBOL_STRINGLIT}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNEXPR, {SYMBOL_ASM COMMA SYMBOL_LPAREN COMMA SYMBOL_STRINGLIT COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
 
         // this assumes a symbol is nullable if and only if it's the LHS of a rule with an empty RHS

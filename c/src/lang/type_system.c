@@ -532,6 +532,7 @@ struct RESULT(type) find_type(const struct type_system *const system, struct par
 
         struct RESULT(type) result;
         if (tree->children){
+                print_parse_tree(tree);
                 char *lit = "Could not find type for subtree ";
                 char *tree_str = parse_tree_string(tree);
                 char *err = malloc((strlen(lit) + strlen(tree_str) + 1) * sizeof(char));

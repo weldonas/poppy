@@ -78,6 +78,7 @@ const struct type* const void_type();
 const struct type* const char_type();
 
 const struct type* const unit_type();
+const struct type* const string_type();
 
 const struct type* const function_type(const struct type *ret, const struct type *params);
 const struct type* const return_type(const struct type *type);
