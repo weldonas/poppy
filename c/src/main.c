@@ -58,6 +58,12 @@ int main(int argc, char *argv[]){
         if (!types_result.is_ok){
                 printf("error: %s\n", types_result.error);
                 free((void*) types_result.error);
+                free_parse_tree(pt);
+                
+                free_poppy_type_system();
+                free_types();
+                free_list(list, free_token, token);
+                free((void*) list);
                 return 0;
         }
 

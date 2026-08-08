@@ -116,7 +116,8 @@ $$\begin{align*}
 \text{unexpr} &\rightarrow \text{INC expr} \\
 \text{unexpr} &\rightarrow \text{DEC expr} \\
 \text{unexpr} &\rightarrow \text{CONSTANT}  \\
-\text{unexpr} &\rightarrow \text{CHARLIT}
+\text{unexpr} &\rightarrow \text{CHARLIT} \\
+\text{unexpr} &\rightarrow \text{STRINGLIT} \\
 \text{unexpr} &\rightarrow \text{ASM LPAREN STRINGLIT RPAREN} \\
 \end{align*}
 $$

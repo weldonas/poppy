@@ -22,6 +22,8 @@ $$
 \end{align*}
 $$
 
+We also assume that $\text{str}$ is a built-in record type.
+
 Poppy has the following typing inference rules. We define the sets $R$ and $M$ for the sake of convenience:
 $$R:=\{t:\text{returnabletype} \to^* t\}$$
 $$M:=\{t:\text{inmemory} \to^* t\}$$
@@ -142,5 +144,6 @@ $$\frac{\Gamma \vdash E_1: \text{int}^a\quad \Gamma \vdash E_2: \text{int}}{
 
 $$\Gamma \vdash \text{CONSTANT}: \text{int}$$
 $$\Gamma \vdash \text{CHARLIT}: \text{char}$$
+$$\Gamma \vdash \text{STRINGLIT}: \text{string}$$
 $$\Gamma \vdash \text{TRUE}: \text{bool}$$
 $$\Gamma \vdash \text{FALSE}: \text{bool}$$

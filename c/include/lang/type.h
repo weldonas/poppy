@@ -78,6 +78,7 @@ const struct type* const void_type();
 const struct type* const char_type();
 
 const struct type* const unit_type();
+const struct type* const string_type();
 
 const struct type* const function_type(const struct type *ret, const struct type *params);
 const struct type* const return_type(const struct type *type);
@@ -89,7 +90,7 @@ const struct type* const array_type(const struct type *element_type, char *lengt
 
 struct type* const record_type();
 bool add_field(struct type *record, struct variable *v);
-void name_record_type(struct type *record, char *name);
+bool name_record_type(struct type *record, char *name);
 const struct type *query_record_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);

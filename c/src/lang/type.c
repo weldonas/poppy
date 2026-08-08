@@ -29,12 +29,36 @@ struct type *void_ptr = NULL;
 struct type *bool_ptr = NULL;
 struct type *char_ptr = NULL;
 struct type *unit_ptr = NULL;
+struct type *string_ptr = NULL;
+
+
+void add_builtin_types(){
+        string_ptr = record_type();
+
+        struct variable *ptr = malloc(sizeof(struct variable));
+        ptr->string = "ptr";
+        ptr->type = pointer_type(char_type());
+        add_field(string_ptr, ptr);
+
+        struct variable *length = malloc(sizeof(struct variable));
+        length->string = "length";
+        length->type = int_type();
+        add_field(string_ptr, length);
+        name_record_type(string_ptr, "string");
+}
+
+void initialize_types(){
+        assert(!initialized);
+        initialized = true;
+        init_list((&types));
+        init_map((&record_map), equals_string, free_record_map_entry, string, type);
+
+        add_builtin_types();
+}
 
 void add_type(struct type *new) {
-        if (!initialized) {
-                init_list((&types));
-                init_map((&record_map), equals_string, free_record_map_entry, string, type);
-                initialized = true;
+        if (!initialized){
+                initialize_types();
         }
 
         append_list((&types), new, type);
@@ -102,6 +126,14 @@ const struct type* const unit_type(){
         }
 
         return unit_ptr;
+}
+
+const struct type* const string_type(){
+        if (string_ptr == NULL){
+                initialize_types();
+        }
+
+        return string_ptr;
 }
 
 const struct type* const function_type(const struct type *ret, const struct type *params){
@@ -226,13 +258,21 @@ const struct type* const return_type(const struct type *type){
         return NULL;
 }
 
-void name_record_type(struct type *record, char *name){
+bool name_record_type(struct type *record, char *name){
         assert(record->category == CATEGORY_RECORD);
         
         struct string *s = malloc(sizeof(struct string));
         s->data = name;
         record->name = name;
+
+        const struct type *result = NULL;
+        query_map((&record_map), s, result, string, type)
+        if (result){
+                return false;
+        }
+
         update_map((&record_map), s, record, string, type);
+        return true;
 }
 
 const struct type *query_record_type(const char *name){

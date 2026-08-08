@@ -1,3 +1,5 @@
+!!munch poppystring
+
 void poppyio_include(){
     asm(".include \"poppyio.s\"");
 }
@@ -20,6 +22,14 @@ void printc(char c){
 
 void println(){
     printc('\n');
+}
+
+void prints(record string s){
+    let &char ptr = s.ptr;
+    for (let int i = 0; i < (s.length); ++i){
+        printc(*ptr);
+        ptr = unsafe &char(unsafe int(ptr) + 1);
+    }
 }
 
 char scanc(){
