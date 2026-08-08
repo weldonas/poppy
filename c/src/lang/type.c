@@ -30,11 +30,34 @@ struct type *bool_ptr = NULL;
 struct type *char_ptr = NULL;
 struct type *unit_ptr = NULL;
 
+void initialize_types(){
+        assert(!initialized);
+        init_list((&types));
+        init_map((&record_map), equals_string, free_record_map_entry, string, type);
+        initialized = true;
+}
+
+void add_type(struct type *new);
+
+void add_builtin_types(){
+        struct type *string_ptr = record_type();
+
+        struct variable *ptr = malloc(sizeof(struct variable));
+        ptr->string = "ptr";
+        ptr->type = pointer_type(char_type());
+        add_field(string_ptr, ptr);
+
+        struct variable *length = malloc(sizeof(struct variable));
+        length->string = "length";
+        length->type = int_type();
+        add_field(string_ptr, length);
+        name_record_type(string_ptr, "string");
+}
+
 void add_type(struct type *new) {
-        if (!initialized) {
-                init_list((&types));
-                init_map((&record_map), equals_string, free_record_map_entry, string, type);
-                initialized = true;
+        if (!initialized){
+                initialize_types();
+                add_builtin_types();
         }
 
         append_list((&types), new, type);
@@ -226,13 +249,21 @@ const struct type* const return_type(const struct type *type){
         return NULL;
 }
 
-void name_record_type(struct type *record, char *name){
+bool name_record_type(struct type *record, char *name){
         assert(record->category == CATEGORY_RECORD);
         
         struct string *s = malloc(sizeof(struct string));
         s->data = name;
         record->name = name;
+
+        const struct type *result = NULL;
+        query_map((&record_map), s, result, string, type)
+        if (result){
+                return false;
+        }
+
         update_map((&record_map), s, record, string, type);
+        return true;
 }
 
 const struct type *query_record_type(const char *name){
