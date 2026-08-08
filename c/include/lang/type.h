@@ -24,13 +24,20 @@ struct variable {
         const struct type *type;
 };
 
+struct field {
+    struct variable *var;
+    uint32_t offset;
+};
+
 void free_variable(struct variable *v);
+void free_field(struct field *f);
 
 DEFINE_LIST(type);
-DEFINE_LIST(variable)
+DEFINE_LIST(variable);
+DEFINE_LIST(field);
 
 struct type {
-    uint32_t word_count;
+    uint32_t byte_count;
     enum category category;
     bool is_assignable;
     union{
@@ -55,7 +62,7 @@ struct type {
         }; // array
 
         struct {
-            struct LIST(variable) fields;
+            struct LIST(field) fields;
             char *name;
         }; // record
 
@@ -94,7 +101,6 @@ const struct type *make_assignable(const struct type *type);
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);
 bool is_returnable(const struct type *type);
-bool is_composite(const struct type *type);
 bool can_safe_cast(const struct type *src, const struct type *dst);
 void free_types();
 #endif

@@ -2,6 +2,7 @@
 #define ASSEM_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include "codegen/register.h"
 
 char *mov(enum reg dest, enum reg src);
@@ -27,7 +28,11 @@ char *not(enum reg dest, enum reg src);
 char *cmpi(enum reg reg, long long imm);
 char *ldr(enum reg dest, enum reg addr);
 char *str(enum reg src, enum reg addr);
-char *memory_copy(enum reg src, enum reg dest, long long words);
+char *memory_copy(enum reg src, enum reg dest, long long bytes);
+// extract selected bytes from value at addr into the LSBs of dest
+char *get_bytes_addr(enum reg dest, enum reg addr, uint32_t count);
+// put selected bytes from src into the specified location in the value at addr (while preserving the rest)
+char *set_bytes_addr(enum reg src, enum reg addr, uint32_t count);
 char *ret();
 char *comment(char *text);
 char *literal(char *text);

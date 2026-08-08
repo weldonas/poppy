@@ -9,7 +9,8 @@
 #include "data/map.h"
 
 struct index {
-        uint32_t data;
+        uint32_t offset;
+        uint32_t size;
 };
 
 DEFINE_MAP(string, index);
@@ -43,25 +44,31 @@ void add_variable(struct chunk *chunk, struct variable var){
         struct string *v = (struct string*) malloc(sizeof(struct string));
         v->data = var.string;
         struct index *i = (struct index*) malloc(sizeof(struct index));
-        i->data = chunk->next_offset;
-        update_map((&chunk->offsets), v, i, string, index);
 
-        size_t num_vars = chunk->offsets.list->len;
-        // if we have an even number of variables, we use an odd number of words
-        // and we have to increment by 16 to keep the stack pointer aligned
-        if (num_vars % 2 == 0){
-                chunk->size += 16;
-        }
+        uint32_t size = var.type->byte_count;
 
-        // chunk->next_offset holds the next available offset, which is also the size of the chunk
-        chunk->next_offset += var.type->word_count * 8;
-
-        if ((chunk->next_offset % 16) == 0){
-                chunk->size = chunk->next_offset;
+        // align variables larger than 8 bytes to an 8-byte boundary
+        if (size > 8) {
+                chunk->next_offset = (chunk->next_offset + 7) & ~7ULL;
         }
         else {
-                chunk->size = chunk->next_offset + 8;
+                // if it would cross an 8-byte boundary, move to next word
+                if ((chunk->next_offset & 7) + size > 8) {
+                        chunk->next_offset = (chunk->next_offset + 7) & ~7ULL;
+                }
         }
+
+        i->offset = chunk->next_offset;
+        i->size = size;
+
+        update_map((&chunk->offsets), v, i, string, index);
+
+        chunk->next_offset += size;
+
+        if (chunk->next_offset > chunk->size) {
+                chunk->size = (chunk->next_offset + 15) & ~15ULL;
+        }
+
         assert(!(chunk->size % 16));
 }
 
@@ -76,8 +83,9 @@ char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_
         struct string v = {var.string};
         const struct index *result;
         query_map((&chunk->offsets), &v, result, string, index);
+
         return concat(2, 
-                movi(dest, result->data), 
+                movi(dest, result->offset), 
                 add(dest,  chunk_address, dest)
         );
 }

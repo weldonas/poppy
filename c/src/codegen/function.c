@@ -1,6 +1,7 @@
 #include "codegen/function.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "codegen/assem.h"
@@ -73,7 +74,8 @@ char *function_variable_address(const struct function *function, struct variable
 
         if (has_variable(function->frame, var)){
                 // frame is on top of the stack (otherwise we wouldn't be in this function)
-                return variable_address(function->frame, var, REG_FP, dest);
+                char *result = variable_address(function->frame, var, REG_FP, dest);
+                return result;
         }
 
         // read from arg chunk pointer
@@ -128,18 +130,25 @@ char *call_function(const struct function *function, char **args){
         size_t i = 0;
         for (struct LIST_NODE(variable) *param = function->params.head; param != NULL; param = param->next, ++i) {
                 char *cur_eval;
-                if (is_composite(param->data->type)) {
+                if (param->data->type->byte_count > 8) {
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
-                                memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->word_count)
+                                memory_copy(REG_RESULT, REG_SCRATCH, param->data->type->byte_count)
+                        );
+                }
+                else if (param->data->type->byte_count == 8){
+                        cur_eval = concat(3,
+                                args[i],
+                                variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
+                                str(REG_RESULT, REG_SCRATCH)
                         );
                 }
                 else {
                         cur_eval = concat(3,
                                 args[i],
                                 variable_address(function->param_chunk, *param->data, REG_SP, REG_SCRATCH),
-                                str(REG_RESULT, REG_SCRATCH)
+                                set_bytes_addr(REG_RESULT, REG_SCRATCH, param->data->type->byte_count)
                         );
                 }
 
