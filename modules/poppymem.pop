@@ -188,3 +188,7 @@ void memfree(&int ptr){
 
         list_push(order, index);
 }
+
+bool memcheck(){
+        hop *metadata_ptr().free_head[NUM_ORDERS() - 1] == 0;
+}
