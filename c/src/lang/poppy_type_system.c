@@ -132,7 +132,7 @@ const struct type *deduce_fields(const struct parse_tree *tree){
                 const struct type *field_type = node->data->type;
                 char *field_name = node->data->children->head->next->data->data.value;
 
-                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                struct variable *v = malloc(sizeof(struct variable));
                 v->type = field_type;
                 v->string = field_name;
 

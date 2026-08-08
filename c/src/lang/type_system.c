@@ -125,7 +125,7 @@ struct RESULT(unit) is_valid_type_tree(const struct parse_tree *tree){
         if ((tree->data.type == SYMBOL_IDENTIFIER) && name_reused(tree)){
                 char *lit = "Name reuse for symbol ";
                 char *name = tree->data.value;
-                char *err = (char*) malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
+                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
                 strcpy(err, lit);
                 strcat(err, name);
                 struct RESULT(unit) result;
@@ -170,7 +170,7 @@ struct RESULT(unit) find_types(const struct type_system *const system, struct pa
                         tree->type = NULL;
                         char *lit = "No definition for symbol ";
                         const char *name = map_node->data->key->data;
-                        char *err = (char*) malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
+                        char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
                         strcpy(err, lit);
                         strcat(err, name);
                         struct RESULT(unit) result;
@@ -209,7 +209,7 @@ size_t get_priority(enum type_rule_condition_type type){
 }
 
 const struct type_rule_condition *new_type_rule_condition(struct type_rule_condition cond){
-        struct type_rule_condition *ptr = (struct type_rule_condition*) malloc(sizeof(struct type_rule_condition));
+        struct type_rule_condition *ptr = malloc(sizeof(struct type_rule_condition));
         *ptr = cond;
         return ptr;
 }
@@ -251,14 +251,14 @@ const struct type_rule_condition *new_add_scope_side_effect() {
 }
 
 const struct symbol_table_value *new_symbol_table_value(const struct type *type, bool is_defined){
-        struct symbol_table_value *value = (struct symbol_table_value*) malloc(sizeof(struct symbol_table_value));
+        struct symbol_table_value *value = malloc(sizeof(struct symbol_table_value));
         value->type = type;
         value->is_defined = is_defined;
         return value;
 }
 
 const struct type_rule *new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        struct type_rule *ptr = malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
                 ptr->conditions[i] = conditions[i];
         }
@@ -269,7 +269,7 @@ const struct type_rule *new_type_rule(const struct type_rule_condition *conditio
 }
 
 const struct type_rule *new_child_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, size_t output_index){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        struct type_rule *ptr = malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
                 ptr->conditions[i] = conditions[i];
         }
@@ -280,7 +280,7 @@ const struct type_rule *new_child_type_rule(const struct type_rule_condition *co
 }
 
 const struct type_rule *new_deducer_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, type_deducer deducer){
-        struct type_rule *ptr = (struct type_rule*) malloc(sizeof(struct type_rule));
+        struct type_rule *ptr = malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){
                 ptr->conditions[i] = conditions[i];
         }
@@ -299,7 +299,7 @@ void free_type_rule(const struct type_rule *type_rule){
 }
 
 const struct type_system *new_type_system(const struct type_rule **rules, size_t rules_len){
-        struct type_system *ptr = (struct type_system*) malloc(sizeof(struct type_system));
+        struct type_system *ptr = malloc(sizeof(struct type_system));
         ptr->rules = rules;
         ptr->rules_len = rules_len;
         return ptr;
@@ -405,7 +405,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         if (child->type){
                                                 char *lit = "There is an existing definition for symbol ";
                                                 char *name = child->data.value;
-                                                char *err = (char*) malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
+                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
                                                 strcpy(err, lit);
                                                 strcat(err, name);
                                                 struct RESULT(type) result;
@@ -413,7 +413,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                                 return result;
                                         }
 
-                                        struct string *str = (struct string*) malloc(sizeof(struct string));
+                                        struct string *str = malloc(sizeof(struct string));
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
@@ -428,7 +428,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
                                                 char *lit = "There is an existing definition for symbol ";
                                                 const char *name = str->data;
-                                                char *err = (char*) malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
+                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
                                                 strcpy(err, lit);
                                                 strcat(err, name);
                                                 struct RESULT(type) result;
@@ -441,7 +441,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
-                                        struct string *str = (struct string*) malloc(sizeof(struct string));
+                                        struct string *str = malloc(sizeof(struct string));
                                         str->data = condition->find_name_tree(tree)->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
@@ -454,7 +454,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
                                                 char *lit = "There is an existing definition for symbol ";
                                                 const char *name = str->data;
-                                                char *err = (char*) malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
+                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
                                                 strcpy(err, lit);
                                                 strcat(err, name);
                                                 struct RESULT(type) result;
@@ -534,7 +534,7 @@ struct RESULT(type) find_type(const struct type_system *const system, struct par
         if (tree->children){
                 char *lit = "Could not find type for subtree ";
                 char *tree_str = parse_tree_string(tree);
-                char *err = (char*) malloc((strlen(lit) + strlen(tree_str) + 1) * sizeof(char));
+                char *err = malloc((strlen(lit) + strlen(tree_str) + 1) * sizeof(char));
                 strcpy(err, lit);
                 strcat(err, tree_str);
                 make_error(result, err);

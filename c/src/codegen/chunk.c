@@ -28,7 +28,7 @@ void free_chunk_entry(const struct MAP_ENTRY(string, index) *entry){
 }
 
 struct chunk *new_chunk(){
-        struct chunk *ptr = (struct chunk*) malloc(sizeof(struct chunk));
+        struct chunk *ptr = malloc(sizeof(struct chunk));
         init_map((&ptr->offsets), equals_string, free_chunk_entry, string, index);
         ptr->next_offset = 8;
         ptr->size = 16;
@@ -41,9 +41,9 @@ void free_chunk(struct chunk *chunk){
 }
 
 void add_variable(struct chunk *chunk, struct variable var){
-        struct string *v = (struct string*) malloc(sizeof(struct string));
+        struct string *v = malloc(sizeof(struct string));
         v->data = var.string;
-        struct index *i = (struct index*) malloc(sizeof(struct index));
+        struct index *i = malloc(sizeof(struct index));
 
         uint32_t size = var.type->byte_count;
 
@@ -104,7 +104,7 @@ char *push_chunk(struct chunk *chunk){
 }
 
 char *pop_chunk(){
-        char *instr = (char*) malloc(13 * sizeof(char));
+        char *instr = malloc(13 * sizeof(char));
         strcpy(instr, "ldr x9, [sp]");
 
         // add the size back to the stack pointer

@@ -44,7 +44,7 @@ struct function *new_function(struct LIST(variable) params, struct LIST(variable
         add_variable(frame, saved_link);
         add_variable(frame, arg_chunk_ptr);
 
-        struct function *ptr = (struct function*) malloc(sizeof(struct function));
+        struct function *ptr = malloc(sizeof(struct function));
         ptr->body = NULL;
         ptr->params = params;
         ptr->start_label = new_label(name);

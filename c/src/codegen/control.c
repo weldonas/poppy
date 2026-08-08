@@ -19,16 +19,16 @@ struct label *new_label(const char *name){
         char *label_name;
 
         if (name){
-                label_name = (char*) malloc((strlen(name) + 1) * sizeof(char));
+                label_name = malloc((strlen(name) + 1) * sizeof(char));
                 strcpy(label_name, name);
         }
         else {
-                label_name = (char*) malloc((MAX_LABEL_INDEX_LENGTH + 4) * sizeof(char));
+                label_name = malloc((MAX_LABEL_INDEX_LENGTH + 4) * sizeof(char));
                 strcpy(label_name, ".L");
                 sprintf(label_name + 2, "%zu", label_count);
         }
 
-        struct label *l = (struct label*) malloc(sizeof(struct label));
+        struct label *l = malloc(sizeof(struct label));
         l->name = label_name;
         return l;
 }
@@ -39,35 +39,35 @@ void free_label(struct label *l){
 }
 
 char *declare_label(struct label *l){
-        char *instr = (char*) malloc((strlen(l->name) + 2) * sizeof(char));
+        char *instr = malloc((strlen(l->name) + 2) * sizeof(char));
         strcpy(instr, l->name);
         strcat(instr, ":");
         return instr;
 }
 
 char *b(struct label *l){
-        char *instr = (char*) malloc((strlen(l->name) + 3) * sizeof(char));
+        char *instr = malloc((strlen(l->name) + 3) * sizeof(char));
         strcpy(instr, "b ");
         strcat(instr, l->name);
         return instr;
 }
 
 char *bl(struct label *l){
-        char *instr = (char*) malloc((strlen(l->name) + 4) * sizeof(char));
+        char *instr = malloc((strlen(l->name) + 4) * sizeof(char));
         strcpy(instr, "bl ");
         strcat(instr, l->name);
         return instr;
 }
 
 char *beq(struct label *l){
-        char *instr = (char*) malloc((strlen(l->name) + 5) * sizeof(char));
+        char *instr = malloc((strlen(l->name) + 5) * sizeof(char));
         strcpy(instr, "beq ");
         strcat(instr, l->name);
         return instr;
 }
 
 char *bne(struct label *l){
-        char *instr = (char*) malloc((strlen(l->name) + 5) * sizeof(char));
+        char *instr = malloc((strlen(l->name) + 5) * sizeof(char));
         strcpy(instr, "bne ");
         strcat(instr, l->name);
         return instr;

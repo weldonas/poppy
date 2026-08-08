@@ -22,7 +22,7 @@
 
 #define init_map(map, eq, ff, ktype, vtype)                                                                               \
         do {                                                                                                              \
-                map->list = (struct LISTMAP_ENTRY(ktype, vtype)*) malloc(sizeof(struct LISTMAP_ENTRY(ktype, vtype)));     \
+                map->list = malloc(sizeof(struct LISTMAP_ENTRY(ktype, vtype)));     \
                 init_list(map->list);                                                                                     \
                 map->equals = eq;                                                                                         \
                 map->free_func = ff;                                                                                      \
@@ -30,7 +30,7 @@
 
 #define update_map(map, k, v, ktype, vtype)                                                                                                       \
         do {                                                                                                                                      \
-                struct MAP_ENTRY(ktype, vtype) *entry = (struct MAP_ENTRY(ktype, vtype)*) malloc(sizeof(struct MAP_ENTRY(ktype, vtype)));         \
+                struct MAP_ENTRY(ktype, vtype) *entry = malloc(sizeof(struct MAP_ENTRY(ktype, vtype)));         \
                 entry->key = k;                                                                                                                   \
                 entry->value = v;                                                                                                                 \
                 bool found = false;                                                                                                               \

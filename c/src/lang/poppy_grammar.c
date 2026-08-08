@@ -10,7 +10,7 @@
         do {                                                                     \
                 grmr->rules[ctr].lhs = lh_symbol;                                \
                 enum symbol rhs[] = rh_symbols;                                  \
-                grmr->rules[ctr].rhs = (enum symbol*) malloc(sizeof(rhs));       \
+                grmr->rules[ctr].rhs = malloc(sizeof(rhs));       \
                 grmr->rules[ctr].rhs_len = sizeof(rhs) / sizeof(enum symbol);    \
                 memcpy(grmr->rules[ctr].rhs, rhs, sizeof(rhs));                  \
         } while (0)
@@ -22,7 +22,7 @@ const struct grammar * const get_poppy_grammar(){
                 return poppy_grammar;
         }
 
-        poppy_grammar = (struct grammar*) malloc(sizeof(struct grammar));
+        poppy_grammar = malloc(sizeof(struct grammar));
         poppy_grammar->start = SYMBOL_PROGRAM;
         poppy_grammar->rules_len = RULE_COUNT;
 
@@ -31,7 +31,7 @@ const struct grammar * const get_poppy_grammar(){
                 poppy_grammar->expanded[i] = false;
         }
 
-        poppy_grammar->rules = (struct rule*) malloc(RULE_COUNT * sizeof(struct rule));
+        poppy_grammar->rules = malloc(RULE_COUNT * sizeof(struct rule));
 
         int i = 0;
         populate(SYMBOL_PROGRAM, {SYMBOL_DEFNDECLS COMMA SYMBOL_END}, i, poppy_grammar); ++i;

@@ -42,7 +42,7 @@ void add_type(struct type *new) {
 
 const struct type* const int_type(){
         if (int_ptr == NULL){
-                int_ptr = (struct type*) malloc(sizeof(struct type));
+                int_ptr = malloc(sizeof(struct type));
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
                 int_ptr->byte_count = 8;
@@ -55,7 +55,7 @@ const struct type* const int_type(){
 
 const struct type* const bool_type(){
         if (bool_ptr == NULL){
-                bool_ptr = (struct type*) malloc(sizeof(struct type));
+                bool_ptr = malloc(sizeof(struct type));
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
                 bool_ptr->byte_count = 1;
@@ -68,7 +68,7 @@ const struct type* const bool_type(){
 
 const struct type* const void_type(){
         if (void_ptr == NULL){
-                void_ptr = (struct type*) malloc(sizeof(struct type));
+                void_ptr = malloc(sizeof(struct type));
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
                 void_ptr->byte_count = NOT_IN_MEMORY;
@@ -81,7 +81,7 @@ const struct type* const void_type(){
 
 const struct type* const char_type(){
         if (char_ptr == NULL){
-                char_ptr = (struct type*) malloc(sizeof(struct type));
+                char_ptr = malloc(sizeof(struct type));
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
                 char_ptr->byte_count = 1;
@@ -94,7 +94,7 @@ const struct type* const char_type(){
 
 const struct type* const unit_type(){
         if (unit_ptr == NULL){
-                unit_ptr = (struct type*) malloc(sizeof(struct type));
+                unit_ptr = malloc(sizeof(struct type));
                 unit_ptr->category = CATEGORY_UNIT;
                 unit_ptr->byte_count = NOT_IN_MEMORY;
                 unit_ptr->is_assignable = false;
@@ -109,7 +109,7 @@ const struct type* const function_type(const struct type *ret, const struct type
                 return NULL;
         }
 
-        struct type *new = (struct type*) malloc(sizeof(struct type));
+        struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_FUNCTION;
         new->ret_type = ret;
         new->params_type = params;
@@ -119,7 +119,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         return new;
 }
 struct type* const param_type(){
-        struct type *new = (struct type*) malloc(sizeof(struct type));
+        struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
         new->byte_count = NOT_IN_MEMORY;
@@ -129,7 +129,7 @@ struct type* const param_type(){
 }
 
 const struct type* const pointer_type(const struct type *type){
-        struct type *new = (struct type*) malloc(sizeof(struct type));
+        struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_POINTER;
         new->referenced_type = type;
         new->byte_count = 8;
@@ -156,7 +156,7 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         uint32_t byte_count = element_type->byte_count * length;
         byte_count = ((byte_count + 7) / 8) * 8;
 
-        struct type *new = (struct type*) malloc(sizeof(struct type));
+        struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_ARRAY;
         new->element_type = element_type;
         new->length = length;
@@ -167,7 +167,7 @@ const struct type* const array_type(const struct type *element_type, char *lengt
 }
 
 struct type* const record_type(){
-        struct type *new = (struct type*) malloc(sizeof(struct type));
+        struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
         init_list((&new->fields));
         new->byte_count = 8;
@@ -206,7 +206,7 @@ bool add_field(struct type *record, struct variable *v){
                 }
         }
 
-        struct field *field = (struct field*) malloc(sizeof(struct field));
+        struct field *field = malloc(sizeof(struct field));
         field->var = v;
         field->offset = offset;
 
@@ -229,14 +229,14 @@ const struct type* const return_type(const struct type *type){
 void name_record_type(struct type *record, char *name){
         assert(record->category == CATEGORY_RECORD);
         
-        struct string *s = (struct string*) malloc(sizeof(struct string));
+        struct string *s = malloc(sizeof(struct string));
         s->data = name;
         record->name = name;
         update_map((&record_map), s, record, string, type);
 }
 
 const struct type *query_record_type(const char *name){
-        struct string *s = (struct string*) malloc(sizeof(struct string));
+        struct string *s = malloc(sizeof(struct string));
         s->data = name;
 
         const struct type *result;
@@ -269,7 +269,7 @@ size_t record_type_offset(const struct type *record, const char *name){
 const struct type *make_assignable(const struct type *type){
         assert(type->byte_count != NOT_IN_MEMORY);
 
-        struct type *new = (struct type*) malloc(sizeof(struct type));
+        struct type *new = malloc(sizeof(struct type));
         add_type(new);
 
         memcpy(new, type, sizeof(struct type));
@@ -286,8 +286,8 @@ const struct type *make_assignable(const struct type *type){
                 case CATEGORY_RECORD:
                         init_list((&new->fields));
                         for (struct LIST_NODE(field) *node = type->fields.head; node != NULL; node = node->next){
-                                struct field *f = (struct field*) malloc(sizeof(struct field));
-                                f->var = (struct variable*) malloc(sizeof(struct variable));
+                                struct field *f = malloc(sizeof(struct field));
+                                f->var = malloc(sizeof(struct variable));
                                 f->var->type = make_assignable(node->data->var->type);
                                 f->var->string = node->data->var->string;
                                 f->offset = node->data->offset;

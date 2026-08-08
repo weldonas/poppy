@@ -20,7 +20,7 @@ struct parse_tree_params {
 DEFINE_LIST(parse_tree_params);
 
 struct parse_tree_params *new_tree_params(struct token data){
-        struct parse_tree_params *ptr = (struct parse_tree_params*) malloc(sizeof(struct parse_tree_params));
+        struct parse_tree_params *ptr = malloc(sizeof(struct parse_tree_params));
         ptr->data = data;
         ptr->last_child = NULL;
         ptr->first_child_not_to_free = NULL;
@@ -28,7 +28,7 @@ struct parse_tree_params *new_tree_params(struct token data){
 }
 
 struct parse_tree_params * copy_tree_params(struct parse_tree_params *tree){
-        struct parse_tree_params *ptr = (struct parse_tree_params*) malloc(sizeof(struct parse_tree_params));
+        struct parse_tree_params *ptr = malloc(sizeof(struct parse_tree_params));
         ptr->data = tree->data;
         ptr->last_child = tree->last_child;
         ptr->prev_sibling = tree->prev_sibling;
@@ -51,7 +51,7 @@ struct item {
 };
 
 struct item * new_item(struct rule *rule, size_t dot, size_t start, struct parse_tree_params *tree){
-        struct item *ptr = (struct item*) malloc(sizeof(struct item));
+        struct item *ptr = malloc(sizeof(struct item));
         ptr->rule = rule;
         ptr->dot = dot;
         ptr->start = start;
@@ -123,7 +123,7 @@ void expand_into_list(struct parse_tree *tree, const struct grammar *grammar, st
 }
 
 struct parse_tree *build_tree(struct parse_tree_params *params, struct parse_tree *parent){
-        struct parse_tree *tree = (struct parse_tree*) malloc(sizeof(struct parse_tree));
+        struct parse_tree *tree = malloc(sizeof(struct parse_tree));
         tree->data = params->data;
         
         struct parse_tree_params *stack[MAX_PARSE_CHILDREN];
@@ -138,7 +138,7 @@ struct parse_tree *build_tree(struct parse_tree_params *params, struct parse_tre
         }
 
         if (child_count > 0){
-                tree->children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
+                tree->children = malloc(sizeof(struct LIST(parse_tree)));
                 init_list(tree->children);
                 
                 for (int8_t i = child_count - 1; i >= 0; --i){
@@ -159,7 +159,7 @@ struct parse_tree *build_tree(struct parse_tree_params *params, struct parse_tre
 
 void expand_subtrees(struct parse_tree *tree, const struct grammar *grammar){
         if (grammar->expanded[tree->data.type]){
-                struct LIST(parse_tree) *children = (struct LIST(parse_tree)*) malloc(sizeof(struct LIST(parse_tree)));
+                struct LIST(parse_tree) *children = malloc(sizeof(struct LIST(parse_tree)));
                 init_list(children);
                 expand_into_list(tree, grammar, children);
                 
@@ -182,7 +182,7 @@ void expand_subtrees(struct parse_tree *tree, const struct grammar *grammar){
 }
 
 struct RESULT(parse_tree) parse(const struct grammar *grammar, const struct LIST(token) *tokens) {
-        struct LIST(item) *state_sets = (struct LIST(item)*) malloc((tokens->len + 1) * sizeof(struct LIST(item)));
+        struct LIST(item) *state_sets = malloc((tokens->len + 1) * sizeof(struct LIST(item)));
 
         for (size_t i = 0; i <= tokens->len; ++i){
                 init_list((&state_sets[i]));

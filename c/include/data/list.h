@@ -16,7 +16,7 @@
 
 #define append_list(list, item, type)                                                                            \
         do {                                                                                                     \
-                struct LIST_NODE(type) *node = (struct LIST_NODE(type)*) malloc(sizeof(struct LIST_NODE(type))); \
+                struct LIST_NODE(type) *node = malloc(sizeof(struct LIST_NODE(type))); \
                 node->data = item;                                                                               \
                 if (list->head == 0){                                                                            \
                         list->head = node;                                                                       \

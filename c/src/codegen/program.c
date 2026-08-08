@@ -141,7 +141,7 @@ char *generate_vardec(const struct parse_tree *tree, struct MAP(string, function
                 }
         }
 
-        char *ret = (char*) malloc(sizeof(char));
+        char *ret = malloc(sizeof(char));
         *ret = 0;
         return ret;
 }
@@ -273,7 +273,7 @@ char *generate_ret(const struct parse_tree *tree, struct MAP(string, function) *
         const struct parse_tree *second; load_child_at(second, tree, 1);
 
         if (second->data.type == SYMBOL_TYPE){
-                char *ret = (char*) malloc(sizeof(char));
+                char *ret = malloc(sizeof(char));
                 *ret = 0;
                 return ret;
         }
@@ -472,7 +472,7 @@ char *generate_unexpr(const struct parse_tree *tree, struct MAP(string, function
 
         if (tree->children->head->data->data.type == SYMBOL_ASM){
                 const struct parse_tree *instr_tree; load_child_at(instr_tree, tree, 2);
-                char *ret = (char*) malloc((strlen(instr_tree->data.value) + 1) * sizeof(char));
+                char *ret = malloc((strlen(instr_tree->data.value) + 1) * sizeof(char));
                 strcpy(ret, instr_tree->data.value);
                 return ret;
         }
@@ -505,7 +505,7 @@ char *generate_call(const struct parse_tree *tree, struct MAP(string, function) 
         struct string s;
         s.data = id;
         const struct function *f; query_map(functions, (&s), f, string, function);
-        char **args_code = (char**) malloc(num_params(f) * sizeof(char*));
+        char **args_code = malloc(num_params(f) * sizeof(char*));
 
         size_t i = 0;
         
@@ -675,7 +675,7 @@ char *generate_code(const struct parse_tree *tree){
                 struct LIST(variable) params_list = get_parameters(defn);
                 struct LIST(variable) locals_list = get_local_variables(defn);
 
-                struct string *s = (struct string*) malloc(sizeof(struct string));
+                struct string *s = malloc(sizeof(struct string));
                 const struct parse_tree *signature = defn->children->head->data;
                 s->data = signature->children->head->next->data->data.value;
                 bool is_main = strcmp("main", s->data) == 0;
@@ -703,7 +703,7 @@ char *generate_code(const struct parse_tree *tree){
                 set_body((struct function*) fn, generate_from_tree(stmts, &functions, fn));
         }
 
-        // char *prog = (char*) malloc(44 * sizeof(char));
+        // char *prog = malloc(44 * sizeof(char));
         // strcpy(prog, head);
         char *prog = generate_head(tree->children->head->data);
         
@@ -725,8 +725,8 @@ char *generate_code(const struct parse_tree *tree){
                 return NULL;
         }
 
-        char *sl = (char*) malloc(8 * sizeof(char));
-        char *t = (char*) malloc(31 * sizeof(char));
+        char *sl = malloc(8 * sizeof(char));
+        char *t = malloc(31 * sizeof(char));
         strcpy(sl, start_label);
         strcpy(t, tail);
         prog = concat(4, prog, sl, declare_function(main), t);

@@ -22,7 +22,7 @@ while (0)                       \
 
 #define make_error_lit(result, lit)                                     \
 do {                                                                    \
-        char *err = (char*) malloc((strlen(lit) + 1) * sizeof(char));   \
+        char *err = malloc((strlen(lit) + 1) * sizeof(char));   \
         strcpy(err, lit);                                               \
         result.error = err;                                             \
         result.is_ok = false;                                           \

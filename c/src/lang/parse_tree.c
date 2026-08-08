@@ -20,7 +20,7 @@ void free_string_entry(const struct MAP_ENTRY(string, symbol_table_value) *entry
 }
 
 struct MAP(string, symbol_table_value) *new_symbol_table() {
-        struct MAP(string, symbol_table_value) *ptr = (struct MAP(string, symbol_table_value)*) malloc(sizeof(struct MAP(string, symbol_table_value)));
+        struct MAP(string, symbol_table_value) *ptr = malloc(sizeof(struct MAP(string, symbol_table_value)));
         init_map(ptr, equals_string, free_string_entry, string, symbol_table_value);
         return ptr;
 }
@@ -113,7 +113,7 @@ void get_variables_recursive(const struct parse_tree *tree, struct LIST(variable
 
         if (symbol_table != NULL){
                 for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
-                        struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                        struct variable *v = malloc(sizeof(struct variable));
                         v->string = map_node->data->key->data;
                         v->type = map_node->data->value->type;
                         append_list(list, v, variable);
@@ -143,7 +143,7 @@ struct LIST(variable) get_parameters(const struct parse_tree *tree){
         struct LIST(variable) list;
         init_list((&list))
         for (struct string_symbol_table_value_map_entry_list_node *map_node = symbol_table->list->head; map_node != NULL; map_node = map_node->next){
-                struct variable *v = (struct variable*) malloc(sizeof(struct variable));
+                struct variable *v = malloc(sizeof(struct variable));
                 v->string = map_node->data->key->data;
                 v->type = map_node->data->value->type;
 

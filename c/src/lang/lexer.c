@@ -231,7 +231,7 @@ bool lex_string_literal(FILE *file, char val[MAX_TOKEN_LENGTH + 1]){
 struct RESULT(token_list) lex(FILE *file){
         char val[MAX_TOKEN_LENGTH + 1];
         val[0] = 0;
-        struct LIST(token) *list = (struct LIST(token)*) malloc(sizeof(struct LIST(token)));
+        struct LIST(token) *list = malloc(sizeof(struct LIST(token)));
         init_list(list);
         struct RESULT(token_list) result;
         make_ok(result, list);
@@ -375,7 +375,7 @@ struct RESULT(token_list) lex(FILE *file){
                                         data = find_numeric_value(file, val);
                                 } else {
                                         char *lit = "Unrecognized character ";
-                                        char *err = (char *) malloc((strlen(lit) + 2) * sizeof(char));
+                                        char *err = malloc((strlen(lit) + 2) * sizeof(char));
                                         strcpy(err, lit);
                                         strcat(err, val);
                                         make_error(result, err);
@@ -388,9 +388,9 @@ struct RESULT(token_list) lex(FILE *file){
                         return result;
                 }
 
-                struct token *new_token = (struct token*) malloc(sizeof(struct token));
+                struct token *new_token = malloc(sizeof(struct token));
 
-                new_token->value = (char*) malloc((data.val_len + 1) * sizeof(char));
+                new_token->value = malloc((data.val_len + 1) * sizeof(char));
                 val[data.val_len] = 0;
                 strcpy(new_token->value, val);
                 new_token->type = data.type;
