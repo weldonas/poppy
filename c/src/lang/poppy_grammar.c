@@ -29,6 +29,7 @@ const struct grammar * const get_poppy_grammar(){
         for (size_t i = 0; i < SYMBOL_COUNT; ++i){
                 poppy_grammar->nullable[i] = false;
                 poppy_grammar->expanded[i] = false;
+                poppy_grammar->skippable[i] = false;
         }
 
         poppy_grammar->rules = malloc(RULE_COUNT * sizeof(struct rule));
@@ -161,6 +162,20 @@ const struct grammar * const get_poppy_grammar(){
         poppy_grammar->expanded[SYMBOL_STMTS] = true;
         poppy_grammar->expanded[SYMBOL_ARGS] = true;
         poppy_grammar->expanded[SYMBOL_FIELDS] = true;
+
+        poppy_grammar->skippable[SYMBOL_BASEEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_MEMBEREXPR] = true;
+        poppy_grammar->skippable[SYMBOL_UNARYEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_MULTEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_ADDEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_BSHIFTEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_BANDEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_BXOREXPR] = true;
+        poppy_grammar->skippable[SYMBOL_BOREXPR] = true;
+        poppy_grammar->skippable[SYMBOL_COMPEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_EQEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_ANDEXPR] = true;
+        poppy_grammar->skippable[SYMBOL_OREXPR] = true;
 
         return poppy_grammar;
 }
