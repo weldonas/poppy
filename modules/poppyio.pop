@@ -26,7 +26,7 @@ void println(){
 
 void prints(record string s){
     let &char ptr = s.ptr;
-    for (let int i = 0; i < (s.length); ++i){
+    for (let int i = 0; i < s.length; ++i){
         printc(*ptr);
         ptr = unsafe &char(unsafe int(ptr) + 1);
     }

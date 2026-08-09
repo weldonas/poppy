@@ -181,6 +181,28 @@ void expand_subtrees(struct parse_tree *tree, const struct grammar *grammar){
         }
 }
 
+void remove_skippable(struct parse_tree *tree, const struct grammar *grammar){
+        if (!tree->children){
+                return;
+        }
+
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                struct parse_tree *child = node->data;
+
+                while (child->children && (child->children->len == 1) && grammar->skippable[child->data.type]){
+                        struct parse_tree *grandchild = child->children->head->data;
+                        grandchild->parent = tree;
+                        node->data = grandchild;
+                        free(child->children->head);
+                        free(child->children);
+                        free(child);
+                        child = grandchild;
+                }
+
+                remove_skippable(child, grammar);
+        }
+}
+
 struct RESULT(parse_tree) parse(const struct grammar *grammar, const struct LIST(token) *tokens) {
         struct LIST(item) *state_sets = malloc((tokens->len + 1) * sizeof(struct LIST(item)));
 
@@ -271,6 +293,7 @@ struct RESULT(parse_tree) parse(const struct grammar *grammar, const struct LIST
 
         if (ret){
                 expand_subtrees(ret, grammar);
+                remove_skippable(ret, grammar);
                 make_ok(result, ret);
         }
         else {
