@@ -5,14 +5,14 @@ int strlen(record string s){
 }
 
 bool streq(record string s1, record string s2){
-        if (s1.length != (s2.length)){
+        if (s1.length != s2.length){
                 hop false;
         }
 
         let &char ptr1 = s1.ptr;
         let &char ptr2 = s2.ptr;
 
-        for (let int i = 0; i < (s1.length); ++i){
+        for (let int i = 0; i < s1.length; ++i){
                 if (*ptr1 != *ptr2){
                         hop false;
                 }
@@ -34,19 +34,19 @@ record string strconcat(record string s1, record string s2){
 
         let record string new_str;
         new_str.length = total_length;
-        new_str.ptr = &char(memalloc(bytes));
+        new_str.ptr = (&char)(memalloc(bytes));
 
         let &char new_ptr = new_str.ptr;
         let &char s1_ptr = s1.ptr;
         let &char s2_ptr = s2.ptr;
 
-        for (let int i = 0; i < (s1.length); ++i){
+        for (let int i = 0; i < s1.length; ++i){
                 *new_ptr = *s1_ptr;
                 new_ptr = unsafe &char(unsafe int(new_ptr) + 1);
                 s1_ptr = unsafe &char(unsafe int(s1_ptr) + 1);
         }
 
-        for (let int i = 0; i < (s2.length); ++i){
+        for (let int i = 0; i < s2.length; ++i){
                 *new_ptr = *s2_ptr;
                 new_ptr = unsafe &char(unsafe int(new_ptr) + 1);
                 s2_ptr = unsafe &char(unsafe int(s2_ptr) + 1);
@@ -56,5 +56,5 @@ record string strconcat(record string s1, record string s2){
 }
 
 void strfree(record string s){
-        memfree(&int(s.ptr));
+        memfree((&int)(s.ptr));
 }

@@ -329,9 +329,20 @@ char *generate_ret(const struct parse_tree *tree, struct codegen_params *params)
         char *value = generate_value(second, params);
         return concat(2, value, hop(params->within));
 }
-char *generate_andcond(const struct parse_tree *tree, struct codegen_params *params){
+
+char *generate_orexpr(const struct parse_tree *tree, struct codegen_params *params){
         if (tree->children->len == 1){
-                return generate_from_tree(tree->children->head->data, params);
+                return generate_first_child(tree, params);
+        }
+
+        char *op1 = generate_value(tree->children->head->data, params);
+        char *op2 = generate_value(tree->children->head->next->next->data, params);
+        return dsjtn(op1, op2);    
+}
+
+char *generate_andexpr(const struct parse_tree *tree, struct codegen_params *params){
+        if (tree->children->len == 1){
+                return generate_first_child(tree, params);
         }
 
         char *op1 = generate_value(tree->children->head->data, params);
@@ -339,14 +350,198 @@ char *generate_andcond(const struct parse_tree *tree, struct codegen_params *par
         return cnjtn(op1, op2);
 }
 
-char *generate_orcond(const struct parse_tree *tree, struct codegen_params *params){
+char *generate_binaryexpr(const struct parse_tree *tree, struct codegen_params *params){
         if (tree->children->len == 1){
-                return generate_from_tree(tree->children->head->data, params);
+                return generate_first_child(tree, params);
         }
 
         char *op1 = generate_value(tree->children->head->data, params);
         char *op2 = generate_value(tree->children->head->next->next->data, params);
-        return dsjtn(op1, op2);    
+        enum symbol op_type = tree->children->head->next->data->data.type;
+
+        switch (op_type){
+                case SYMBOL_EQ:
+                        return eq(op1, op2);
+                case SYMBOL_NE:
+                        return ne(op1, op2);
+                case SYMBOL_LT:
+                        return lt(op1, op2);
+                case SYMBOL_GT:
+                        return gt(op1, op2);
+                case SYMBOL_LE:
+                        return le(op1, op2);
+                case SYMBOL_GE:
+                        return ge(op1, op2);
+                case SYMBOL_BOR:
+                        return bor(op1, op2);
+                case SYMBOL_BXOR:
+                        return bxor(op1, op2);
+                case SYMBOL_AMP:
+                        return band(op1, op2);
+                case SYMBOL_BLEFT:
+                        return bleft(op1, op2);
+                case SYMBOL_BRIGHT:
+                        return bright(op1, op2);
+                case SYMBOL_PLUS:
+                        return sum(op1, op2);
+                case SYMBOL_MINUS:
+                        return subtract(op1, op2);
+                case SYMBOL_STAR:
+                        return multiply(op1, op2);
+                case SYMBOL_DIVIDE:
+                        return divide(op1, op2);
+                case SYMBOL_MOD:
+                        return modulo(op1, op2);
+                default:
+                        assert(0);
+                        return NULL;
+        }
+}
+
+char *generate_unaryexpr(const struct parse_tree *tree, struct codegen_params *params){
+        if (tree->children->len == 1){
+                return generate_first_child(tree, params);
+        }
+
+        enum symbol first = tree->children->head->data->data.type;
+
+        if (first == SYMBOL_INC){
+                const struct parse_tree *addressable; load_child_at(addressable, tree, 1);
+                char *find_memory_addr = generate_address(addressable, params);
+
+                return concat(5,
+                        find_memory_addr,
+                        ldr(REG_SCRATCH2, REG_RESULT),
+                        movi(REG_SCRATCH, 1),
+                        add(REG_SCRATCH, REG_SCRATCH2, REG_SCRATCH),
+                        set_bytes_addr(REG_SCRATCH, REG_RESULT, addressable->type->byte_count)
+                );
+        }
+
+        if (first == SYMBOL_DEC){
+                const struct parse_tree *addressable; load_child_at(addressable, tree, 1);
+                char *find_memory_addr = generate_address(addressable, params);
+
+                return concat(5,
+                        find_memory_addr,
+                        ldr(REG_SCRATCH2, REG_RESULT),
+                        movi(REG_SCRATCH, 1),
+                        sub(REG_SCRATCH, REG_SCRATCH2, REG_SCRATCH),
+                        set_bytes_addr(REG_SCRATCH, REG_RESULT,addressable->type->byte_count)
+                );
+        }   
+
+        if (first == SYMBOL_MINUS){
+                return subtract(
+                        movi(REG_RESULT, 0), 
+                        generate_value(tree->children->head->next->data, params)
+                );
+        }
+
+        if (first == SYMBOL_NOT){
+                return ngtn(generate_value(tree->children->head->next->data, params));
+        }
+
+        if (first == SYMBOL_BNOT){
+                char *op = generate_value(tree->children->head->next->data, params);
+                return bnot(op);
+        }
+
+        if (first == SYMBOL_STAR){
+                char *find_memory_address = generate_value(tree->children->head->next->data, params);
+                return concat(2,
+                        find_memory_address,
+                        ldr(REG_RESULT, REG_RESULT)
+                );
+        }
+
+        if (first == SYMBOL_AMP){
+                return generate_address(tree->children->head->next->data, params);
+        }
+
+        assert(0);
+        return NULL;
+}
+
+char *generate_memberexpr(const struct parse_tree *tree, struct codegen_params *params){
+        if (tree->children->len == 1){
+                return generate_first_child(tree, params);
+        }
+
+        if (tree->children->head->next->data->data.type == SYMBOL_LBRACKET){
+                char *address = generate_address(tree, params);
+                return concat(3, 
+                        address, 
+                        mov(REG_SCRATCH, REG_RESULT),
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH, tree->type->byte_count) 
+                );
+        }
+
+        if (tree->children->head->next->data->data.type == SYMBOL_DOT){
+                char *address = generate_address(tree, params);
+                return concat(3, 
+                        address, 
+                        mov(REG_SCRATCH, REG_RESULT),
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH, tree->type->byte_count) 
+                );
+        }
+
+        assert(0);
+        return NULL;
+}
+
+char *generate_baseexpr(const struct parse_tree *tree, struct codegen_params *params){
+        enum symbol child_type = tree->children->head->data->data.type;
+
+        if (child_type == SYMBOL_LPAREN){
+                return generate_from_tree(tree->children->head->next->data, params);
+        }
+
+        if (child_type == SYMBOL_TRUE){
+                return movi(REG_RESULT, 1);
+        }
+
+        if (child_type == SYMBOL_FALSE){
+                return movi(REG_RESULT, 0);
+        }
+
+        if (child_type == SYMBOL_CALL){
+                return generate_first_child(tree, params);
+        }
+
+        if (child_type == SYMBOL_CAST){
+                return generate_first_child(tree, params);
+        }
+
+        if (child_type == SYMBOL_IDENTIFIER){
+                char *address = generate_address(tree, params);
+                return concat(3, 
+                        address, 
+                        mov(REG_SCRATCH, REG_RESULT),
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH,tree->type->byte_count) 
+                );  
+        }
+
+        if (child_type == SYMBOL_CONSTANT){
+                long long imm = strtoll(tree->children->head->data->data.value, NULL, 10);
+                return movi(REG_RESULT, imm);
+        }
+
+        if (child_type == SYMBOL_CHARLIT){
+                char *data = tree->children->head->data->data.value;
+                long long imm = data[0];
+                return movi(REG_RESULT, imm);
+        }
+
+        if (child_type == SYMBOL_ASM){
+                const struct parse_tree *instr_tree; load_child_at(instr_tree, tree, 2);
+                char *ret = malloc((strlen(instr_tree->data.value) + 1) * sizeof(char));
+                strcpy(ret, instr_tree->data.value);
+                return ret;
+        }
+
+        assert(0);
+        return NULL;
 }
 
 char *generate_uncond(const struct parse_tree *tree, struct codegen_params *params){
@@ -702,18 +897,47 @@ char *generate_from_tree(const struct parse_tree *tree, struct codegen_params *p
                 return generate_varasst(tree, params);
         } else if (symbol == SYMBOL_RET){
                 return generate_ret(tree, params);
-        } else if (symbol == SYMBOL_ANDCOND){
-                return generate_andcond(tree, params);
-        } else if (symbol == SYMBOL_ORCOND){
-                return generate_orcond(tree, params);
-        } else if (symbol == SYMBOL_UNCOND){
-                return generate_uncond(tree, params);
         } else if (symbol == SYMBOL_EXPR){
                 return generate_first_child(tree, params);
-        } else if ((symbol == SYMBOL_ADDEXPR) || (symbol == SYMBOL_MULTEXPR) || (symbol == SYMBOL_BITEXPR)){
-                return generate_addmultbitexpr(tree, params);
-        } else if (symbol == SYMBOL_UNEXPR){          
-                return generate_unexpr(tree, params);
+        } else if (symbol == SYMBOL_OREXPR){
+                return generate_orexpr(tree, params);
+        } else if (symbol == SYMBOL_ANDEXPR){
+                return generate_andexpr(tree, params);
+        } else if (symbol == SYMBOL_EQEXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_COMPEXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_BOREXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_BXOREXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_BANDEXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_BSHIFTEXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_ADDEXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_MULTEXPR){
+                return generate_binaryexpr(tree, params);
+        } else if (symbol == SYMBOL_UNARYEXPR){
+                return generate_unaryexpr(tree, params);
+        } else if (symbol == SYMBOL_MEMBEREXPR){
+                return generate_memberexpr(tree, params);
+        } else if (symbol == SYMBOL_BASEEXPR){
+                return generate_baseexpr(tree, params);
+        // } 
+        // else if (symbol == SYMBOL_ANDCOND){
+                // return generate_andcond(tree, params);
+        // } else if (symbol == SYMBOL_ORCOND){
+                // return generate_orcond(tree, params);
+        // } else if (symbol == SYMBOL_UNCOND){
+                // return generate_uncond(tree, params);
+        // } else if (symbol == SYMBOL_EXPR){
+        //         return generate_first_child(tree, params);
+        // } else if ((symbol == SYMBOL_ADDEXPR) || (symbol == SYMBOL_MULTEXPR) || (symbol == SYMBOL_BITEXPR)){
+        //         return generate_addmultbitexpr(tree, params);
+        // } else if (symbol == SYMBOL_UNEXPR){          
+        //         return generate_unexpr(tree, params);
         } else if (symbol == SYMBOL_CALL){
                 return generate_call(tree, params);
         } else if (symbol == SYMBOL_BODY){
