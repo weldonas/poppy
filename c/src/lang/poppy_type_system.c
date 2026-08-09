@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 95
+#define RULE_COUNT 99
  
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -170,10 +170,10 @@ const struct type *deduce_addressable_dot(const struct parse_tree *tree){
         const struct parse_tree *record_tree; load_child_at(record_tree, tree, 0);
         const struct parse_tree *field_tree; load_child_at(field_tree, tree, 2);
 
-        if (!record_tree->type){
+        if (!record_tree->type || (record_tree->type->category != CATEGORY_RECORD)){
                 return NULL;
         }
-
+ 
         return field_type(record_tree->type, field_tree->data.value);
 }
 
@@ -386,26 +386,26 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         // Non-primitive data types
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_MEMBEREXPR);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_array_type);
         conditions[3] = new_type_at_condition(2, is_non_null_int_type);
         rules[i] = new_deducer_type_rule(conditions, 4, deduce_addressable_index);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_AMP);
         conditions[2] = new_type_at_condition(1, is_non_null_assignable_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_reference);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_STAR);
         conditions[2] = new_type_at_condition(1, is_non_null_pointer_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_dereference);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_MEMBEREXPR);
         conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
         ++i;
@@ -509,82 +509,73 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         // inline assembly
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BASEEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_ASM);
         rules[i] = new_type_rule(conditions, 2, void_type());
         ++i;
 
         // Predicates
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ORCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_OREXPR);
         conditions[1] = new_length_condition(1);
         rules[i] = new_child_type_rule(conditions, 2, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ORCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_OREXPR);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(0, is_non_null_bool_type);
         conditions[3] = new_type_at_condition(2, is_non_null_bool_type);
         rules[i] = new_child_type_rule(conditions, 4, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ANDCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ANDEXPR);
         conditions[1] = new_length_condition(1);
         rules[i] = new_child_type_rule(conditions, 2, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_ANDCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ANDEXPR);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(0, is_non_null_bool_type);
         conditions[3] = new_type_at_condition(2, is_non_null_bool_type);
         rules[i] = new_child_type_rule(conditions, 4, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_COMPEXPR);
         conditions[1] = new_length_condition(1);
         rules[i] = new_child_type_rule(conditions, 2, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_length_condition(2);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_NOT);
         conditions[3] = new_type_at_condition(1, is_non_null_bool_type);
         rules[i] = new_child_type_rule(conditions, 4, 1);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BASEEXPR);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_LPAREN);
         // conditions[3] = new_type_at_condition(1, is_non_null_bool_type);
         rules[i] = new_child_type_rule(conditions, 3, 1);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(0, is_non_null_bool_type);
-        conditions[3] = new_symbol_at_condition(1, SYMBOL_EQ);
-        conditions[4] = new_type_at_condition(2, is_non_null_bool_type);
-        rules[i] = new_type_rule(conditions, 5, bool_type());
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
-        conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_bool_type);
-        conditions[3] = new_symbol_at_condition(1, SYMBOL_NE);
-        conditions[4] = new_type_at_condition(2, is_non_null_bool_type);
-        rules[i] = new_type_rule(conditions, 5, bool_type());
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
-        conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_int_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_int_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_bool_type);
         rules[i] = new_type_rule(conditions, 4, bool_type());
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNCOND);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_char_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_char_type);
+        conditions[2] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_int_or_char_type);
+        rules[i] = new_type_rule(conditions, 4, bool_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_COMPEXPR);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_type_at_condition(0, is_non_null_int_or_char_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_int_or_char_type);
         rules[i] = new_type_rule(conditions, 4, bool_type());
         ++i;
 
@@ -594,7 +585,7 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 2, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_length_condition(1);
         rules[i] = new_child_type_rule(conditions, 2, 0);
         ++i;
@@ -623,12 +614,7 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 4, 0);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
-        conditions[1] = new_symbol_at_condition(0, SYMBOL_LPAREN);
-        rules[i] = new_child_type_rule(conditions, 2, 1);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_length_condition(2);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_INC);
         conditions[3] = new_type_at_condition(1, is_non_null_int_or_char_type);
@@ -636,7 +622,7 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 5, 1);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_length_condition(2);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_DEC);
         conditions[3] = new_type_at_condition(1, is_non_null_int_or_char_type);
@@ -644,53 +630,41 @@ const struct type_system *const get_poppy_type_system(){
         rules[i] = new_child_type_rule(conditions, 5, 1);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_UNEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_MINUS);
         conditions[2] = new_type_at_condition(1, is_non_null_int_type);
         rules[i] = new_child_type_rule(conditions, 3, 1);
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BANDEXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_symbol_at_condition(1, SYMBOL_AMP);
-        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
-        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_type_rule(conditions, 5, int_type());
+        conditions[2] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 4, int_type());
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BOREXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_symbol_at_condition(1, SYMBOL_BOR);
-        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
-        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_type_rule(conditions, 5, int_type());
+        conditions[2] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 4, int_type());
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BXOREXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_symbol_at_condition(1, SYMBOL_BXOR);
-        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
-        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_type_rule(conditions, 5, int_type());
+        conditions[2] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 4, int_type());
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BSHIFTEXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_symbol_at_condition(1, SYMBOL_BLEFT);
-        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
-        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_type_rule(conditions, 5, int_type());
+        conditions[2] = new_type_at_condition(0, is_non_null_int_type);
+        conditions[3] = new_type_at_condition(2, is_non_null_int_type);
+        rules[i] = new_type_rule(conditions, 4, int_type());
         ++i;
 
-        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
-        conditions[1] = new_length_condition(3);
-        conditions[2] = new_symbol_at_condition(1, SYMBOL_BRIGHT);
-        conditions[3] = new_type_at_condition(0, is_non_null_int_type);
-        conditions[4] = new_type_at_condition(2, is_non_null_int_type);
-        rules[i] = new_type_rule(conditions, 5, int_type());
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_BITEXPR);
+        conditions[0] = new_parent_symbol_condition(SYMBOL_UNARYEXPR);
         conditions[1] = new_length_condition(2);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_BNOT);
         conditions[3] = new_type_at_condition(1, is_non_null_int_type);
@@ -862,6 +836,42 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELD);
         rules[i] = new_child_type_rule(conditions, 1, 0);
+        ++i;
+
+        // Single-child recursion
+        conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BOREXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BXOREXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BANDEXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BSHIFTEXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_MEMBEREXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_BASEEXPR);
+        conditions[1] = new_length_condition(1);
+        rules[i] = new_child_type_rule(conditions, 2, 0);
         ++i;
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
