@@ -176,6 +176,8 @@ const struct grammar * const get_poppy_grammar(){
         poppy_grammar->skippable[SYMBOL_EQEXPR] = true;
         poppy_grammar->skippable[SYMBOL_ANDEXPR] = true;
         poppy_grammar->skippable[SYMBOL_OREXPR] = true;
+        poppy_grammar->skippable[SYMBOL_OPTPARAMS] = true;
+        poppy_grammar->skippable[SYMBOL_OPTARGS] = true;
 
         return poppy_grammar;
 }

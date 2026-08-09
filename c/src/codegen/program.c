@@ -107,10 +107,6 @@ char *generate_stmts(const struct parse_tree *tree, struct codegen_params *param
         return cur;
 }
 
-char *generate_stmt(const struct parse_tree *tree, struct codegen_params *params){
-        return generate_first_child(tree, params);
-}
-
 char *generate_ifstmt(const struct parse_tree *tree, struct codegen_params *params){
         const struct parse_tree *cond; load_child_at(cond, tree, 2);
         char *cond_code = generate_value(cond, params);
@@ -379,10 +375,6 @@ char *generate_binaryexpr(const struct parse_tree *tree, struct codegen_params *
 }
 
 char *generate_unaryexpr(const struct parse_tree *tree, struct codegen_params *params){
-        if (tree->children->len == 1){
-                return generate_first_child(tree, params);
-        }
-
         enum symbol first = tree->children->head->data->data.type;
 
         if (first == SYMBOL_INC){
@@ -444,10 +436,6 @@ char *generate_unaryexpr(const struct parse_tree *tree, struct codegen_params *p
 }
 
 char *generate_memberexpr(const struct parse_tree *tree, struct codegen_params *params){
-        if (tree->children->len == 1){
-                return generate_first_child(tree, params);
-        }
-
         if (tree->children->head->next->data->data.type == SYMBOL_LBRACKET){
                 char *address = generate_address(tree, params);
                 return concat(3, 
@@ -477,14 +465,6 @@ char *generate_baseexpr(const struct parse_tree *tree, struct codegen_params *pa
                 return generate_from_tree(tree->children->head->next->data, params);
         }
 
-        if (child_type == SYMBOL_CALL){
-                return generate_first_child(tree, params);
-        }
-
-        if (child_type == SYMBOL_CAST){
-                return generate_first_child(tree, params);
-        }
-
         if (child_type == SYMBOL_ASM){
                 const struct parse_tree *instr_tree; load_child_at(instr_tree, tree, 2);
                 char *ret = malloc((strlen(instr_tree->data.value) + 1) * sizeof(char));
@@ -511,6 +491,7 @@ char *generate_identifier(const struct parse_tree *tree, struct codegen_params *
 }
 
 char *generate_call(const struct parse_tree *tree, struct codegen_params *params){
+        print_parse_tree(tree);
         char *id = tree->children->head->data->data.value;
         struct string s;
         s.data = id;
@@ -519,10 +500,8 @@ char *generate_call(const struct parse_tree *tree, struct codegen_params *params
 
         size_t i = 0;
         
-        const struct parse_tree *optargs = tree->children->head->next->next->data;
-        if ((optargs->children != NULL) && (optargs->children->len != 0)){
-                const struct parse_tree *args = optargs->children->head->data;
-
+        const struct parse_tree *args = tree->children->head->next->next->data;
+        if ((args->children != NULL) && (args->children->len != 0)){
                 for (struct LIST_NODE(parse_tree) *child = args->children->head; child != NULL; child = child->next ? child->next->next : NULL){
                         args_code[i++] = child->data->type->byte_count > 8
                                 ? generate_address(child->data, params)
@@ -655,7 +634,7 @@ char *generate_from_tree(const struct parse_tree *tree, struct codegen_params *p
                 case SYMBOL_STMTS:
                         return generate_stmts(tree, params);
                 case SYMBOL_STMT:
-                        return generate_stmt(tree, params);
+                        return generate_first_child(tree, params);
                 case SYMBOL_IFSTMT:
                         return generate_ifstmt(tree, params);
                 case SYMBOL_WHILESTMT:
