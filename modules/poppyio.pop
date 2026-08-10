@@ -37,8 +37,7 @@ char scanc(){
     asm("str lr, [sp, #-16]!");
     asm("bl read_char");
     asm("ldr lr, [sp], #16");
-    asm("mov x10, x0");
-    hop char;
+    hop unsafe char(asm("mov x10, x0"));
 }
 
 bool isdigit(char c){

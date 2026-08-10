@@ -56,7 +56,6 @@ $$\begin{align*}
 \text{semistmt} &\rightarrow \text{ret}  \\
 \text{ret} &\rightarrow \text{HOP expr}  \\
 \text{ret} &\rightarrow \text{HOP}  \\
-\text{ret} &\rightarrow \text{HOP type} \\
 \text{semistmt} &\rightarrow \text{expr} \\
 \text{stmt} &\rightarrow \text{ifstmt}  \\
 \text{ifstmt} &\rightarrow \text{IF LPAREN expr RPAREN LBRACE body RBRACE optelse}  \\
