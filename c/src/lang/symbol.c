@@ -103,6 +103,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_RECDEFN: return "RECDEFN";
                 case SYMBOL_CAST: return "CAST";
                 case SYMBOL_UNSAFE: return "UNSAFE";
+                case SYMBOL_SAFE: return "SAFE";
         }
         return 0;
 }

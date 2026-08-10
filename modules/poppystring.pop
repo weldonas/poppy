@@ -1,10 +1,10 @@
 !!munch poppymem
 
-int strlen(record string s){
+int strlen(string s){
         hop s.length;
 }
 
-bool streq(record string s1, record string s2){
+bool streq(string s1, string s2){
         if (s1.length != s2.length){
                 hop false;
         }
@@ -24,17 +24,17 @@ bool streq(record string s1, record string s2){
         hop true;
 }
 
-char strat(record string s, int i){
+char strat(string s, int i){
         hop *(unsafe &char(unsafe int((s.ptr)) + i));
 }
 
-record string strconcat(record string s1, record string s2){
+string strconcat(string s1, string s2){
         let int total_length = strlen(s1) + strlen(s2);
         let int bytes = (total_length + 7) / 8;
 
-        let record string new_str;
+        let string new_str;
         new_str.length = total_length;
-        new_str.ptr = (&char)(memalloc(bytes));
+        new_str.ptr = safe &char(memalloc(bytes));
 
         let &char new_ptr = new_str.ptr;
         let &char s1_ptr = s1.ptr;
@@ -55,6 +55,6 @@ record string strconcat(record string s1, record string s2){
         hop new_str;
 }
 
-void strfree(record string s){
-        memfree((&int)(s.ptr));
+void strfree(string s){
+        memfree(safe &int(s.ptr));
 }

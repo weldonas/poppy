@@ -13,8 +13,8 @@ record metadata (
         int[32] is_free         !!- 2048 / 64
 )
 
-&record metadata metadata_ptr(){
-        hop unsafe &record metadata(asm("ldr x10, =__heapmeta"));
+&metadata metadata_ptr(){
+        hop unsafe &metadata(asm("ldr x10, =__heapmeta"));
 }
 
 int heap_ptr(){
@@ -26,9 +26,9 @@ record free_node (
         int prev
 )
 
-&record free_node node_at(int index){
+&free_node node_at(int index){
         let int ptr = heap_ptr() + index * MIN_SIZE();
-        hop unsafe &record free_node(ptr);
+        hop unsafe &free_node(ptr);
 }
 
 bool bit_test(int index){
@@ -38,35 +38,35 @@ bool bit_test(int index){
 }
 
 void bit_set(int index){
-        let &record metadata m = metadata_ptr();
+        let &metadata m = metadata_ptr();
         let int word_index = index >> 6;
         (*m).is_free[word_index] |= (1 << (index & 63));
 }
 
 void bit_clear(int index){
-        let &record metadata m = metadata_ptr();
+        let &metadata m = metadata_ptr();
         let int word_index = index >> 6;
         (*m).is_free[word_index] &= ~(1 << (index & 63));
 }
 
 void order_set(int index, int order){
-        let &record metadata m = metadata_ptr();
-        (*m).order_of[index] = char(order);
+        let &metadata m = metadata_ptr();
+        (*m).order_of[index] = safe char(order);
 }
 
 int order_get(int index){
-        hop int((*metadata_ptr()).order_of[index]);
+        hop safe int((*metadata_ptr()).order_of[index]);
 }
 
 void list_push(int order, int index){
-        let &record metadata m = metadata_ptr();
-        let &record free_node n = node_at(index);
+        let &metadata m = metadata_ptr();
+        let &free_node n = node_at(index);
 
         (*n).prev = NULL();
         (*n).next = (*m).free_head[order];
 
         if ((*n).next != NULL()){
-                let &record free_node next = node_at((*n).next);
+                let &free_node next = node_at((*n).next);
                 (*next).prev = index;
         }
 
@@ -76,11 +76,11 @@ void list_push(int order, int index){
 }
 
 void list_remove(int order, int index){
-        let &record metadata m = metadata_ptr();
-        let &record free_node n = node_at(index);
+        let &metadata m = metadata_ptr();
+        let &free_node n = node_at(index);
 
         if ((*n).prev != NULL()){
-                let &record free_node prev = node_at((*n).prev);
+                let &free_node prev = node_at((*n).prev);
                 (*prev).next = (*n).next;
         }
         else {
@@ -88,7 +88,7 @@ void list_remove(int order, int index){
         }
 
         if ((*n).next != NULL()){
-                let &record free_node next = node_at((*n).next);
+                let &free_node next = node_at((*n).next);
                 (*next).prev = (*n).prev;
         }
 
@@ -96,7 +96,7 @@ void list_remove(int order, int index){
 }
 
 void meminit(){
-        let &record metadata m = metadata_ptr();
+        let &metadata m = metadata_ptr();
         !!- set all memory for metadata to 0 initially
         for (let int i = 0; i < 12 + 256 + 32; ++i){
                 let &int ptr = unsafe &int(unsafe int(m) + 8 * i);
@@ -130,7 +130,7 @@ int order_for_size(int size){
 }
 
 &int memalloc(int size){
-        let &record metadata m = metadata_ptr();
+        let &metadata m = metadata_ptr();
 
         let int order = order_for_size(size);
         if (order < 0){

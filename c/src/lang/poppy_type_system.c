@@ -4,7 +4,7 @@
 #include "lang/type.h"
 #include "lang/type_system.h"
 
-#define RULE_COUNT 84
+#define RULE_COUNT 83
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -161,7 +161,7 @@ const struct type *deduce_record(const struct parse_tree *tree){
 }
 
 const struct type *deduce_record_type(const struct parse_tree *tree){
-        const struct parse_tree *record; load_child_at(record, tree, 1);
+        const struct parse_tree *record = tree->children->head->data;
         char *record_name = record->data.value;
         return query_record_type(record_name);
 }
@@ -241,13 +241,13 @@ const struct type *deduce_symbol_type(const struct parse_tree *tree){
 }
 
 const struct type *deduce_cast(const struct parse_tree *tree){
-        if (tree->children->len == 5){
+        if (tree->children->head->data->data.type == SYMBOL_UNSAFE){
                 const struct parse_tree *dst_tree; load_child_at(dst_tree, tree, 1);
                 return dst_tree->type;
         }
 
-        const struct parse_tree *dst_tree; load_child_at(dst_tree, tree, 0);
-        const struct parse_tree *src_tree; load_child_at(src_tree, tree, 2);
+        const struct parse_tree *dst_tree; load_child_at(dst_tree, tree, 1);
+        const struct parse_tree *src_tree; load_child_at(src_tree, tree, 3);
 
         if (can_safe_cast(src_tree->type, dst_tree->type)){
                 return dst_tree->type;
@@ -401,17 +401,10 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CAST);
-        conditions[1] = new_length_condition(4);
-        conditions[2] = new_type_at_condition(0, is_non_null_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_type);
-        rules[i] = new_deducer_type_rule(conditions, 4, deduce_cast);
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_CAST);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_type_at_condition(1, is_non_null_type);
         conditions[3] = new_type_at_condition(3, is_non_null_type);
-        rules[i] = new_child_type_rule(conditions, 4, 1);
+        rules[i] = new_deducer_type_rule(conditions, 4, deduce_cast);
         ++i;
 
         // Statements
@@ -782,7 +775,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
         
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
-        conditions[1] = new_symbol_at_condition(0, SYMBOL_RECORD);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_IDENTIFIER);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_record_type);
         ++i;
 
