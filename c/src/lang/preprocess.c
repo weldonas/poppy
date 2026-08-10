@@ -1,6 +1,7 @@
 #include "lang/preprocess.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +29,7 @@ void free_module(struct module *m){
         free(m);
 }
 
-void preprocess_module_line(char line[256], FILE *out, struct LIST(module) *included){
+struct RESULT(unit) preprocess_module_line(char line[256], FILE *out, struct LIST(module) *included){
         if (strncmp(line, "!!", 2) == 0){
                 if (strncmp(line + 2, "munch", 5) == 0){
 
@@ -36,18 +37,36 @@ void preprocess_module_line(char line[256], FILE *out, struct LIST(module) *incl
                         strcpy(file_name, "../modules/");
                         strcat(file_name, line + 8);
 
-                        file_name[strlen(file_name) - 1] = 0;
+                        char *last = file_name + strlen(file_name) - 1;
+                        while (isspace(*last)){
+                                *last = 0;
+                                --last;
+                        }
 
                         strcat(file_name, ".pop");
 
                         if (contains(included, file_name)){
-                                return;
+                                struct RESULT(unit) r;
+                                make_ok(r, 0);
+                                return r;
                         }
 
                         FILE *module = fopen(file_name, "r");
+                        if (!module){
+                                struct RESULT(unit) r;
+                                char *err = (char*) malloc((23 + strlen(file_name)) * sizeof(char));
+                                strcpy(err, "Could not find module ");
+                                strcat(err, file_name);
+                                make_error(r, err);
+                                return r;
+                        }
 
                         while (fgets(line, 256, module)){
-                                preprocess_module_line(line, out, included);
+                                struct RESULT(unit) r = preprocess_module_line(line, out, included);
+                                if (!r.is_ok){
+                                        fclose(module);
+                                        return r;
+                                }
                         }
 
                         fclose(module);
@@ -63,9 +82,13 @@ void preprocess_module_line(char line[256], FILE *out, struct LIST(module) *incl
         else {
                 fputs(line, out);
         }
+
+        struct RESULT(unit) r;
+        make_ok(r, 0);
+        return r;
 }
 
-void include_modules(char *in_name, char *out_name){
+struct RESULT(unit) include_modules(char *in_name, char *out_name){
         FILE *in = fopen(in_name, "r");
         FILE *out = fopen(out_name, "w");
 
@@ -74,11 +97,21 @@ void include_modules(char *in_name, char *out_name){
 
         char line[256];
         while(fgets(line, 256, in)){
-                preprocess_module_line(line, out, &included);
+                struct RESULT(unit) r = preprocess_module_line(line, out, &included);
+                if (!r.is_ok){
+                        fclose(in);
+                        fclose(out);
+                        free_list((&included), free_module, module);
+                        return r;
+                }
         }
         fclose(in);
         fclose(out);
         free_list((&included), free_module, module);
+
+        struct RESULT(unit) r;
+        make_ok(r, 0);
+        return r;
 }
 
 void remove_comments(char *in_name, char *out_name){
@@ -101,8 +134,16 @@ void remove_comments(char *in_name, char *out_name){
         fclose(out);
 }
 
-void preprocess(char *in_name, char *out_name){
-        include_modules(in_name, "a.pop");
+struct RESULT(unit) preprocess(char *in_name, char *out_name){
+        struct RESULT(unit) module_result = include_modules(in_name, "a.pop");
+        if (!module_result.is_ok){
+                return module_result;
+        }
+
         remove_comments("a.pop", out_name);
         remove("a.pop");
+
+        struct RESULT(unit) r;
+        make_ok(r, 0);
+        return r;
 }

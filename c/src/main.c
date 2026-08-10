@@ -20,7 +20,13 @@ int main(int argc, char *argv[]){
                 exit(1);
         }
 
-        preprocess(argv[1], intermediate_file);
+        struct RESULT(unit) preprocess_result = preprocess(argv[1], intermediate_file);
+        if (!preprocess_result.is_ok){
+                printf("error: %s\n", preprocess_result.error);
+                free((void*) preprocess_result.error);
+                return 0;       
+        }
+
         printf("preprocessed\n");
         FILE *in = fopen(intermediate_file, "r");
         struct RESULT(token_list) list_result = lex(in);
