@@ -22,7 +22,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\
 \text{type} &\rightarrow \text{BOOL}\\
-\text{type} &\rightarrow \text{RECORD IDENTIFIER}\\
+\text{type} &\rightarrow \text{IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
 \text{type} &\rightarrow \text{AMP type}\\
 \text{type} &\rightarrow \text{LPAREN type RPAREN}\\
@@ -120,7 +120,7 @@ $$\begin{align*}
 \text{optargs} &\rightarrow \text{args} \\
 \text{args} &\rightarrow \text{expr} \\
 \text{args} &\rightarrow \text{expr COMMA args} \\
-\text{cast} &\rightarrow \text{type LPAREN expr RPAREN} \\
+\text{cast} &\rightarrow \text{SAFE type LPAREN expr RPAREN} \\
 \text{cast} &\rightarrow \text{UNSAFE type LPAREN expr RPAREN} \\
 \end{align*}
 $$

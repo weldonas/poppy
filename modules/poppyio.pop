@@ -24,7 +24,7 @@ void println(){
     printc('\n');
 }
 
-void prints(record string s){
+void prints(string s){
     let &char ptr = s.ptr;
     for (let int i = 0; i < s.length; ++i){
         printc(*ptr);
@@ -58,7 +58,7 @@ int scan(){
     c = scanc();
 
     while (isdigit(c)){
-        let int digit_value = int(c - '0');
+        let int digit_value = safe int(c - '0');
         total *= 10;
         total += digit_value * sign;
         c = scanc();

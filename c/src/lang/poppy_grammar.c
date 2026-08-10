@@ -49,7 +49,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_TYPE, {SYMBOL_VOID}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_CHAR}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_BOOL}, i, poppy_grammar); ++i;
-        populate(SYMBOL_TYPE, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_TYPE, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_TYPE COMMA SYMBOL_LBRACKET COMMA SYMBOL_CONSTANT COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_AMP COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_LPAREN COMMA SYMBOL_TYPE COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
@@ -147,7 +147,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_OPTARGS, {SYMBOL_ARGS}, i, poppy_grammar); ++i;
         populate(SYMBOL_ARGS, {SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_ARGS, {SYMBOL_EXPR COMMA SYMBOL_COMMA COMMA SYMBOL_ARGS}, i, poppy_grammar); ++i;
-        populate(SYMBOL_CAST, {SYMBOL_TYPE COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_CAST, {SYMBOL_SAFE COMMA SYMBOL_TYPE COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_CAST, {SYMBOL_UNSAFE COMMA SYMBOL_TYPE COMMA SYMBOL_LPAREN COMMA SYMBOL_EXPR COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         // this assumes a symbol is nullable if and only if it's the LHS of a rule with an empty RHS
         for (size_t i = 0; i < RULE_COUNT; ++i){

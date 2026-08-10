@@ -64,7 +64,7 @@ $$\frac{\Gamma \vdash E: \&\tau}{\Gamma \vdash *E : \tau}$$
 
 $$\frac{\Gamma \vdash E: \tau \quad \gamma_\tau(\text s) = \sigma}{\Gamma \vdash E\text{.s} : \sigma}$$
 
-$$\frac{\Gamma \vdash E:\tau \quad (\tau, \sigma) \in C}{\Gamma \vdash \sigma(E) : \sigma}$$
+$$\frac{\Gamma \vdash E:\tau \quad (\tau, \sigma) \in C}{\Gamma \vdash \text{safe }\sigma(E) : \sigma}$$
 
 $$\frac{\Gamma \vdash E:\tau }{\Gamma \vdash \text{unsafe } \sigma(E) : \sigma}$$
 
