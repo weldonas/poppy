@@ -491,7 +491,6 @@ char *generate_identifier(const struct parse_tree *tree, struct codegen_params *
 }
 
 char *generate_call(const struct parse_tree *tree, struct codegen_params *params){
-        print_parse_tree(tree);
         char *id = tree->children->head->data->data.value;
         struct string s;
         s.data = id;

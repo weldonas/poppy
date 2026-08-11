@@ -25,6 +25,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{IDENTIFIER}\\
 \text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
 \text{type} &\rightarrow \text{AMP type}\\
+\text{type} &\rightarrow \text{AND type}\\
 \text{type} &\rightarrow \text{LPAREN type RPAREN}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
@@ -94,13 +95,13 @@ $$\begin{align*}
 \text{multexpr} &\rightarrow \text{multexpr DIVIDE unaryexpr}  \\
 \text{multexpr} &\rightarrow \text{multexpr MOD unaryexpr}  \\
 \text{multexpr} &\rightarrow \text{unaryexpr}  \\
-\text{unaryexpr} &\rightarrow \text{INC memberexpr}  \\
-\text{unaryexpr} &\rightarrow \text{DEC memberexpr}  \\
-\text{unaryexpr} &\rightarrow \text{MINUS memberexpr}  \\
-\text{unaryexpr} &\rightarrow \text{NOT memberexpr}  \\
-\text{unaryexpr} &\rightarrow \text{BNOT memberexpr}  \\
-\text{unaryexpr} &\rightarrow \text{STAR memberexpr}  \\
-\text{unaryexpr} &\rightarrow \text{AMP memberexpr}  \\
+\text{unaryexpr} &\rightarrow \text{INC unaryexpr}  \\
+\text{unaryexpr} &\rightarrow \text{DEC unaryexpr}  \\
+\text{unaryexpr} &\rightarrow \text{MINUS unaryexpr}  \\
+\text{unaryexpr} &\rightarrow \text{NOT unaryexpr}  \\
+\text{unaryexpr} &\rightarrow \text{BNOT unaryexpr}  \\
+\text{unaryexpr} &\rightarrow \text{STAR unaryexpr}  \\
+\text{unaryexpr} &\rightarrow \text{AMP unaryexpr}  \\
 \text{unaryexpr} &\rightarrow \text{memberexpr}  \\
 \text{memberexpr} &\rightarrow \text{memberexpr LBRACKET expr RBRACKET}  \\
 \text{memberexpr} &\rightarrow \text{memberexpr DOT IDENTIFIER} \\
