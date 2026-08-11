@@ -3,8 +3,9 @@
 #include "lang/symbol.h"
 #include "lang/type.h"
 #include "lang/type_system.h"
+#include <assert.h>
 
-#define RULE_COUNT 83
+#define RULE_COUNT 84
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -259,6 +260,11 @@ const struct type *deduce_cast(const struct parse_tree *tree){
 const struct type *deduce_reference(const struct parse_tree *tree){
         const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
         return pointer_type(type_tree->type);
+}
+
+const struct type *deduce_double_reference(const struct parse_tree *tree){
+        const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
+        return pointer_type(pointer_type(type_tree->type));
 }
 
 const struct type *deduce_dereference(const struct parse_tree *tree){
@@ -769,6 +775,12 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_AND);
+        conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_double_reference);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_length_condition(4);
         conditions[2] = new_type_at_condition(0, is_non_null_in_memory_type);
         rules[i] = new_deducer_type_rule(conditions, 3, deduce_array);
@@ -790,6 +802,8 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELD);
         rules[i] = new_child_type_rule(conditions, 1, 0);
         ++i;
+
+        assert(i == RULE_COUNT);
 
         poppy_type_system = new_type_system(rules, RULE_COUNT);
         return poppy_type_system;

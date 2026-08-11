@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 114
+#define RULE_COUNT 115
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -52,6 +52,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_TYPE, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_TYPE COMMA SYMBOL_LBRACKET COMMA SYMBOL_CONSTANT COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_AMP COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
+        populate(SYMBOL_TYPE, {SYMBOL_AND COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_LPAREN COMMA SYMBOL_TYPE COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {SYMBOL_PARAMS}, i, poppy_grammar); ++i;
@@ -121,13 +122,13 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_MULTEXPR, {SYMBOL_MULTEXPR COMMA SYMBOL_DIVIDE COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_MULTEXPR, {SYMBOL_MULTEXPR COMMA SYMBOL_MOD COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_MULTEXPR, {SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_INC COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_DEC COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_MINUS COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_NOT COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_BNOT COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_STAR COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
-        populate(SYMBOL_UNARYEXPR, {SYMBOL_AMP COMMA SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_INC COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_DEC COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_MINUS COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_NOT COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_BNOT COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_STAR COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_UNARYEXPR, {SYMBOL_AMP COMMA SYMBOL_UNARYEXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_UNARYEXPR, {SYMBOL_MEMBEREXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_MEMBEREXPR, {SYMBOL_MEMBEREXPR COMMA SYMBOL_LBRACKET COMMA SYMBOL_EXPR COMMA SYMBOL_RBRACKET}, i, poppy_grammar); ++i;
         populate(SYMBOL_MEMBEREXPR, {SYMBOL_MEMBEREXPR COMMA SYMBOL_DOT COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
