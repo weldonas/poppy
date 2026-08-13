@@ -77,15 +77,18 @@ char *function_variable_address(const struct function *function, struct variable
                 char *result = variable_address(function->frame, var, REG_FP, dest);
                 return result;
         }
+        else if (has_variable(function->param_chunk, var)){
+                // read from arg chunk pointer
+                struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
+                char *result = concat(3,
+                        variable_address(function->frame, arg_chunk_ptr, REG_FP, dest),
+                        ldr(REG_SCRATCH, dest),
+                        variable_address(function->param_chunk, var, REG_SCRATCH, dest)
+                );
+                return result; 
+        }
 
-        // read from arg chunk pointer
-        struct variable arg_chunk_ptr = {.string = ARG_CHUNK_PTR, .type = int_type()};
-        char *result = concat(3,
-                variable_address(function->frame, arg_chunk_ptr, REG_FP, dest),
-                ldr(REG_SCRATCH, dest),
-                variable_address(function->param_chunk, var, REG_SCRATCH, dest)
-        );
-        return result;
+        return global_address(var.string, dest);
 }
 
 void set_body(struct function *function, char *body){

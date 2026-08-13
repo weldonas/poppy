@@ -104,6 +104,7 @@ enum symbol : uint8_t {
         SYMBOL_FIELD,
         SYMBOL_RECDEFN,
         SYMBOL_CAST,
+        SYMBOL_GLOBALVARDEC,
         SYMBOL_COUNT
 };
 

@@ -104,6 +104,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_CAST: return "CAST";
                 case SYMBOL_UNSAFE: return "UNSAFE";
                 case SYMBOL_SAFE: return "SAFE";
+                case SYMBOL_GLOBALVARDEC: return "GLOBALVARDEC";
         }
         return 0;
 }

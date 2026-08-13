@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 115
+#define RULE_COUNT 118
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -41,10 +41,13 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_DEFNDECL, {SYMBOL_FNDEFN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECL, {SYMBOL_RECDEFN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECL, {SYMBOL_DECL}, i, poppy_grammar); ++i;
+        populate(SYMBOL_DEFNDECL, {SYMBOL_GLOBALVARDEC}, i, poppy_grammar); ++i;
         populate(SYMBOL_FNDEFN, {SYMBOL_SIGNATURE COMMA SYMBOL_LBRACE COMMA SYMBOL_BODY COMMA SYMBOL_RBRACE}, i, poppy_grammar); ++i;
         populate(SYMBOL_RECDEFN, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_FIELDS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DECL, {SYMBOL_DECLARE COMMA SYMBOL_SIGNATURE}, i, poppy_grammar); ++i;
         populate(SYMBOL_SIGNATURE, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_OPTPARAMS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_GLOBALVARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
+        populate(SYMBOL_GLOBALVARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_INT}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_VOID}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_CHAR}, i, poppy_grammar); ++i;

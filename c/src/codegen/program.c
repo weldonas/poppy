@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "codegen/assem.h"
+#include "codegen/chunk.h"
 #include "codegen/control.h"
 #include "codegen/function.h"
 #include "codegen/ops.h"
@@ -21,16 +22,29 @@ struct literal {
         char *value;
 };
 
+struct global_variable {
+        char *name;
+        uint32_t size;
+        char *init_code;
+};
+
 DEFINE_LIST(literal);
+
+DEFINE_LIST(global_variable);
 
 void free_literal(struct literal *l){
         free(l);
+}
+
+void free_global_variable(struct global_variable *v){
+        free(v);
 }
 
 struct codegen_params {
         struct MAP(string, function) *functions;
         const struct function *within;
         struct LIST(literal) literals;
+        struct LIST(global_variable) globals;
 };
 
 const char *tail = "mov x0, #0\n"
@@ -45,12 +59,60 @@ void free_string_function_entry(const struct MAP_ENTRY(string, function) *entry)
         free((void*) entry);
 }
 
-char *generate_head(struct LIST(literal) literals){
+char *generate_head(struct codegen_params *params){
+        char *global_declare = NULL;
+
+        for (struct LIST_NODE(global_variable) *node = params->globals.head; node != NULL; node = node->next){
+                char *label = malloc((11 + strlen(node->data->name)) * sizeof(char));
+                strcpy(label, "__global_");
+                strcat(label, node->data->name);
+                strcat(label, ":");
+
+                char *skip = malloc(27 * sizeof(char));
+                strcpy(skip, ".skip ");
+                sprintf(skip + 6, "%u", node->data->size);
+
+                if (global_declare){
+                        global_declare = concat(3, global_declare, label, skip);
+                }
+                else {
+                        global_declare = concat(2, label, skip);
+                }
+        }
+
+        char *global_init = NULL;
+
+        for (struct LIST_NODE(global_variable) *node = params->globals.head; node != NULL; node = node->next){
+                char *init_code;
+                
+                if (node->data->size > 8){
+                        init_code = concat(3,
+                                node->data->init_code,
+                                global_address(node->data->name, REG_SCRATCH),
+                                memory_copy(REG_RESULT, REG_SCRATCH, node->data->size)
+                        );
+                }
+                else {
+                        init_code = concat(3,
+                                node->data->init_code,
+                                global_address(node->data->name, REG_SCRATCH),
+                                str(REG_RESULT, REG_SCRATCH)
+                        );
+                }
+
+                if (global_init){
+                        global_init = concat(2, global_init, init_code);
+                }
+                else {
+                        global_init = init_code;
+                }
+        }
+
         // see if we can make this readonly
         char *literal_declare = literal(".data");
 
         uint64_t i = 0;
-        for (struct LIST_NODE(literal) *node = literals.head; node != NULL; node = node->next){
+        for (struct LIST_NODE(literal) *node = params->literals.head; node != NULL; node = node->next){
                 char *cur = malloc((43 + strlen(node->data->value)) * sizeof(char));
                 *cur = 0;
 
@@ -68,18 +130,25 @@ char *generate_head(struct LIST(literal) literals){
                 ++i;
         }
 
-        return concat(11,
+        return concat(18,
                 literal(".bss"),
+                literal(".balign 8"),
                 literal("__heapmeta:"),
                 literal(".skip 8192"),
                 literal("__heap:"),
                 literal(".skip 65536"),
                 literal("__stringlittemp:"),
                 literal(".skip 16"),
+                global_declare,
                 literal_declare,
                 literal(".text"),
                 literal(".include \"utils.s\""),
-                literal(".global _start")
+                literal(".global _start"),
+                literal("__global_init:"),
+                push(REG_LR),
+                global_init,
+                pop(REG_LR),
+                literal("ret")
         );
 }
 
@@ -721,28 +790,44 @@ char *generate_code(const struct parse_tree *tree){
 
         struct codegen_params params = {.functions = &functions};
         init_list((&params.literals));
+        init_list((&params.globals));
 
         for (struct LIST_NODE(parse_tree) *node = defndecls->children->head; node != NULL; node = node->next) {
                 const struct parse_tree *defndecl = node->data;
                 const struct parse_tree *defn = defndecl->children->head->data;
 
-                if (defn->data.type != SYMBOL_FNDEFN){
+                if (defn->data.type == SYMBOL_GLOBALVARDEC){
+                        struct global_variable *v = malloc(sizeof(struct global_variable));
+                        v->name = defn->children->head->next->next->data->data.value;
+                        v->size = defn->children->head->next->data->type->byte_count;
+
+                        if (defn->children->len == 5){
+                                v->init_code = generate_from_tree(defn->children->tail->data, &params);
+                        }
+                        else {
+                                v->init_code = NULL;
+                        }
+                        append_list((&params.globals), v, global_variable);
+                        
+                }
+                else if (defn->data.type == SYMBOL_FNDEFN){
+                        const struct parse_tree *signature = defn->children->head->data;
+                        struct string s;
+                        s.data = signature->children->head->next->data->data.value;;
+                        const struct function *fn; query_map((&functions), (&s), fn, string, function);
+
+                        const struct parse_tree *stmts; load_child_at(stmts, defn, 2);
+                        params.within = fn;
+                        set_body((struct function*) fn, generate_from_tree(stmts, &params));
+                }
+                else {
                         continue;
                 }
-
-                const struct parse_tree *signature = defn->children->head->data;
-                struct string s;
-                s.data = signature->children->head->next->data->data.value;;
-                const struct function *fn; query_map((&functions), (&s), fn, string, function);
-
-                const struct parse_tree *stmts; load_child_at(stmts, defn, 2);
-                params.within = fn;
-                set_body((struct function*) fn, generate_from_tree(stmts, &params));
         }
 
         // char *prog = malloc(44 * sizeof(char));
         // strcpy(prog, head);
-        char *prog = generate_head(params.literals);
+        char *prog = generate_head(&params);
         
         for (struct string_function_map_entry_list_node *node = functions.list->head; node != NULL; node = node->next){
                 if (strcmp(node->data->key->data, "main") == 0){
@@ -766,8 +851,9 @@ char *generate_code(const struct parse_tree *tree){
         char *t = malloc(31 * sizeof(char));
         strcpy(sl, start_label);
         strcpy(t, tail);
-        prog = concat(4, prog, sl, declare_function(main), t);
+        prog = concat(5, prog, sl, literal("bl __global_init"), declare_function(main), t);
         free_map((&functions), string, function);
         free_list((&params.literals), free_literal, literal);
+        free_list((&params.globals), free_global_variable, global_variable);
         return prog;
 }

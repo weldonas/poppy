@@ -17,6 +17,7 @@ bool has_variable(struct chunk *chunk, struct variable var);
 
 // this does not modify any register other than dest (including chunk_address)
 char *variable_address(struct chunk *chunk, struct variable var, enum reg chunk_address, enum reg dest);
+char *global_address(const char *global_variable_name, enum reg dest);
 
 char *push_chunk(struct chunk *chunk);
 char *pop_chunk();         
