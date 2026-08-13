@@ -114,6 +114,15 @@ char *pop_chunk(){
         );
 }
 
+char *global_address(const char *global_variable_name, enum reg dest){
+        char *ret = malloc((20 + strlen(global_variable_name)) * sizeof(char));
+        strcpy(ret, "ldr ");
+        strcat(ret, reg_to_string(dest));
+        strcat(ret, ", =__global_");
+        strcat(ret, global_variable_name);
+        return ret;
+}
+
 void num_to_string(size_t num, char *ret){
         char tmp[16];
         size_t cur = num;

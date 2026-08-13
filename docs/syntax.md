@@ -14,10 +14,13 @@ $$\begin{align*}
 \text{defndecl} &\rightarrow \text{fndefn}\\
 \text{defndecl} &\rightarrow \text{recdefn}\\
 \text{defndecl} &\rightarrow \text{decl}\\
+\text{defndecl} &\rightarrow \text{globalvardec}\\
 \text{fndefn} &\rightarrow \text{signature LBRACE body RBRACE}\\
 \text{recdefn} &\rightarrow \text{RECORD IDENTIFIER LPAREN fields RPAREN} \\
 \text{decl} &\rightarrow \text{DECLARE signature}\\
 \text{signature} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN}\\
+\text{globalvardec} &\rightarrow \text{LET type IDENTIFIER ASSIGN expr}  \\
+\text{globalvardec} &\rightarrow \text{LET type IDENTIFIER}  \\
 \text{type} &\rightarrow \text{INT}\\
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\

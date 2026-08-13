@@ -5,7 +5,7 @@
 #include "lang/type_system.h"
 #include <assert.h>
 
-#define RULE_COUNT 84
+#define RULE_COUNT 86
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -215,6 +215,10 @@ const struct type *deduce_call(const struct parse_tree *tree){
         const struct parse_tree *optargs; load_child_at(optargs, tree, 2);
         const struct parse_tree *fn; load_child_at(fn, tree, 0);
 
+        if (fn->type->category != CATEGORY_FUNCTION){
+                return NULL;
+        }
+
         if (!equals_type(optargs->type, fn->type->params_type)){
                 return NULL;
         }
@@ -354,6 +358,20 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
+        conditions[1] = new_length_condition(5);
+        conditions[2] = new_types_equal_at_condition(1, 4);
+        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
+        rules[i] = new_type_rule(conditions, 4, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_GLOBALVARDEC);
+        conditions[1] = new_length_condition(3);
+        conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
+        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
+        rules[i] = new_type_rule(conditions, 4, void_type());
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_GLOBALVARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
         conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);

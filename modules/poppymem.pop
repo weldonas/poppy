@@ -2,10 +2,11 @@
 !!- so we need 2048 bits (256 B or 32 words) in total for an entire bitmap
 !!- we have 12 layers of blocks (sizes 2^5 to 2^16 B) -> 12 pointers to free lists
 
-int HEAP_SIZE(){ hop 65536; }
-int MIN_SIZE(){ hop 32; }
-int NUM_ORDERS(){ hop 12; }
-int NULL(){ hop -1; }
+let int HEAP_SIZE = 65536
+
+let int MIN_SIZE = 32
+let int NUM_ORDERS = 12
+let int NULL = -1
 
 record metadata (
         int[12] free_head,
@@ -13,13 +14,8 @@ record metadata (
         int[32] is_free         !!- 2048 / 64
 )
 
-&metadata metadata_ptr(){
-        hop unsafe &metadata(asm("ldr x10, =__heapmeta"));
-}
-
-int heap_ptr(){
-        hop unsafe int(asm("ldr x10, =__heap"));
-}
+let &metadata metadata_ptr = unsafe &metadata(asm("ldr x10, =__heapmeta"))
+let int heap_ptr = unsafe int(asm("ldr x10, =__heap"))
 
 record free_node (
         int next,
@@ -27,67 +23,62 @@ record free_node (
 )
 
 &free_node node_at(int index){
-        let int ptr = heap_ptr() + index * MIN_SIZE();
+        let int ptr = heap_ptr + index * MIN_SIZE;
         hop unsafe &free_node(ptr);
 }
 
 bool bit_test(int index){
         !!- word size is 64 = 2^6 bits
-        let int result = ((*metadata_ptr()).is_free[index >> 6] >> (index & 63)) & 1;
+        let int result = ((*metadata_ptr).is_free[index >> 6] >> (index & 63)) & 1;
         hop unsafe bool(result);
 }
 
 void bit_set(int index){
-        let &metadata m = metadata_ptr();
         let int word_index = index >> 6;
-        (*m).is_free[word_index] |= (1 << (index & 63));
+        (*metadata_ptr).is_free[word_index] |= (1 << (index & 63));
 }
 
 void bit_clear(int index){
-        let &metadata m = metadata_ptr();
         let int word_index = index >> 6;
-        (*m).is_free[word_index] &= ~(1 << (index & 63));
+        (*metadata_ptr).is_free[word_index] &= ~(1 << (index & 63));
 }
 
 void order_set(int index, int order){
-        let &metadata m = metadata_ptr();
-        (*m).order_of[index] = safe char(order);
+        (*metadata_ptr).order_of[index] = safe char(order);
 }
 
 int order_get(int index){
-        hop safe int((*metadata_ptr()).order_of[index]);
+        hop safe int((*metadata_ptr).order_of[index]);
 }
 
 void list_push(int order, int index){
-        let &metadata m = metadata_ptr();
         let &free_node n = node_at(index);
 
-        (*n).prev = NULL();
-        (*n).next = (*m).free_head[order];
+        (*n).prev = NULL;
+        (*n).next = (*metadata_ptr).free_head[order];
 
-        if ((*n).next != NULL()){
+        if ((*n).next != NULL){
                 let &free_node next = node_at((*n).next);
                 (*next).prev = index;
         }
 
-        (*m).free_head[order] = index;
+        (*metadata_ptr).free_head[order] = index;
         order_set(index, order);
         bit_set(index);
 }
 
 void list_remove(int order, int index){
-        let &metadata m = metadata_ptr();
         let &free_node n = node_at(index);
 
-        if ((*n).prev != NULL()){
+        if ((*n).prev != NULL){
                 let &free_node prev = node_at((*n).prev);
                 (*prev).next = (*n).next;
         }
         else {
-                (*m).free_head[order] = (*n).next;
+                (*metadata_ptr).free_head[order] = (*n).next;
         }
 
-        if ((*n).next != NULL()){
+        if ((*n).next != NULL){
                 let &free_node next = node_at((*n).next);
                 (*next).prev = (*n).prev;
         }
@@ -96,33 +87,32 @@ void list_remove(int order, int index){
 }
 
 void meminit(){
-        let &metadata m = metadata_ptr();
         !!- set all memory for metadata to 0 initially
         for (let int i = 0; i < 12 + 256 + 32; ++i){
-                let &int ptr = unsafe &int(unsafe int(m) + 8 * i);
+                let &int ptr = unsafe &int(unsafe int(metadata_ptr) + 8 * i);
                 *ptr = 0;
         }
 
-        for (let int o = 0; o < NUM_ORDERS(); ++o){
-                (*m).free_head[o] = NULL();
+        for (let int o = 0; o < NUM_ORDERS; ++o){
+                (*metadata_ptr).free_head[o] = NULL;
         }
 
-        list_push(NUM_ORDERS() - 1, 0);
+        list_push(NUM_ORDERS - 1, 0);
 }
 
 int order_for_size(int size){
-        if (size == 0 || size > HEAP_SIZE()){
+        if (size == 0 || size > HEAP_SIZE){
                 hop -1;
         }
 
         let int order = 0;
-        let int block = MIN_SIZE();
+        let int block = MIN_SIZE;
         while (block < size){
                 block <<= 1;
                 ++order;
         }
 
-        if (order > NUM_ORDERS() - 1){
+        if (order > NUM_ORDERS - 1){
                 hop -1;
         }
 
@@ -130,23 +120,21 @@ int order_for_size(int size){
 }
 
 &int memalloc(int size){
-        let &metadata m = metadata_ptr();
-
         let int order = order_for_size(size);
         if (order < 0){
                 hop unsafe &int(0);
         }
 
         let int o = order;
-        while (o <= NUM_ORDERS() - 1 && (*m).free_head[o] == NULL()){
+        while (o <= NUM_ORDERS - 1 && (*metadata_ptr).free_head[o] == NULL){
                 ++o;
         }
 
-        if (o > NUM_ORDERS() - 1){
+        if (o > NUM_ORDERS - 1){
                 hop unsafe &int(0);
         }
 
-        let int index = (*m).free_head[o];
+        let int index = (*metadata_ptr).free_head[o];
         list_remove(o, index);
 
         while (o > order){
@@ -158,7 +146,7 @@ int order_for_size(int size){
         order_set(index, order);
         bit_clear(index);
 
-        let int ptr = heap_ptr() + index * MIN_SIZE();
+        let int ptr = heap_ptr + index * MIN_SIZE;
         hop unsafe &int(ptr);
 }
 
@@ -167,11 +155,11 @@ void memfree(&int ptr){
                 hop;
         }
 
-        let int index = (unsafe int(ptr) - heap_ptr()) / MIN_SIZE();
+        let int index = (unsafe int(ptr) - heap_ptr) / MIN_SIZE;
         let int order = order_get(index);
 
         let bool done = false;
-        while (!done && order < NUM_ORDERS() - 1){
+        while (!done && order < NUM_ORDERS - 1){
                 let int buddy = index ^ (1 << order);
 
                 if (!bit_test(buddy) || (order_get(buddy) != order)){
@@ -190,5 +178,5 @@ void memfree(&int ptr){
 }
 
 bool memcheck(){
-        hop (*metadata_ptr()).free_head[NUM_ORDERS() - 1] == 0;
+        hop (*metadata_ptr).free_head[NUM_ORDERS - 1] == 0;
 }
