@@ -130,7 +130,7 @@ char *generate_head(struct codegen_params *params){
                 ++i;
         }
 
-        return concat(18,
+        char *bss = concat(8,
                 literal(".bss"),
                 literal(".balign 8"),
                 literal("__heapmeta:"),
@@ -138,17 +138,36 @@ char *generate_head(struct codegen_params *params){
                 literal("__heap:"),
                 literal(".skip 65536"),
                 literal("__stringlittemp:"),
-                literal(".skip 16"),
-                global_declare,
-                literal_declare,
+                literal(".skip 16")
+        );
+
+        if (global_declare){
+                bss = concat(2, bss, global_declare);
+        }
+
+        bss = concat(2, bss, literal_declare);
+
+        char *text = concat(4,
                 literal(".text"),
                 literal(".include \"utils.s\""),
                 literal(".global _start"),
-                literal("__global_init:"),
-                push(REG_LR),
-                global_init,
-                pop(REG_LR),
-                literal("ret")
+                literal("__global_init:")
+        );
+
+        if (global_init){
+                text = concat(4,
+                        text,
+                        push(REG_LR),
+                        global_init,
+                        pop(REG_LR)
+                );
+        }
+
+        text = concat(2, text, ret());
+
+        return concat(2,
+                bss,
+                text
         );
 }
 
