@@ -146,23 +146,26 @@ const struct type *deduce_record(const struct parse_tree *tree){
                 return NULL;
         }
 
-        struct type *record = record_type(name_tree->data.value);
+        struct LIST(variable) fields;
+        init_list((&fields));
 
         for (struct LIST_NODE(parse_tree) *node = field_tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
                 const struct type *field_type = node->data->type;
+                if (!field_type){
+                        free_list((&fields), free_variable, variable);
+                        return NULL;
+                }
+                
                 char *field_name = node->data->children->head->next->data->data.value;
 
                 struct variable *v = malloc(sizeof(struct variable));
                 v->type = field_type;
                 v->string = field_name;
 
-                if(!add_field(record, v)){
-                        free_variable(v);
-                        return NULL;
-                }
+                append_list((&fields), v, variable);
         }
 
-        return record;
+        return record_type(name_tree->data.value, fields);
 }
 
 const struct type *deduce_enum(const struct parse_tree *tree){

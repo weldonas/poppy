@@ -94,8 +94,8 @@ void add_param(struct type *params, const struct type *type_to_add);
 
 const struct type* const array_type(const struct type *element_type, char *length);
 
-struct type* const record_type(const char *name);
-bool add_field(struct type *record, struct variable *v);
+const struct type* const record_type(const char *name, struct LIST(variable) fields);
+// bool add_field(struct type *record, struct variable *v);
 const struct type *query_record_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);
