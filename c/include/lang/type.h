@@ -69,17 +69,12 @@ struct type {
         }; // array
 
         struct {
-            struct LIST(field) fields;
-            char *name;
-        }; // record
+            const char *name;
+        }; // record/enum
 
         struct {
             const struct type *referenced_type;
         }; // pointer
-
-        struct {
-            struct LIST(enum_item) items;
-        }; // enum
     };
 };
 
@@ -99,9 +94,8 @@ void add_param(struct type *params, const struct type *type_to_add);
 
 const struct type* const array_type(const struct type *element_type, char *length);
 
-struct type* const record_type();
+struct type* const record_type(const char *name);
 bool add_field(struct type *record, struct variable *v);
-bool name_record_type(struct type *record, char *name);
 const struct type *query_record_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);

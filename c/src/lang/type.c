@@ -14,15 +14,31 @@
 #define CHAR_CHAR 'c'
 
 DEFINE_MAP(string, type);
+DEFINE_MAP(string, LIST(field));
 
 void free_type_map_entry(const struct MAP_ENTRY(string, type) *entry){
         free((void*) entry->key);
         free((void*) entry);
 }
 
+void free_record_field_entry(const struct MAP_ENTRY(string, field_list) *entry){
+        free((void*) entry->key);
+        free_list(entry->value, free_field, field);
+        free((void*) entry->value);
+        free((void*) entry);
+}
+
 struct LIST(type) types;
+struct MAP(string, field_list) record_fields;
 struct MAP(string, type) record_enum_map;
-struct MAP(string, type) ;
+
+struct LIST(field) *query_record_fields(const char *name){
+        struct string s = {.data = name};
+        const struct LIST(field) *result;
+        query_map((&record_fields), (&s), result, string, LIST(field));
+        return (struct LIST(field)*) result;
+}
+
 bool initialized = false;
 
 struct type *int_ptr = NULL;
@@ -34,7 +50,7 @@ struct type *string_ptr = NULL;
 
 
 void add_builtin_types(){
-        string_ptr = record_type();
+        string_ptr = record_type("string");
 
         struct variable *ptr = malloc(sizeof(struct variable));
         ptr->string = "ptr";
@@ -45,7 +61,6 @@ void add_builtin_types(){
         length->string = "length";
         length->type = int_type();
         add_field(string_ptr, length);
-        name_record_type(string_ptr, "string");
 }
 
 void initialize_types(){
@@ -53,6 +68,7 @@ void initialize_types(){
         initialized = true;
         init_list((&types));
         init_map((&record_enum_map), equals_string, free_type_map_entry, string, type);
+        init_map((&record_fields), equals_string, free_record_field_entry, string, LIST(field));
 
         add_builtin_types();
 }
@@ -174,7 +190,7 @@ const struct type* const pointer_type(const struct type *type){
 const struct type* const enum_type(struct LIST(enum_item) items){
         struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_ENUM;
-        new->items = items;
+        // new->items = items;
         new->byte_count = 8;
         new->is_assignable = false;
         add_type(new);
@@ -209,15 +225,24 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         return new;
 }
 
-struct type* const record_type(){
+struct type* const record_type(const char *name){
         struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
-        init_list((&new->fields));
+        new->name = name;
         new->byte_count = 8;
         new->is_assignable = false;
-        new->name = NULL;
-
         add_type(new);
+
+        if (query_record_fields(name)){
+                return new;
+        }
+
+        struct string *s = malloc(sizeof(struct string));
+        s->data = name;
+        struct LIST(field) *fields = malloc(sizeof(struct LIST(field)));
+        init_list(fields);
+        update_map((&record_fields), s, fields, string, LIST(field));
+
         return new;
 }
 
@@ -230,9 +255,10 @@ bool add_field(struct type *record, struct variable *v){
 
         uint32_t prev_offset = 0; 
         uint32_t prev_size = 0; 
-        if (record->fields.len > 0){
-                prev_offset = record->fields.tail->data->offset;
-                prev_size = record->fields.tail->data->var->type->byte_count;
+        struct LIST(field) *fields = query_record_fields(record->name);
+        if (fields->len > 0){
+                prev_offset = fields->tail->data->offset;
+                prev_size = fields->tail->data->var->type->byte_count;
         }
 
         uint32_t offset = prev_offset + prev_size;
@@ -253,7 +279,7 @@ bool add_field(struct type *record, struct variable *v){
         field->var = v;
         field->offset = offset;
 
-        append_list((&record->fields), field, field);
+        append_list((fields), field, field);
 
         record->byte_count = offset + size;
         record->byte_count = (record->byte_count + 7) & ~7U;
@@ -267,23 +293,6 @@ const struct type* const return_type(const struct type *type){
         }
 
         return NULL;
-}
-
-bool name_record_type(struct type *record, char *name){
-        assert(record->category == CATEGORY_RECORD);
-        
-        struct string *s = malloc(sizeof(struct string));
-        s->data = name;
-        record->name = name;
-
-        const struct type *result = NULL;
-        query_map((&record_enum_map), s, result, string, type)
-        if (result){
-                return false;
-        }
-
-        update_map((&record_enum_map), s, record, string, type);
-        return true;
 }
 
 bool name_enum_type(struct type *enm, char *name){
@@ -304,17 +313,12 @@ bool name_enum_type(struct type *enm, char *name){
 }
 
 const struct type *query_record_type(const char *name){
-        struct string *s = malloc(sizeof(struct string));
-        s->data = name;
+        const struct LIST(field) *result = query_record_fields(name);
+        if (result){
+                return record_type(name);
+        }
 
-        const struct type *result;
-        query_map((&record_enum_map), s, result, string, type);
-        free(s);
-
-        if (result->category != CATEGORY_RECORD){
-                result = NULL;
-        } 
-        return result;
+        return NULL;
 }
 
 const struct type *query_enum_type(const char *name){
@@ -332,7 +336,8 @@ const struct type *query_enum_type(const char *name){
 }
 
 const struct type *field_type(const struct type *record, const char *name){
-        for (struct LIST_NODE(field) *node = record->fields.head; node != NULL; node = node->next){
+        struct LIST(field) *fields = query_record_fields(record->name);
+        for (struct LIST_NODE(field) *node = fields->head; node != NULL; node = node->next){
                 if (strcmp(node->data->var->string, name) == 0){
                         return node->data->var->type;
                 }
@@ -342,7 +347,8 @@ const struct type *field_type(const struct type *record, const char *name){
 }
 
 size_t record_type_offset(const struct type *record, const char *name){
-        for (struct LIST_NODE(field) *node = record->fields.head; node != NULL; node = node->next){
+        struct LIST(field) *fields = query_record_fields(record->name);
+        for (struct LIST_NODE(field) *node = fields->head; node != NULL; node = node->next){
                 if (strcmp(node->data->var->string, name) == 0){
                         return node->data->offset;
                 }
@@ -362,23 +368,11 @@ const struct type *make_assignable(const struct type *type){
 
         switch(type->category){
                 case CATEGORY_PRIMITIVE:
+                case CATEGORY_RECORD:
                         assert(equals_type(type, new));
                         return new;
                 case CATEGORY_ARRAY:
                         new->element_type = make_assignable(new->element_type);
-                        assert(equals_type(type, new));
-                        return new;
-                case CATEGORY_RECORD:
-                        init_list((&new->fields));
-                        for (struct LIST_NODE(field) *node = type->fields.head; node != NULL; node = node->next){
-                                struct field *f = malloc(sizeof(struct field));
-                                f->var = malloc(sizeof(struct variable));
-                                f->var->type = make_assignable(node->data->var->type);
-                                f->var->string = node->data->var->string;
-                                f->offset = node->data->offset;
-                                
-                                append_list((&new->fields), f, field);
-                        }
                         assert(equals_type(type, new));
                         return new;
                 case CATEGORY_POINTER:
@@ -482,12 +476,6 @@ void free_type(const struct type *type){
         if (type->category == CATEGORY_PARAMS){
                 free_list((&type->subtypes), free_type_list_item, type);
         }
-        else if (type->category == CATEGORY_RECORD){
-                free_list((&type->fields), free_field, field);
-        }
-        else if (type->category == CATEGORY_ENUM){
-                free_list((&type->items), free_enum_item, enum_item);
-        }
 
         free((void*) type);
 }
@@ -495,6 +483,7 @@ void free_type(const struct type *type){
 void free_types(){
         free_list((&types), free_type, type);
         free_map((&record_enum_map), string, type);
+        free_map((&record_fields), string, LIST(field));
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;

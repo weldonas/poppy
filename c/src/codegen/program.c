@@ -781,19 +781,19 @@ char *generate_from_tree(const struct parse_tree *tree, struct codegen_params *p
 }
 
 void populate_enum(const struct parse_tree *tree, struct codegen_params *params){
-        const struct type *enum_type = tree->type;
+        // const struct type *enum_type = tree->type;
 
-        uint64_t index = 0;
-        for (struct LIST_NODE(enum_item) *node = enum_type->items.head; node != NULL; node = node->next){
-                struct global_variable *v = malloc(sizeof(struct global_variable));
-                v->name = node->data->data;
-                v->size = enum_type->byte_count;
-                v->init_code = movi(REG_RESULT, index);
+        // uint64_t index = 0;
+        // for (struct LIST_NODE(enum_item) *node = enum_type->items.head; node != NULL; node = node->next){
+        //         struct global_variable *v = malloc(sizeof(struct global_variable));
+        //         v->name = node->data->data;
+        //         v->size = enum_type->byte_count;
+        //         v->init_code = movi(REG_RESULT, index);
 
-                append_list((&params->globals), v, global_variable);
+        //         append_list((&params->globals), v, global_variable);
 
-                index++;
-        }
+        //         index++;
+        // }
 }
 
 char *generate_code(const struct parse_tree *tree){
