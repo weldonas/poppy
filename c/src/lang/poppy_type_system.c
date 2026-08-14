@@ -5,7 +5,7 @@
 #include "lang/type_system.h"
 #include <assert.h>
 
-#define RULE_COUNT 86
+#define RULE_COUNT 89
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -159,6 +159,55 @@ const struct type *deduce_record(const struct parse_tree *tree){
         }
 
         return NULL;
+}
+
+const struct type *deduce_enum(const struct parse_tree *tree){
+        const struct parse_tree *name_tree; load_child_at(name_tree, tree, 1);
+        const struct parse_tree *item_tree; load_child_at(item_tree, tree, 3);      
+        
+        if (!item_tree->type){
+                return NULL;
+        }
+
+        if (name_enum_type((struct type*) item_tree->type, name_tree->data.value)){
+                return item_tree->type;
+        }
+
+        return NULL;
+}
+
+const struct type *deduce_enumitems(const struct parse_tree *tree){
+        struct LIST(enum_item) items;
+        init_list((&items));
+
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+                const struct type *item_type = node->data->type;
+                
+                if (!item_type){
+                        free_list((&items), free_enum_item, enum_item);
+                        return NULL;
+                }
+
+                char *item_name = node->data->children->head->data->data.value;
+                struct enum_item *item = malloc(sizeof(struct enum_item));
+                item->data = item_name;
+
+                append_list((&items), item, enum_item);
+                // TODO add to symbol table
+        }
+
+        return enum_type(items);
+}
+
+const struct type *deduce_enumitem(const struct parse_tree *tree){
+        const struct type *child_type = tree->children->head->data->type;
+
+        // if the type of the identifier is not null, it has been declared already
+        if (child_type != NULL){
+                return NULL;
+        }
+
+        return void_type();
 }
 
 const struct type *deduce_record_type(const struct parse_tree *tree){
@@ -819,6 +868,18 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELD);
         rules[i] = new_child_type_rule(conditions, 1, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ENUMDEFN);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_enum);
+        ++i;       
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ENUMITEMS);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_enumitems);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ENUMITEM);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_enumitem);
         ++i;
 
         assert(i == RULE_COUNT);

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 118
+#define RULE_COUNT 123
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -42,12 +42,14 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_DEFNDECL, {SYMBOL_RECDEFN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECL, {SYMBOL_DECL}, i, poppy_grammar); ++i;
         populate(SYMBOL_DEFNDECL, {SYMBOL_GLOBALVARDEC}, i, poppy_grammar); ++i;
+        populate(SYMBOL_DEFNDECL, {SYMBOL_ENUMDEFN}, i, poppy_grammar); ++i;
         populate(SYMBOL_FNDEFN, {SYMBOL_SIGNATURE COMMA SYMBOL_LBRACE COMMA SYMBOL_BODY COMMA SYMBOL_RBRACE}, i, poppy_grammar); ++i;
         populate(SYMBOL_RECDEFN, {SYMBOL_RECORD COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_FIELDS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_DECL, {SYMBOL_DECLARE COMMA SYMBOL_SIGNATURE}, i, poppy_grammar); ++i;
         populate(SYMBOL_SIGNATURE, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_OPTPARAMS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_GLOBALVARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_ASSIGN COMMA SYMBOL_EXPR}, i, poppy_grammar); ++i;
         populate(SYMBOL_GLOBALVARDEC, {SYMBOL_LET COMMA SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ENUMDEFN, {SYMBOL_ENUM COMMA SYMBOL_IDENTIFIER COMMA SYMBOL_LPAREN COMMA SYMBOL_ENUMITEMS COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_INT}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_VOID}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_CHAR}, i, poppy_grammar); ++i;
@@ -65,6 +67,9 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_FIELDS, {SYMBOL_FIELD COMMA SYMBOL_COMMA COMMA SYMBOL_FIELDS}, i, poppy_grammar); ++i;
         populate(SYMBOL_FIELDS, {SYMBOL_FIELD}, i, poppy_grammar); ++i;
         populate(SYMBOL_FIELD, {SYMBOL_TYPE COMMA SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ENUMITEMS, {SYMBOL_ENUMITEM COMMA SYMBOL_COMMA COMMA SYMBOL_ENUMITEMS}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ENUMITEMS, {SYMBOL_ENUMITEM}, i, poppy_grammar); ++i;
+        populate(SYMBOL_ENUMITEM, {SYMBOL_IDENTIFIER}, i, poppy_grammar); ++i;
         populate(SYMBOL_BODY, {SYMBOL_STMTS}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMTS, {SYMBOL_STMT}, i, poppy_grammar); ++i;
         populate(SYMBOL_STMTS, {SYMBOL_STMT COMMA SYMBOL_STMTS}, i, poppy_grammar); ++i;
@@ -165,6 +170,7 @@ const struct grammar * const get_poppy_grammar(){
         poppy_grammar->expanded[SYMBOL_STMTS] = true;
         poppy_grammar->expanded[SYMBOL_ARGS] = true;
         poppy_grammar->expanded[SYMBOL_FIELDS] = true;
+        poppy_grammar->expanded[SYMBOL_ENUMITEMS] = true;
 
         poppy_grammar->skippable[SYMBOL_BASEEXPR] = true;
         poppy_grammar->skippable[SYMBOL_MEMBEREXPR] = true;

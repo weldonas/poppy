@@ -16,7 +16,8 @@ enum category : uint8_t {
     CATEGORY_ARRAY,
     CATEGORY_UNIT,
     CATEGORY_RECORD,
-    CATEGORY_POINTER
+    CATEGORY_POINTER,
+    CATEGORY_ENUM
 };
 
 struct variable {
@@ -29,12 +30,18 @@ struct field {
     uint32_t offset;
 };
 
+struct enum_item {
+    char *data;
+};
+
 void free_variable(struct variable *v);
 void free_field(struct field *f);
+void free_enum_item(struct enum_item *i);
 
 DEFINE_LIST(type);
 DEFINE_LIST(variable);
 DEFINE_LIST(field);
+DEFINE_LIST(enum_item);
 
 struct type {
     uint32_t byte_count;
@@ -69,6 +76,10 @@ struct type {
         struct {
             const struct type *referenced_type;
         }; // pointer
+
+        struct {
+            struct LIST(enum_item) items;
+        }; // enum
     };
 };
 
@@ -96,6 +107,10 @@ const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);
 
 const struct type* const pointer_type(const struct type *type);
+
+const struct type* const enum_type(struct LIST(enum_item) items);
+bool name_enum_type(struct type *record, char *name);
+const struct type *query_enum_type(const char *name);
 
 const struct type *make_assignable(const struct type *type);
 

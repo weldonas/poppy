@@ -538,6 +538,7 @@ struct RESULT(type) find_type(const struct type_system *const system, struct par
                 char *err = malloc((strlen(lit) + strlen(tree_str) + 1) * sizeof(char));
                 strcpy(err, lit);
                 strcat(err, tree_str);
+                free(tree_str);
                 make_error(result, err);
         }
         else {

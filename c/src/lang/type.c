@@ -15,13 +15,14 @@
 
 DEFINE_MAP(string, type);
 
-void free_record_map_entry(const struct MAP_ENTRY(string, type) *entry){
+void free_type_map_entry(const struct MAP_ENTRY(string, type) *entry){
         free((void*) entry->key);
         free((void*) entry);
 }
 
 struct LIST(type) types;
-struct MAP(string, type) record_map;
+struct MAP(string, type) record_enum_map;
+struct MAP(string, type) ;
 bool initialized = false;
 
 struct type *int_ptr = NULL;
@@ -51,7 +52,7 @@ void initialize_types(){
         assert(!initialized);
         initialized = true;
         init_list((&types));
-        init_map((&record_map), equals_string, free_record_map_entry, string, type);
+        init_map((&record_enum_map), equals_string, free_type_map_entry, string, type);
 
         add_builtin_types();
 }
@@ -170,6 +171,16 @@ const struct type* const pointer_type(const struct type *type){
         return new;
 }
 
+const struct type* const enum_type(struct LIST(enum_item) items){
+        struct type *new = malloc(sizeof(struct type));
+        new->category = CATEGORY_ENUM;
+        new->items = items;
+        new->byte_count = 8;
+        new->is_assignable = false;
+        add_type(new);
+        return new;
+}
+
 void add_param(struct type *params, const struct type *type_to_add){
         assert(type_to_add->byte_count != NOT_IN_MEMORY);
         append_list((&params->subtypes), (struct type*) type_to_add, type);
@@ -266,12 +277,29 @@ bool name_record_type(struct type *record, char *name){
         record->name = name;
 
         const struct type *result = NULL;
-        query_map((&record_map), s, result, string, type)
+        query_map((&record_enum_map), s, result, string, type)
         if (result){
                 return false;
         }
 
-        update_map((&record_map), s, record, string, type);
+        update_map((&record_enum_map), s, record, string, type);
+        return true;
+}
+
+bool name_enum_type(struct type *enm, char *name){
+        assert(enm->category == CATEGORY_ENUM);
+        
+        struct string *s = malloc(sizeof(struct string));
+        s->data = name;
+        enm->name = name;
+
+        const struct type *result = NULL;
+        query_map((&record_enum_map), s, result, string, type)
+        if (result){
+                return false;
+        }
+
+        update_map((&record_enum_map), s, enm, string, type);
         return true;
 }
 
@@ -280,9 +308,26 @@ const struct type *query_record_type(const char *name){
         s->data = name;
 
         const struct type *result;
-        query_map((&record_map), s, result, string, type);
-
+        query_map((&record_enum_map), s, result, string, type);
         free(s);
+
+        if (result->category != CATEGORY_RECORD){
+                result = NULL;
+        } 
+        return result;
+}
+
+const struct type *query_enum_type(const char *name){
+        struct string *s = malloc(sizeof(struct string));
+        s->data = name;
+
+        const struct type *result;
+        query_map((&record_enum_map), s, result, string, type);
+        free(s);
+
+        if (result->category != CATEGORY_ENUM){
+                result = NULL;
+        }
         return result;
 }
 
@@ -437,9 +482,11 @@ void free_type(const struct type *type){
         if (type->category == CATEGORY_PARAMS){
                 free_list((&type->subtypes), free_type_list_item, type);
         }
-
         else if (type->category == CATEGORY_RECORD){
                 free_list((&type->fields), free_field, field);
+        }
+        else if (type->category == CATEGORY_ENUM){
+                free_list((&type->items), free_enum_item, enum_item);
         }
 
         free((void*) type);
@@ -447,7 +494,7 @@ void free_type(const struct type *type){
 
 void free_types(){
         free_list((&types), free_type, type);
-        free_map((&record_map), string, type);
+        free_map((&record_enum_map), string, type);
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;
@@ -462,4 +509,8 @@ void free_variable(struct variable *v){
 void free_field(struct field *f){
         free_variable(f->var);
         free(f);
+}
+
+void free_enum_item(struct enum_item *i){
+        free(i);
 }

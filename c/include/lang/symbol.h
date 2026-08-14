@@ -43,6 +43,7 @@ enum symbol : uint8_t {
         SYMBOL_BOOL,
         SYMBOL_CHAR,
         SYMBOL_ELSE,
+        SYMBOL_ENUM,
         SYMBOL_FALSE,
         SYMBOL_FOR,
         SYMBOL_HOP,
@@ -105,6 +106,9 @@ enum symbol : uint8_t {
         SYMBOL_RECDEFN,
         SYMBOL_CAST,
         SYMBOL_GLOBALVARDEC,
+        SYMBOL_ENUMDEFN,
+        SYMBOL_ENUMITEMS,
+        SYMBOL_ENUMITEM,
         SYMBOL_COUNT
 };
 
