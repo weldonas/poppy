@@ -468,6 +468,14 @@ bool is_returnable(const struct type *type){
 }
 
 bool can_safe_cast(const struct type *src, const struct type *dst){
+        if (src->category == CATEGORY_ENUM){
+                return is_numeric(dst);
+        }
+
+        if (dst->category == CATEGORY_ENUM){
+                return is_numeric(src);
+        }
+
         if (src->category != dst->category){
                 return false;
         }

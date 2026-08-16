@@ -6,7 +6,7 @@
 #include "lang/type_system.h"
 #include <assert.h>
 
-#define RULE_COUNT 89
+#define RULE_COUNT 88
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -53,6 +53,10 @@ bool is_non_null_assignable_type(const struct type *const type){
 
 bool is_non_null_pointer_type(const struct type *const type){
         return type && (type->category == CATEGORY_POINTER);
+}
+
+bool is_non_null_one_word_type(const struct type *const type){
+        return type && (type->byte_count <= 8);
 }
 
 const struct parse_tree *find_defn_signature_name(const struct parse_tree *defn){
@@ -421,10 +425,6 @@ const struct type_system *const get_poppy_type_system(){
         // Variables
         // we don't add a condition for LHS being assignable since this should always be the case
         // and the variable is not added until after this type rule completes execution
-        // conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
-        // rules[i] = new_deducer_type_rule(conditions, 1, deduce_vardec);
-        // ++i;
-        
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
@@ -627,15 +627,8 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_bool_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_bool_type);
-        rules[i] = new_type_rule(conditions, 4, bool_type());
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
-        conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_int_or_char_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_int_or_char_type);
+        conditions[2] = new_type_at_condition(0, is_non_null_one_word_type);
+        conditions[3] = new_types_equal_at_condition(0, 2);
         rules[i] = new_type_rule(conditions, 4, bool_type());
         ++i;
 
