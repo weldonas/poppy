@@ -1,6 +1,7 @@
 #include "codegen/ops.h"
 
 #include "codegen/assem.h"
+#include "codegen/control.h"
 #include "codegen/register.h"
 
 // op1 in REG_SCRATCH, op2 in REG_RESULT
@@ -83,13 +84,37 @@ char *ge(char *op1, char *op2){
 }
 
 char *cnjtn(char *op1, char *op2){
-        return binop(op1, op2, and(REG_RESULT, REG_SCRATCH, REG_RESULT));
+        struct label *short_circuit = new_label(NULL);
+
+        char *result = concat(5,
+                op1,
+                // if op1 is false, the whole expression is false
+                cmpi(REG_RESULT, 0),
+                beq(short_circuit),
+                // if op1 is true, the whole expression is equal to op2
+                op2,
+                declare_label(short_circuit)
+        );
+
+        free_label(short_circuit);
+        return result;
 }
 
 char *dsjtn(char *op1, char *op2){
-        return binop(op1, op2, orr(REG_RESULT, REG_SCRATCH, REG_RESULT));
+        struct label *short_circuit = new_label(NULL);
 
-        return binop(op1, op2, orr(REG_RESULT, REG_SCRATCH, REG_RESULT));
+        char *result = concat(5,
+                op1,
+                // if op1 is true, the whole expression is true
+                cmpi(REG_RESULT, 1),
+                beq(short_circuit),
+                // if op1 is false, the whole expression is equal to op2
+                op2,
+                declare_label(short_circuit)
+        );
+
+        free_label(short_circuit);
+        return result;
 }
 
 char *ngtn(char *op){
@@ -97,11 +122,11 @@ char *ngtn(char *op){
 }
 
 char *band(char *op1, char *op2){
-        return cnjtn(op1, op2);
+        return binop(op1, op2, and(REG_RESULT, REG_SCRATCH, REG_RESULT));
 }
 
 char *bor(char *op1, char *op2){
-        return dsjtn(op1, op2);
+        return binop(op1, op2, orr(REG_RESULT, REG_SCRATCH, REG_RESULT));
 }
 
 char *bxor(char *op1, char *op2){
