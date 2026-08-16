@@ -7,7 +7,9 @@
 
 #include "data/list.h"
 
-void free_string(struct string *s){}
+void free_string(struct string *s){
+        free(s);
+}
 
 bool equals_string(const struct string *s1, const struct string *s2) {
         return strcmp(s1->data, s2->data) == 0;

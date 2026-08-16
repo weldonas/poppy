@@ -1,4 +1,5 @@
 #include "lang/poppy_type_system.h"
+#include "data/map.h"
 #include "lang/parse_tree.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
@@ -169,41 +170,50 @@ const struct type *deduce_record(const struct parse_tree *tree){
 }
 
 const struct type *deduce_enum(const struct parse_tree *tree){
+        const struct parse_tree *parent = tree->parent->parent->parent;
+        assert(parent->data.type == SYMBOL_PROGRAM);
         const struct parse_tree *name_tree; load_child_at(name_tree, tree, 1);
         const struct parse_tree *item_tree; load_child_at(item_tree, tree, 3);      
-        
         if (!item_tree->type){
                 return NULL;
         }
 
-        if (name_enum_type((struct type*) item_tree->type, name_tree->data.value)){
-                return item_tree->type;
+        // const struct type *type = make_assignable(enum_type(name_tree->data.value));
+        struct LIST(string) *items = malloc(sizeof(struct LIST(string)));
+        init_list(items);
+
+        for (struct LIST_NODE(parse_tree) *node = item_tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+                char *item_name = node->data->children->head->data->data.value;
+                struct string *s = malloc(sizeof(struct string));
+                s->data = item_name;
+                append_list(items, s, string);
         }
 
-        return NULL;
+        const struct type *type = make_assignable(enum_type(name_tree->data.value, items));
+        for (struct LIST_NODE(string) *node = items->head; node != NULL; node = node->next){
+                const char *item_name = node->data->data;
+                struct string *s = malloc(sizeof(struct string));
+                s->data = item_name;
+
+                struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
+                v->type = type;
+                v->is_defined = true;
+                update_map((parent->symbol_table), s, v, string, symbol_table_value); 
+        }
+
+        return void_type();
 }
 
 const struct type *deduce_enumitems(const struct parse_tree *tree){
-        struct LIST(enum_item) items;
-        init_list((&items));
-
         for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
                 const struct type *item_type = node->data->type;
                 
                 if (!item_type){
-                        free_list((&items), free_enum_item, enum_item);
                         return NULL;
                 }
-
-                char *item_name = node->data->children->head->data->data.value;
-                struct enum_item *item = malloc(sizeof(struct enum_item));
-                item->data = item_name;
-
-                append_list((&items), item, enum_item);
-                // TODO add to symbol table
         }
 
-        return enum_type(items);
+        return void_type();
 }
 
 const struct type *deduce_enumitem(const struct parse_tree *tree){
@@ -220,7 +230,7 @@ const struct type *deduce_enumitem(const struct parse_tree *tree){
 const struct type *deduce_record_type(const struct parse_tree *tree){
         const struct parse_tree *record = tree->children->head->data;
         char *record_name = record->data.value;
-        return query_record_type(record_name);
+        return query_named_type(record_name);
 }
 
 const struct type *deduce_addressable_dot(const struct parse_tree *tree){
@@ -332,6 +342,11 @@ const struct type *deduce_dereference(const struct parse_tree *tree){
         return type_tree->type->referenced_type;
 }
 
+const struct type *deduce_vardec(const struct parse_tree *tree){
+        // const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
+        return void_type();
+}
+
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
                 return poppy_type_system;
@@ -406,6 +421,10 @@ const struct type_system *const get_poppy_type_system(){
         // Variables
         // we don't add a condition for LHS being assignable since this should always be the case
         // and the variable is not added until after this type rule completes execution
+        // conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
+        // rules[i] = new_deducer_type_rule(conditions, 1, deduce_vardec);
+        // ++i;
+        
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);

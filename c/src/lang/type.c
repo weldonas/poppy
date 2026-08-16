@@ -20,11 +20,7 @@ struct record_data {
 
 DEFINE_MAP(string, type);
 DEFINE_MAP(string, record_data);
-
-void free_type_map_entry(const struct MAP_ENTRY(string, type) *entry){
-        free((void*) entry->key);
-        free((void*) entry);
-}
+DEFINE_MAP(string, LIST(string));
 
 void free_record_field_entry(const struct MAP_ENTRY(string, record_data) *entry){
         free((void*) entry->key);
@@ -33,15 +29,29 @@ void free_record_field_entry(const struct MAP_ENTRY(string, record_data) *entry)
         free((void*) entry);
 }
 
+void free_enum_item_entry(const struct MAP_ENTRY(string, string_list) *entry){
+        free((void*) entry->key);
+        free_list((entry->value), free_string, string);
+        free((void*) entry->value);
+        free((void*) entry);
+}
+
 struct LIST(type) types;
 struct MAP(string, record_data) record_fields;
-struct MAP(string, type) record_enum_map;
+struct MAP(string, string_list) enum_items;
 
 struct record_data *query_record_fields(const char *name){
         struct string s = {.data = name};
         const struct record_data *result;
         query_map((&record_fields), (&s), result, string, record_data);
         return (struct record_data*) result;
+}
+
+const struct LIST(string) *query_enum_items(const char *name){
+        struct string s = {.data = name};
+        const struct LIST(string) *result;
+        query_map((&enum_items), (&s), result, string, LIST(string));
+        return (struct LIST(string)*) result;
 }
 
 bool initialized = false;
@@ -75,8 +85,8 @@ void initialize_types(){
         assert(!initialized);
         initialized = true;
         init_list((&types));
-        init_map((&record_enum_map), equals_string, free_type_map_entry, string, type);
         init_map((&record_fields), equals_string, free_record_field_entry, string, record_data);
+        init_map((&enum_items), equals_string, free_enum_item_entry, string, LIST(string));
 
         add_builtin_types();
 }
@@ -195,13 +205,21 @@ const struct type* const pointer_type(const struct type *type){
         return new;
 }
 
-const struct type* const enum_type(struct LIST(enum_item) items){
+const struct type* const enum_type(const char *name, struct LIST(string) *items){
+        if (query_named_type(name)){
+                return NULL;
+        }
+        
         struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_ENUM;
-        // new->items = items;
+        new->name = name;
         new->byte_count = 8;
         new->is_assignable = false;
         add_type(new);
+
+        struct string *s = malloc(sizeof(struct string));
+        s->data = name;
+        update_map((&enum_items), s, items, string, LIST(string));
         return new;
 }
 
@@ -275,16 +293,18 @@ bool add_field(struct type *record, struct variable *v){
         return true;
 }
 
-const struct type *query_record_type(const char *name){
-        struct record_data *data = query_record_fields(name);
-        if (!data){
+const struct type *query_named_type(const char *name){
+        struct record_data *record_data = query_record_fields(name);
+        const struct LIST(string) *enum_items = query_enum_items(name);
+
+        if (!record_data && !enum_items){
                 return NULL;
         }
 
         struct type *new = malloc(sizeof(struct type));
-        new->category = CATEGORY_RECORD;
+        new->category = record_data ? CATEGORY_RECORD : CATEGORY_ENUM;
         new->name = name;
-        new->byte_count = data->byte_count;
+        new->byte_count = record_data ? record_data->byte_count : 8;
         new->is_assignable = false;
         add_type(new);     
         return new;
@@ -293,6 +313,10 @@ const struct type *query_record_type(const char *name){
 void free_variable_nop(struct variable *v){}
 
 const struct type* const record_type(const char *name, struct LIST(variable) fields){
+        if (query_named_type(name)){
+                return NULL;
+        }
+        
         struct type *new = malloc(sizeof(struct type));
         new->category = CATEGORY_RECORD;
         new->name = name;
@@ -327,36 +351,6 @@ const struct type* const return_type(const struct type *type){
         return NULL;
 }
 
-bool name_enum_type(struct type *enm, char *name){
-        assert(enm->category == CATEGORY_ENUM);
-        
-        struct string *s = malloc(sizeof(struct string));
-        s->data = name;
-        enm->name = name;
-
-        const struct type *result = NULL;
-        query_map((&record_enum_map), s, result, string, type)
-        if (result){
-                return false;
-        }
-
-        update_map((&record_enum_map), s, enm, string, type);
-        return true;
-}
-
-const struct type *query_enum_type(const char *name){
-        struct string *s = malloc(sizeof(struct string));
-        s->data = name;
-
-        const struct type *result;
-        query_map((&record_enum_map), s, result, string, type);
-        free(s);
-
-        if (result->category != CATEGORY_ENUM){
-                result = NULL;
-        }
-        return result;
-}
 
 const struct type *field_type(const struct type *record, const char *name){
         struct record_data *data = query_record_fields(record->name);
@@ -392,6 +386,7 @@ const struct type *make_assignable(const struct type *type){
         switch(type->category){
                 case CATEGORY_PRIMITIVE:
                 case CATEGORY_RECORD:
+                case CATEGORY_ENUM:
                         assert(equals_type(type, new));
                         return new;
                 case CATEGORY_ARRAY:
@@ -447,8 +442,8 @@ bool equals_type(const struct type *t1, const struct type *t2){
                 return t1->length == t2->length;
         }
 
-        else if (t1->category == CATEGORY_RECORD){
-                // unlike other types, we require that records' names are the same (not just their internals)
+        else if ((t1->category == CATEGORY_RECORD) || (t1->category == CATEGORY_ENUM)){
+                // unlike other types, we require that records/enums' names are the same (not just their internals)
                 // assuming uniqueness among type names, this is true iff the names are equal
 
                 return strcmp(t1->name, t2->name) == 0;
@@ -505,8 +500,8 @@ void free_type(const struct type *type){
 
 void free_types(){
         free_list((&types), free_type, type);
-        free_map((&record_enum_map), string, type);
         free_map((&record_fields), string, record_data);
+        free_map((&enum_items), string, LIST(string));
         int_ptr = NULL;
         bool_ptr = NULL;
         void_ptr = NULL;

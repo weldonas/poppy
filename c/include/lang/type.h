@@ -42,7 +42,7 @@ DEFINE_LIST(type);
 DEFINE_LIST(variable);
 DEFINE_LIST(field);
 DEFINE_LIST(enum_item);
-
+DEFINE_LIST(string);
 struct type {
     uint32_t byte_count;
     enum category category;
@@ -59,8 +59,6 @@ struct type {
 
         struct {
             struct LIST(type) subtypes;
-            // const struct type *current_type; // primitive
-            // const struct type *previous; // params or NULL
         }; // params
 
         struct {
@@ -95,16 +93,14 @@ void add_param(struct type *params, const struct type *type_to_add);
 const struct type* const array_type(const struct type *element_type, char *length);
 
 const struct type* const record_type(const char *name, struct LIST(variable) fields);
-// bool add_field(struct type *record, struct variable *v);
-const struct type *query_record_type(const char *name);
+const struct type *query_named_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);
 
 const struct type* const pointer_type(const struct type *type);
 
-const struct type* const enum_type(struct LIST(enum_item) items);
-bool name_enum_type(struct type *record, char *name);
-const struct type *query_enum_type(const char *name);
+const struct type* const enum_type(const char *name, struct LIST(string) *items);
+const struct LIST(string) *query_enum_items(const char *name);
 
 const struct type *make_assignable(const struct type *type);
 
