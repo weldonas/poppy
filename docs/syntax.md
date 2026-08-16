@@ -1,8 +1,6 @@
 # Context-Free Grammar for Poppy
 
-Terminal symbols: all tokens for the language.
-
-Nonterminal symbols: $\{\text{program, defndecls, defn, type, optparams, stmts, params, param, stmt, semistmt, expr, orexpr, andexpr, eqexpr, compexpr, borexpr, bxorexpr, bandexpr, bshiftexpr, addexpr, multexpr, unaryexpr, memberexpr, baseexpr, optelse, optargs, args, vardec, varasst, ret, call, ifstmt, whilestmt, forstmt, body, signature, defndecl, decl, addressable, fields, field, cast}\}$
+Terminal and non-terminal symbols are given in `c/include/lang/symbol.h`
 
 Start symbol: $\text{program}$
 
@@ -15,12 +13,14 @@ $$\begin{align*}
 \text{defndecl} &\rightarrow \text{recdefn}\\
 \text{defndecl} &\rightarrow \text{decl}\\
 \text{defndecl} &\rightarrow \text{globalvardec}\\
+\text{defndecl} &\rightarrow \text{enumdefn} \\
 \text{fndefn} &\rightarrow \text{signature LBRACE body RBRACE}\\
 \text{recdefn} &\rightarrow \text{RECORD IDENTIFIER LPAREN fields RPAREN} \\
 \text{decl} &\rightarrow \text{DECLARE signature}\\
 \text{signature} &\rightarrow \text{type IDENTIFIER LPAREN optparams RPAREN}\\
 \text{globalvardec} &\rightarrow \text{LET type IDENTIFIER ASSIGN expr}  \\
 \text{globalvardec} &\rightarrow \text{LET type IDENTIFIER}  \\
+\text{enumdefn} &\rightarrow \text{ENUM IDENTIFIER LPAREN enumitems RPAREN} \\
 \text{type} &\rightarrow \text{INT}\\
 \text{type} &\rightarrow \text{VOID}\\
 \text{type} &\rightarrow \text{CHAR}\\
@@ -38,6 +38,9 @@ $$\begin{align*}
 \text{fields} &\rightarrow \text{field COMMA fields}  \\
 \text{fields} &\rightarrow \text{field}  \\
 \text{field} &\rightarrow \text{type IDENTIFIER} \\
+\text{enumitems} &\rightarrow \text{enumitem COMMA enumitems} \\
+\text{enumitems} &\rightarrow \text{enumitem} \\
+\text{enumitem} &\rightarrow \text{IDENTIFIER} \\
 \text{body} &\rightarrow \text{stmts}  \\
 \text{stmts} &\rightarrow \text{stmt}  \\
 \text{stmts} &\rightarrow \text{stmt stmts}  \\

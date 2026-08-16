@@ -16,7 +16,8 @@ enum category : uint8_t {
     CATEGORY_ARRAY,
     CATEGORY_UNIT,
     CATEGORY_RECORD,
-    CATEGORY_POINTER
+    CATEGORY_POINTER,
+    CATEGORY_ENUM
 };
 
 struct variable {
@@ -29,13 +30,19 @@ struct field {
     uint32_t offset;
 };
 
+struct enum_item {
+    char *data;
+};
+
 void free_variable(struct variable *v);
 void free_field(struct field *f);
+void free_enum_item(struct enum_item *i);
 
 DEFINE_LIST(type);
 DEFINE_LIST(variable);
 DEFINE_LIST(field);
-
+DEFINE_LIST(enum_item);
+DEFINE_LIST(string);
 struct type {
     uint32_t byte_count;
     enum category category;
@@ -52,8 +59,6 @@ struct type {
 
         struct {
             struct LIST(type) subtypes;
-            // const struct type *current_type; // primitive
-            // const struct type *previous; // params or NULL
         }; // params
 
         struct {
@@ -62,9 +67,8 @@ struct type {
         }; // array
 
         struct {
-            struct LIST(field) fields;
-            char *name;
-        }; // record
+            const char *name;
+        }; // record/enum
 
         struct {
             const struct type *referenced_type;
@@ -88,14 +92,15 @@ void add_param(struct type *params, const struct type *type_to_add);
 
 const struct type* const array_type(const struct type *element_type, char *length);
 
-struct type* const record_type();
-bool add_field(struct type *record, struct variable *v);
-bool name_record_type(struct type *record, char *name);
-const struct type *query_record_type(const char *name);
+const struct type* const record_type(const char *name, struct LIST(variable) fields);
+const struct type *query_named_type(const char *name);
 const struct type *field_type(const struct type *record, const char *name);
 size_t record_type_offset(const struct type *record, const char *name);
 
 const struct type* const pointer_type(const struct type *type);
+
+const struct type* const enum_type(const char *name, struct LIST(string) *items);
+const struct LIST(string) *query_enum_items(const char *name);
 
 const struct type *make_assignable(const struct type *type);
 

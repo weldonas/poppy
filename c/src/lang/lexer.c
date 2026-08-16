@@ -97,6 +97,8 @@ struct lex_data find_alphanumeric_value (FILE* file, char *val){
                 ret.type = SYMBOL_DECLARE;
         } else if ((ret.val_len == 4) && (strncmp(val, "else", 4) == 0)){
                 ret.type = SYMBOL_ELSE;
+        } else if ((ret.val_len == 4) && (strncmp(val, "enum", 4) == 0)){
+                ret.type = SYMBOL_ENUM;
         } else if ((ret.val_len == 5) && (strncmp(val, "false", 5) == 0)){
                 ret.type = SYMBOL_FALSE;
         } else if ((ret.val_len == 3) && (strncmp(val, "for", 3) == 0)){

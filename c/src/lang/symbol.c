@@ -105,6 +105,10 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_UNSAFE: return "UNSAFE";
                 case SYMBOL_SAFE: return "SAFE";
                 case SYMBOL_GLOBALVARDEC: return "GLOBALVARDEC";
-        }
+                case SYMBOL_ENUM: return "enum";
+                case SYMBOL_ENUMDEFN: return "ENUMDEFN";
+                case SYMBOL_ENUMITEMS: return "ENUMITEMS";
+                case SYMBOL_ENUMITEM: return "ENUMITEM";
+                }
         return 0;
 }

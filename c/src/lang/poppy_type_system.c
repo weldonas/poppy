@@ -1,11 +1,12 @@
 #include "lang/poppy_type_system.h"
+#include "data/map.h"
 #include "lang/parse_tree.h"
 #include "lang/symbol.h"
 #include "lang/type.h"
 #include "lang/type_system.h"
 #include <assert.h>
 
-#define RULE_COUNT 86
+#define RULE_COUNT 88
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -54,6 +55,10 @@ bool is_non_null_pointer_type(const struct type *const type){
         return type && (type->category == CATEGORY_POINTER);
 }
 
+bool is_non_null_one_word_type(const struct type *const type){
+        return type && (type->byte_count <= 8);
+}
+
 const struct parse_tree *find_defn_signature_name(const struct parse_tree *defn){
         const struct parse_tree *signature = defn->children->head->data;
         const struct parse_tree *id = signature->children->head->next->data;
@@ -70,6 +75,19 @@ const struct type *deduce_from_last_child(const struct parse_tree *tree){
         const struct type *current;
         
         for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next){
+                current = node->data->type;
+                if (!current){
+                        return NULL;
+                }
+        }
+
+        return current;
+}
+
+const struct type *deduce_from_last_child_skip(const struct parse_tree *tree){
+        const struct type *current;
+        
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
                 current = node->data->type;
                 if (!current){
                         return NULL;
@@ -126,45 +144,97 @@ const struct type *deduce_params(const struct parse_tree *tree){
         return params;
 }
 
-const struct type *deduce_fields(const struct parse_tree *tree){
-        struct type *record = record_type();
+const struct type *deduce_record(const struct parse_tree *tree){
+        const struct parse_tree *name_tree; load_child_at(name_tree, tree, 1);
+        const struct parse_tree *field_tree; load_child_at(field_tree, tree, 3);      
+        if (!field_tree->type){
+                return NULL;
+        }
 
-        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+        struct LIST(variable) fields;
+        init_list((&fields));
+
+        for (struct LIST_NODE(parse_tree) *node = field_tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
                 const struct type *field_type = node->data->type;
+                if (!field_type){
+                        free_list((&fields), free_variable, variable);
+                        return NULL;
+                }
+                
                 char *field_name = node->data->children->head->next->data->data.value;
 
                 struct variable *v = malloc(sizeof(struct variable));
                 v->type = field_type;
                 v->string = field_name;
 
-                if(!add_field(record, v)){
-                        free_variable(v);
+                append_list((&fields), v, variable);
+        }
+
+        return record_type(name_tree->data.value, fields);
+}
+
+const struct type *deduce_enum(const struct parse_tree *tree){
+        const struct parse_tree *parent = tree->parent->parent->parent;
+        assert(parent->data.type == SYMBOL_PROGRAM);
+        const struct parse_tree *name_tree; load_child_at(name_tree, tree, 1);
+        const struct parse_tree *item_tree; load_child_at(item_tree, tree, 3);      
+        if (!item_tree->type){
+                return NULL;
+        }
+
+        // const struct type *type = make_assignable(enum_type(name_tree->data.value));
+        struct LIST(string) *items = malloc(sizeof(struct LIST(string)));
+        init_list(items);
+
+        for (struct LIST_NODE(parse_tree) *node = item_tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+                char *item_name = node->data->children->head->data->data.value;
+                struct string *s = malloc(sizeof(struct string));
+                s->data = item_name;
+                append_list(items, s, string);
+        }
+
+        const struct type *type = make_assignable(enum_type(name_tree->data.value, items));
+        for (struct LIST_NODE(string) *node = items->head; node != NULL; node = node->next){
+                const char *item_name = node->data->data;
+                struct string *s = malloc(sizeof(struct string));
+                s->data = item_name;
+
+                struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
+                v->type = type;
+                v->is_defined = true;
+                update_map((parent->symbol_table), s, v, string, symbol_table_value); 
+        }
+
+        return void_type();
+}
+
+const struct type *deduce_enumitems(const struct parse_tree *tree){
+        for (struct LIST_NODE(parse_tree) *node = tree->children->head; node != NULL; node = node->next ? node->next->next : NULL){
+                const struct type *item_type = node->data->type;
+                
+                if (!item_type){
                         return NULL;
                 }
         }
 
-        return record;
+        return void_type();
 }
 
-const struct type *deduce_record(const struct parse_tree *tree){
-        const struct parse_tree *name_tree; load_child_at(name_tree, tree, 1);
-        const struct parse_tree *field_tree; load_child_at(field_tree, tree, 3);      
-        
-        if (!field_tree->type){
+const struct type *deduce_enumitem(const struct parse_tree *tree){
+        const struct type *child_type = tree->children->head->data->type;
+
+        // if the type of the identifier is not null, it has been declared already
+        if (child_type != NULL){
                 return NULL;
         }
 
-        if (name_record_type((struct type*) field_tree->type, name_tree->data.value)){
-                return field_tree->type;
-        }
-
-        return NULL;
+        return void_type();
 }
 
 const struct type *deduce_record_type(const struct parse_tree *tree){
         const struct parse_tree *record = tree->children->head->data;
         char *record_name = record->data.value;
-        return query_record_type(record_name);
+        return query_named_type(record_name);
 }
 
 const struct type *deduce_addressable_dot(const struct parse_tree *tree){
@@ -175,7 +245,7 @@ const struct type *deduce_addressable_dot(const struct parse_tree *tree){
                 return NULL;
         }
  
-        return field_type(record_tree->type, field_tree->data.value);
+        return make_assignable(field_type(record_tree->type, field_tree->data.value));
 }
 
 const struct type *deduce_addressable_index(const struct parse_tree *tree){
@@ -274,6 +344,11 @@ const struct type *deduce_double_reference(const struct parse_tree *tree){
 const struct type *deduce_dereference(const struct parse_tree *tree){
         const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
         return type_tree->type->referenced_type;
+}
+
+const struct type *deduce_vardec(const struct parse_tree *tree){
+        // const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
+        return void_type();
 }
 
 const struct type_system *const get_poppy_type_system(){
@@ -552,15 +627,8 @@ const struct type_system *const get_poppy_type_system(){
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
         conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_bool_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_bool_type);
-        rules[i] = new_type_rule(conditions, 4, bool_type());
-        ++i;
-
-        conditions[0] = new_parent_symbol_condition(SYMBOL_EQEXPR);
-        conditions[1] = new_length_condition(3);
-        conditions[2] = new_type_at_condition(0, is_non_null_int_or_char_type);
-        conditions[3] = new_type_at_condition(2, is_non_null_int_or_char_type);
+        conditions[2] = new_type_at_condition(0, is_non_null_one_word_type);
+        conditions[3] = new_types_equal_at_condition(0, 2);
         rules[i] = new_type_rule(conditions, 4, bool_type());
         ++i;
 
@@ -814,11 +882,23 @@ const struct type_system *const get_poppy_type_system(){
         ++i;       
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELDS);
-        rules[i] = new_deducer_type_rule(conditions, 1, deduce_fields);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_from_last_child_skip);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FIELD);
         rules[i] = new_child_type_rule(conditions, 1, 0);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ENUMDEFN);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_enum);
+        ++i;       
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ENUMITEMS);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_enumitems);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_ENUMITEM);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_enumitem);
         ++i;
 
         assert(i == RULE_COUNT);
