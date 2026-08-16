@@ -6,7 +6,7 @@
 #include "lang/type_system.h"
 #include <assert.h>
 
-#define RULE_COUNT 88
+#define RULE_COUNT 89
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -246,6 +246,23 @@ const struct type *deduce_addressable_dot(const struct parse_tree *tree){
         }
  
         return make_assignable(field_type(record_tree->type, field_tree->data.value));
+}
+
+const struct type *deduce_addressable_dotdot(const struct parse_tree *tree){
+        const struct parse_tree *pointer_tree; load_child_at(pointer_tree, tree, 0);
+        const struct parse_tree *field_tree; load_child_at(field_tree, tree, 2);
+
+        if (!pointer_tree->type || (pointer_tree->type->category != CATEGORY_POINTER)){
+                return NULL;
+        }
+
+        const struct type *record_type = pointer_tree->type->referenced_type;
+
+        if (record_type->category != CATEGORY_RECORD){
+                return NULL;
+        }
+ 
+        return make_assignable(field_type(record_type, field_tree->data.value));
 }
 
 const struct type *deduce_addressable_index(const struct parse_tree *tree){
@@ -497,6 +514,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_MEMBEREXPR);
         conditions[1] = new_symbol_at_condition(1, SYMBOL_DOT);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dot);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_MEMBEREXPR);
+        conditions[1] = new_symbol_at_condition(1, SYMBOL_DOTDOT);
+        rules[i] = new_deducer_type_rule(conditions, 2, deduce_addressable_dotdot);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_CAST);

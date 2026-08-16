@@ -33,6 +33,7 @@ enum symbol : uint8_t {
         SYMBOL_LBRACKET,   // [
         SYMBOL_RBRACKET,   // ]
         SYMBOL_DOT,        // .
+        SYMBOL_DOTDOT,     // ..
         SYMBOL_AMP,        // &
         SYMBOL_BOR,        // |
         SYMBOL_BXOR,       // ^

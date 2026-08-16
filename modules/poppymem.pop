@@ -29,40 +29,40 @@ record free_node (
 
 bool bit_test(int index){
         !!- word size is 64 = 2^6 bits
-        let int result = ((*metadata_ptr).is_free[index >> 6] >> (index & 63)) & 1;
+        let int result = (metadata_ptr..is_free[index >> 6] >> (index & 63)) & 1;
         hop unsafe bool(result);
 }
 
 void bit_set(int index){
         let int word_index = index >> 6;
-        (*metadata_ptr).is_free[word_index] |= (1 << (index & 63));
+        metadata_ptr..is_free[word_index] |= (1 << (index & 63));
 }
 
 void bit_clear(int index){
         let int word_index = index >> 6;
-        (*metadata_ptr).is_free[word_index] &= ~(1 << (index & 63));
+        metadata_ptr..is_free[word_index] &= ~(1 << (index & 63));
 }
 
 void order_set(int index, int order){
-        (*metadata_ptr).order_of[index] = safe char(order);
+        metadata_ptr..order_of[index] = safe char(order);
 }
 
 int order_get(int index){
-        hop safe int((*metadata_ptr).order_of[index]);
+        hop safe int(metadata_ptr..order_of[index]);
 }
 
 void list_push(int order, int index){
         let &free_node n = node_at(index);
 
-        (*n).prev = NULL;
-        (*n).next = (*metadata_ptr).free_head[order];
+        n..prev = NULL;
+        n..next = metadata_ptr..free_head[order];
 
-        if ((*n).next != NULL){
-                let &free_node next = node_at((*n).next);
-                (*next).prev = index;
+        if (n..next != NULL){
+                let &free_node next = node_at(n..next);
+                next..prev = index;
         }
 
-        (*metadata_ptr).free_head[order] = index;
+        metadata_ptr..free_head[order] = index;
         order_set(index, order);
         bit_set(index);
 }
@@ -70,17 +70,17 @@ void list_push(int order, int index){
 void list_remove(int order, int index){
         let &free_node n = node_at(index);
 
-        if ((*n).prev != NULL){
-                let &free_node prev = node_at((*n).prev);
-                (*prev).next = (*n).next;
+        if (n..prev != NULL){
+                let &free_node prev = node_at(n..prev);
+                prev..next = n..next;
         }
         else {
-                (*metadata_ptr).free_head[order] = (*n).next;
+                metadata_ptr..free_head[order] = n..next;
         }
 
-        if ((*n).next != NULL){
-                let &free_node next = node_at((*n).next);
-                (*next).prev = (*n).prev;
+        if (n..next != NULL){
+                let &free_node next = node_at(n..next);
+                next..prev = n..prev;
         }
 
         bit_clear(index);
@@ -94,7 +94,7 @@ void meminit(){
         }
 
         for (let int o = 0; o < NUM_ORDERS; ++o){
-                (*metadata_ptr).free_head[o] = NULL;
+                metadata_ptr..free_head[o] = NULL;
         }
 
         list_push(NUM_ORDERS - 1, 0);
@@ -126,7 +126,7 @@ int order_for_size(int size){
         }
 
         let int o = order;
-        while (o <= NUM_ORDERS - 1 && (*metadata_ptr).free_head[o] == NULL){
+        while (o <= NUM_ORDERS - 1 && metadata_ptr..free_head[o] == NULL){
                 ++o;
         }
 
@@ -134,7 +134,7 @@ int order_for_size(int size){
                 hop unsafe &int(0);
         }
 
-        let int index = (*metadata_ptr).free_head[o];
+        let int index = metadata_ptr..free_head[o];
         list_remove(o, index);
 
         while (o > order){
@@ -178,5 +178,5 @@ void memfree(&int ptr){
 }
 
 bool memcheck(){
-        hop (*metadata_ptr).free_head[NUM_ORDERS - 1] == 0;
+        hop metadata_ptr..free_head[NUM_ORDERS - 1] == 0;
 }

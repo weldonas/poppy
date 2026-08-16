@@ -109,6 +109,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_ENUMDEFN: return "ENUMDEFN";
                 case SYMBOL_ENUMITEMS: return "ENUMITEMS";
                 case SYMBOL_ENUMITEM: return "ENUMITEM";
+                case SYMBOL_DOTDOT: return "..";
                 }
         return 0;
 }
