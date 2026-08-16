@@ -304,10 +304,6 @@ struct RESULT(token_list) lex(FILE *file){
                                 data.type = SYMBOL_RBRACKET;
                                 data.val_len = 1;
                                 break;
-                        case '.':
-                                data.type = SYMBOL_DOT;
-                                data.val_len = 1;
-                                break;
                         case '^':
                                 data.type = SYMBOL_BXOR;
                                 data.val_len = 1;
@@ -371,6 +367,10 @@ struct RESULT(token_list) lex(FILE *file){
                         case '=':
                                 map[0] = (struct character_symbol_map){.expected = '=', .if_expected = SYMBOL_EQ};
                                 data = find_prefixed_type(file, map, 1, SYMBOL_ASSIGN, val);
+                                break;
+                        case '.':
+                                map[0] = (struct character_symbol_map){.expected = '.', .if_expected = SYMBOL_DOTDOT};
+                                data = find_prefixed_type(file, map, 1, SYMBOL_DOT, val);
                                 break;
                         default:
                                 if (is_alphabetic(val[0])){

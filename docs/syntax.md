@@ -111,6 +111,7 @@ $$\begin{align*}
 \text{unaryexpr} &\rightarrow \text{memberexpr}  \\
 \text{memberexpr} &\rightarrow \text{memberexpr LBRACKET expr RBRACKET}  \\
 \text{memberexpr} &\rightarrow \text{memberexpr DOT IDENTIFIER} \\
+\text{memberexpr} &\rightarrow \text{memberexpr DOTDOT IDENTIFIER} \\
 \text{memberexpr} &\rightarrow \text{baseexpr} \\
 \text{baseexpr} &\rightarrow \text{LPAREN expr RPAREN}  \\
 \text{baseexpr} &\rightarrow \text{TRUE}  \\
@@ -143,7 +144,7 @@ $$\begin{align*}
 
 Note that the rules above yield the following operator precedence classes, which are mostly modelled off of those for C
 
-Precedence 1 ($\text{memberexpr}$): `[]`, `.`
+Precedence 1 ($\text{memberexpr}$): `[]`, `.`, `..`
 
 Precedence 2 ($\text{unaryexpr}$): `++`, `--`, `-` (as negation operator), `!`, `~`, `*` (as dereference operator), `&` (as reference operator)
 

@@ -542,6 +542,15 @@ char *generate_memberexpr(const struct parse_tree *tree, struct codegen_params *
                 );
         }
 
+        if (tree->children->head->next->data->data.type == SYMBOL_DOTDOT){
+                char *address = generate_address(tree, params);
+                return concat(3, 
+                        address, 
+                        mov(REG_SCRATCH, REG_RESULT),
+                        get_bytes_addr(REG_RESULT, REG_SCRATCH, tree->type->byte_count) 
+                );
+        }
+
         assert(0);
         return NULL;
 }
@@ -674,6 +683,21 @@ char *generate_address(const struct parse_tree *tree, struct codegen_params *par
                 size_t field_offset = record_type_offset(record_tree->type, field_tree->data.value);
 
                 char *record = generate_address(record_tree, params);
+
+                return concat(3,
+                        record,
+                        movi(REG_SCRATCH, field_offset),
+                        add(REG_RESULT, REG_RESULT, REG_SCRATCH)
+                );
+        }
+
+        if (tree->children->head->next->data->data.type == SYMBOL_DOTDOT){
+                const struct parse_tree *pointer_tree; load_child_at(pointer_tree, tree, 0);
+                const struct parse_tree *field_tree; load_child_at(field_tree, tree, 2);
+                size_t field_offset = record_type_offset(pointer_tree->type->referenced_type, field_tree->data.value);
+
+                // generating address of record == generating value of pointer to record
+                char *record = generate_value(pointer_tree, params);
 
                 return concat(3,
                         record,
