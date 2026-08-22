@@ -1,0 +1,742 @@
+!!munch poppystring
+!!munch poppyio
+
+let int MAX_TOKEN_LENGTH = 127
+
+enum symbol (
+        SYMBOL_NULL,
+        !!- terminal symbols
+        SYMBOL_LPAREN,     !!- (
+        SYMBOL_RPAREN,     !!- )
+        SYMBOL_LBRACE,     !!- {
+        SYMBOL_RBRACE,     !!- }
+        SYMBOL_INC,        !!- ++
+        SYMBOL_DEC,        !!- --
+        SYMBOL_AND,        !!- &&
+        SYMBOL_OR,         !!- ||
+        SYMBOL_NOT,        !!- !
+        SYMBOL_PLUS,       !!- +
+        SYMBOL_MINUS,      !!- -
+        SYMBOL_STAR,       !!- *
+        SYMBOL_DIVIDE,     !!- /
+        SYMBOL_MOD,        !!- %
+        SYMBOL_LT,         !!- <
+        SYMBOL_GT,         !!- >
+        SYMBOL_LE,         !!- <=
+        SYMBOL_GE,         !!- >=
+        SYMBOL_EQ,         !!- ==
+        SYMBOL_NE,         !!- !=
+        SYMBOL_ASSIGN,     !!- =
+        SYMBOL_COMMA,      !!- ,
+        SYMBOL_SEMICOLON,  !!- ;
+        SYMBOL_LBRACKET,   !!- [
+        SYMBOL_RBRACKET,   !!- ]
+        SYMBOL_DOT,        !!- .
+        SYMBOL_DOTDOT,     !!- ..
+        SYMBOL_AMP,        !!- &
+        SYMBOL_BOR,        !!- |
+        SYMBOL_BXOR,       !!- ^
+        SYMBOL_BLEFT,      !!- <<
+        SYMBOL_BRIGHT,     !!- >>
+        SYMBOL_BNOT,       !!- ~
+        SYMBOL_ASM,
+        SYMBOL_BOOL,
+        SYMBOL_CHAR,
+        SYMBOL_ELSE,
+        SYMBOL_ENUM,
+        SYMBOL_FALSE,
+        SYMBOL_FOR,
+        SYMBOL_HOP,
+        SYMBOL_IF,
+        SYMBOL_INT,
+        SYMBOL_LET,
+        SYMBOL_TRUE,
+        SYMBOL_VOID,
+        SYMBOL_WHILE,
+        SYMBOL_IDENTIFIER,
+        SYMBOL_CONSTANT,
+        SYMBOL_CHARLIT,
+        SYMBOL_STRINGLIT,
+        SYMBOL_DECLARE,
+        SYMBOL_RECORD,
+        SYMBOL_UNSAFE,
+        SYMBOL_SAFE,
+        SYMBOL_END,         !!- end of input
+        !!- non-terminal symbols
+        SYMBOL_PROGRAM,
+        SYMBOL_DEFNDECLS,
+        SYMBOL_FNDEFN,
+        SYMBOL_TYPE,
+        SYMBOL_OPTPARAMS,
+        SYMBOL_STMTS,
+        SYMBOL_PARAMS,
+        SYMBOL_PARAM,
+        SYMBOL_STMT,
+        SYMBOL_SEMISTMT,
+        SYMBOL_EXPR,
+        SYMBOL_OREXPR,
+        SYMBOL_ANDEXPR,
+        SYMBOL_EQEXPR,
+        SYMBOL_COMPEXPR,
+        SYMBOL_BOREXPR,
+        SYMBOL_BXOREXPR,
+        SYMBOL_BANDEXPR,
+        SYMBOL_BSHIFTEXPR,
+        SYMBOL_ADDEXPR,
+        SYMBOL_MULTEXPR,
+        SYMBOL_UNARYEXPR,
+        SYMBOL_MEMBEREXPR,
+        SYMBOL_BASEEXPR,
+        SYMBOL_OPTELSE,
+        SYMBOL_OPTARGS,
+        SYMBOL_ARGS,
+        SYMBOL_VARDEC,
+        SYMBOL_VARASST,
+        SYMBOL_RET,
+        SYMBOL_CALL,
+        SYMBOL_IFSTMT,
+        SYMBOL_WHILESTMT,
+        SYMBOL_FORSTMT,
+        SYMBOL_BODY,
+        SYMBOL_SIGNATURE,
+        SYMBOL_DECL,
+        SYMBOL_DEFNDECL,
+        SYMBOL_FIELDS,
+        SYMBOL_FIELD,
+        SYMBOL_RECDEFN,
+        SYMBOL_CAST,
+        SYMBOL_GLOBALVARDEC,
+        SYMBOL_ENUMDEFN,
+        SYMBOL_ENUMITEMS,
+        SYMBOL_ENUMITEM,
+        SYMBOL_COUNT
+)
+
+string symbol_name(symbol s){
+        if (s == SYMBOL_NULL){ hop "NULL"; }
+        if (s == SYMBOL_LPAREN){ hop "("; }   
+        if (s == SYMBOL_RPAREN){ hop ")"; }   
+        if (s == SYMBOL_LBRACE){ hop "{"; }   
+        if (s == SYMBOL_RBRACE){ hop "}"; }   
+        if (s == SYMBOL_INC){ hop "++"; }       
+        if (s == SYMBOL_DEC){ hop "--"; }       
+        if (s == SYMBOL_AND){ hop "&&"; }       
+        if (s == SYMBOL_OR){ hop "||"; }        
+        if (s == SYMBOL_NOT){ hop "!"; }      
+        if (s == SYMBOL_PLUS){ hop "+"; }     
+        if (s == SYMBOL_MINUS){ hop "-"; }    
+        if (s == SYMBOL_STAR){ hop "*"; }     
+        if (s == SYMBOL_DIVIDE){ hop "/"; }   
+        if (s == SYMBOL_MOD){ hop "%"; }      
+        if (s == SYMBOL_LT){ hop "<"; }       
+        if (s == SYMBOL_GT){ hop ">"; }       
+        if (s == SYMBOL_LE){ hop "<="; }        
+        if (s == SYMBOL_GE){ hop ">="; }        
+        if (s == SYMBOL_EQ){ hop "=="; }        
+        if (s == SYMBOL_NE){ hop "!="; }        
+        if (s == SYMBOL_ASSIGN){ hop "="; }   
+        if (s == SYMBOL_COMMA){ hop ","; }    
+        if (s == SYMBOL_SEMICOLON){ hop ";"; }
+        if (s == SYMBOL_LBRACKET){ hop "["; } 
+        if (s == SYMBOL_RBRACKET){ hop "]"; } 
+        if (s == SYMBOL_DOT){ hop "."; }      
+        if (s == SYMBOL_DOTDOT){ hop ".."; }    
+        if (s == SYMBOL_AMP){ hop "&"; }      
+        if (s == SYMBOL_BOR){ hop "|"; }      
+        if (s == SYMBOL_BXOR){ hop "^"; }     
+        if (s == SYMBOL_BLEFT){ hop "<<"; }     
+        if (s == SYMBOL_BRIGHT){ hop ">>"; }    
+        if (s == SYMBOL_BNOT){ hop "~"; }     
+        if (s == SYMBOL_ASM){ hop "ASM"; }
+        if (s == SYMBOL_BOOL){ hop "BOOL"; }
+        if (s == SYMBOL_CHAR){ hop "CHAR"; }
+        if (s == SYMBOL_ELSE){ hop "ELSE"; }
+        if (s == SYMBOL_ENUM){ hop "ENUM"; }
+        if (s == SYMBOL_FALSE){ hop "FALSE"; }
+        if (s == SYMBOL_FOR){ hop "FOR"; }
+        if (s == SYMBOL_HOP){ hop "HOP"; }
+        if (s == SYMBOL_IF){ hop "IF"; }
+        if (s == SYMBOL_INT){ hop "INT"; }
+        if (s == SYMBOL_LET){ hop "LET"; }
+        if (s == SYMBOL_TRUE){ hop "TRUE"; }
+        if (s == SYMBOL_VOID){ hop "VOID"; }
+        if (s == SYMBOL_WHILE){ hop "WHILE"; }
+        if (s == SYMBOL_IDENTIFIER){ hop "IDENTIFIER"; }
+        if (s == SYMBOL_CONSTANT){ hop "CONSTANT"; }
+        if (s == SYMBOL_CHARLIT){ hop "CHARLIT"; }
+        if (s == SYMBOL_STRINGLIT){ hop "STRINGLIT"; }
+        if (s == SYMBOL_DECLARE){ hop "DECLARE"; }
+        if (s == SYMBOL_RECORD){ hop "RECORD"; }
+        if (s == SYMBOL_UNSAFE){ hop "UNSAFE"; }
+        if (s == SYMBOL_SAFE){ hop "SAFE"; }
+        if (s == SYMBOL_END){ hop "END"; }
+        if (s == SYMBOL_PROGRAM){ hop "PROGRAM"; }
+        if (s == SYMBOL_DEFNDECLS){ hop "DEFNDECLS"; }
+        if (s == SYMBOL_FNDEFN){ hop "FNDEFN"; }
+        if (s == SYMBOL_TYPE){ hop "TYPE"; }
+        if (s == SYMBOL_OPTPARAMS){ hop "OPTPARAMS"; }
+        if (s == SYMBOL_STMTS){ hop "STMTS"; }
+        if (s == SYMBOL_PARAMS){ hop "PARAMS"; }
+        if (s == SYMBOL_PARAM){ hop "PARAM"; }
+        if (s == SYMBOL_STMT){ hop "STMT"; }
+        if (s == SYMBOL_SEMISTMT){ hop "SEMISTMT"; }
+        if (s == SYMBOL_EXPR){ hop "EXPR"; }
+        if (s == SYMBOL_OREXPR){ hop "OREXPR"; }
+        if (s == SYMBOL_ANDEXPR){ hop "ANDEXPR"; }
+        if (s == SYMBOL_EQEXPR){ hop "EQEXPR"; }
+        if (s == SYMBOL_COMPEXPR){ hop "COMPEXPR"; }
+        if (s == SYMBOL_BOREXPR){ hop "BOREXPR"; }
+        if (s == SYMBOL_BXOREXPR){ hop "BXOREXPR"; }
+        if (s == SYMBOL_BANDEXPR){ hop "BANDEXPR"; }
+        if (s == SYMBOL_BSHIFTEXPR){ hop "BSHIFTEXPR"; }
+        if (s == SYMBOL_ADDEXPR){ hop "ADDEXPR"; }
+        if (s == SYMBOL_MULTEXPR){ hop "MULTEXPR"; }
+        if (s == SYMBOL_UNARYEXPR){ hop "UNARYEXPR"; }
+        if (s == SYMBOL_MEMBEREXPR){ hop "MEMBEREXPR"; }
+        if (s == SYMBOL_BASEEXPR){ hop "BASEEXPR"; }
+        if (s == SYMBOL_OPTELSE){ hop "OPTELSE"; }
+        if (s == SYMBOL_OPTARGS){ hop "OPTARGS"; }
+        if (s == SYMBOL_ARGS){ hop "ARGS"; }
+        if (s == SYMBOL_VARDEC){ hop "VARDEC"; }
+        if (s == SYMBOL_VARASST){ hop "VARASST"; }
+        if (s == SYMBOL_RET){ hop "RET"; }
+        if (s == SYMBOL_CALL){ hop "CALL"; }
+        if (s == SYMBOL_IFSTMT){ hop "IFSTMT"; }
+        if (s == SYMBOL_WHILESTMT){ hop "WHILESTMT"; }
+        if (s == SYMBOL_FORSTMT){ hop "FORSTMT"; }
+        if (s == SYMBOL_BODY){ hop "BODY"; }
+        if (s == SYMBOL_SIGNATURE){ hop "SIGNATURE"; }
+        if (s == SYMBOL_DECL){ hop "DECL"; }
+        if (s == SYMBOL_DEFNDECL){ hop "DEFNDECL"; }
+        if (s == SYMBOL_FIELDS){ hop "FIELDS"; }
+        if (s == SYMBOL_FIELD){ hop "FIELD"; }
+        if (s == SYMBOL_RECDEFN){ hop "RECDEFN"; }
+        if (s == SYMBOL_CAST){ hop "CAST"; }
+        if (s == SYMBOL_GLOBALVARDEC){ hop "GLOBALVARDEC"; }
+        if (s == SYMBOL_ENUMDEFN){ hop "ENUMDEFN"; }
+        if (s == SYMBOL_ENUMITEMS){ hop "ENUMITEMS"; }
+        if (s == SYMBOL_ENUMITEM){ hop "ENUMITEM"; }
+        if (s == SYMBOL_COUNT){ hop "COUNT"; }
+        hop "";
+}
+
+record token (
+        symbol type,
+        string value
+)
+
+char fgetc(&&char file){
+        let char ret = **file;
+        *file = unsafe &char(unsafe int(*file) + 1);
+        hop ret;
+}
+
+bool feof(&&char file){
+        hop **file == safe char(255);
+}
+
+bool is_numeric_char(char c){
+        hop c >= '0' && c <= '9';
+}
+
+bool is_alphabetic(char c){
+        hop (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+}
+
+record lex_data (
+        symbol type,
+        char excess,
+        int val_len
+)
+
+record character_symbol_map (
+        char expected,
+        symbol if_expected
+)
+
+lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_len, symbol not_second, &(char[127]) val){
+        let lex_data ret;
+
+        ret.excess = safe char(0);
+        ret.val_len = 1;
+        ret.type = not_second;
+
+        if (feof(file)){
+                hop ret;
+        }
+
+        let char second = fgetc(file);
+        for (let int i = 0; i < map_len; ++i){
+                if (second == map[i].expected){
+                        (*val)[1] = second;
+                        ret.val_len = 2;
+                        ret.type = map[i].if_expected;
+
+                        hop ret;
+                }
+        }
+
+        ret.excess = second;
+        hop ret;
+}
+
+lex_data find_numeric_value(&&char file, &(char[127]) val){
+        let lex_data ret;
+        ret.type = SYMBOL_CONSTANT;
+        ret.excess = safe char(0);
+        ret.val_len = 1;
+
+        while (!feof(file) && ret.val_len <= MAX_TOKEN_LENGTH && is_numeric_char((*val)[ret.val_len - 1])){
+                (*val)[ret.val_len] = fgetc(file);
+                ++ret.val_len;
+        }
+
+        if (!feof(file)){
+                --ret.val_len;
+                ret.excess = (*val)[ret.val_len];
+        }
+
+        hop ret;
+}
+
+lex_data find_alphanumeric_value (&&char file, &(char[127]) val){
+        let lex_data ret;
+        ret.excess = safe char(0);
+        ret.val_len = 1;
+
+        while (!feof(file) && ret.val_len <= MAX_TOKEN_LENGTH && (is_numeric_char((*val)[ret.val_len - 1]) || is_alphabetic((*val)[ret.val_len - 1]))){
+                (*val)[ret.val_len] = **file;
+                *file = unsafe &char(unsafe int(*file) + 1);
+                ++ret.val_len;
+        }
+
+        if (!feof(file)){
+                --ret.val_len;
+                ret.excess = (*val)[ret.val_len];
+        }
+
+        let string val_str;
+        val_str.ptr = &((*val)[0]);
+        val_str.length = ret.val_len;
+
+        ret.type = SYMBOL_IDENTIFIER;
+        if (streq(val_str, "if")){
+                ret.type = SYMBOL_IF;
+        }
+
+        if (streq(val_str, "asm")){
+                ret.type = SYMBOL_ASM;
+        }
+        if (streq(val_str, "bool")){
+                ret.type = SYMBOL_BOOL;
+        }
+        if (streq(val_str, "char")){
+                ret.type = SYMBOL_CHAR;
+        }
+        if (streq(val_str, "declare")){
+                ret.type = SYMBOL_DECLARE;
+        }
+        if (streq(val_str, "else")){
+                ret.type = SYMBOL_ELSE;
+        }
+        if (streq(val_str, "enum")){
+                ret.type = SYMBOL_ENUM;
+        }
+        if (streq(val_str, "false")){
+                ret.type = SYMBOL_FALSE;
+        }
+        if (streq(val_str, "for")){
+                ret.type = SYMBOL_FOR;
+        }
+        if (streq(val_str, "hop")){
+                ret.type = SYMBOL_HOP;
+        }
+        if (streq(val_str, "if")){
+                ret.type = SYMBOL_IF;
+        }
+        if (streq(val_str, "int")){
+                ret.type = SYMBOL_INT;
+        }
+        if (streq(val_str, "let")){
+                ret.type = SYMBOL_LET;
+        }
+        if (streq(val_str, "record")){
+                ret.type = SYMBOL_RECORD;
+        }
+        if (streq(val_str, "safe")){
+                ret.type = SYMBOL_SAFE;
+        }
+        if (streq(val_str, "true")){
+                ret.type = SYMBOL_TRUE;
+        }
+        if (streq(val_str, "unsafe")){
+                ret.type = SYMBOL_UNSAFE;
+        }
+        if (streq(val_str, "void")){
+                ret.type = SYMBOL_VOID;
+        }
+        if (streq(val_str, "while")){
+                ret.type = SYMBOL_WHILE;
+        }
+        hop ret;
+}
+
+bool lex_single_char(&&char file, &char chr, &bool escaped){
+        !!- precondition: !feof(file);
+        if (escaped != unsafe &bool(0)){
+                *escaped = false;
+        }
+
+        *chr = fgetc(file);
+
+        if (*chr == '\\'){
+                if (feof(file)){
+                        hop false;
+                }
+
+                if (escaped != unsafe &bool(0)){
+                        *escaped = true;
+                }
+
+                let char next = fgetc(file);
+                if (next == 'a'){
+                        *chr = '\a';
+                        hop true;
+                }
+                if (next == 'b'){
+                        *chr = '\b';
+                        hop true;
+                }
+                if (next == 'f'){
+                        *chr = '\f';
+                        hop true;
+                }
+                if (next == 'n'){
+                        *chr = '\n';
+                        hop true;
+                }
+                if (next == 'r'){
+                        *chr = '\r';
+                        hop true;
+                }
+                if (next == 't'){
+                        *chr = '\t';
+                        hop true;
+                }
+                if (next == 'v'){
+                        *chr = '\v';
+                        hop true;
+                }
+                if (next == '\\'){
+                        *chr = '\\';
+                        hop true;
+                }
+                if (next == '\''){
+                        *chr = '\'';
+                        hop true;
+                }
+                if (next == '\"'){
+                        *chr = '\"';
+                        hop true;
+                }
+
+                hop false;
+        }
+
+        hop true;
+}
+
+bool lex_char_literal(&&char file, &(char[127]) val){
+        if (feof(file)){
+                hop false;
+        }
+
+        if (!lex_single_char(file, &((*val)[0]), unsafe &bool(0))){
+                hop false;
+        }
+
+        if (feof(file) || fgetc(file) != '\''){
+                hop false;
+        }
+        
+        hop true;
+}
+
+int lex_string_literal(&&char file, &(char[127]) val){
+        !!- ensure we have char after opening single quote
+        if (feof(file)){
+                hop -1;
+        }
+
+        let int i = 0;
+        let bool escaped;
+        let bool first = true;
+
+        while (first || (((*val)[i - 1] != '\"') || escaped) && (i <= MAX_TOKEN_LENGTH)){
+                if (feof(file)){
+                        hop -1;
+                }
+                if (!lex_single_char(file, &((*val)[i]), &escaped)){
+                        hop -1;
+                }
+                ++i;
+                first = false;
+        }
+
+        if (i - 1 > MAX_TOKEN_LENGTH){
+                hop -1;
+        }
+
+        hop i - 1;
+}
+
+bool isspace(char c){
+        hop c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
+}
+
+token[1000] lex(&&char file){
+        let char[127] val;
+        val[0] = safe char(0);
+        let token[1000] list;
+        let int token_index = 0;
+
+        while(!feof(file)){
+                if (val[0] == safe char(0)){
+                        val[0] = fgetc(file);
+                }
+
+                let lex_data data;
+                data.excess = safe char(0);
+                data.type = SYMBOL_NULL;
+
+                if (isspace(val[0])){
+                        val[0] = safe char(0);
+                }
+                else {
+                        let character_symbol_map[2] map;
+
+                        if (val[0] == safe char(255)){
+                                data.type = SYMBOL_END;
+                                data.val_len = 0;
+                        }
+                        if (val[0] == '('){
+                                data.type = SYMBOL_LPAREN;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == ')'){
+                                data.type = SYMBOL_RPAREN;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '{'){
+                                data.type = SYMBOL_LBRACE;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '}'){
+                                data.type = SYMBOL_RBRACE;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '*'){
+                                data.type = SYMBOL_STAR;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '/'){
+                                data.type = SYMBOL_DIVIDE;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '%'){
+                                data.type = SYMBOL_MOD;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == ','){
+                                data.type = SYMBOL_COMMA;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == ';'){
+                                data.type = SYMBOL_SEMICOLON;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '['){
+                                data.type = SYMBOL_LBRACKET;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == ']'){
+                                data.type = SYMBOL_RBRACKET;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '^'){
+                                data.type = SYMBOL_BXOR;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '~'){
+                                data.type = SYMBOL_BNOT;
+                                data.val_len = 1;
+                        }
+                        if (val[0] == '\''){
+                                data.val_len = 1;
+                                if (lex_char_literal(file, &val)){
+                                        data.type = SYMBOL_CHARLIT;
+                                }
+                                else {
+                                        prints("error");
+                                        0/0;
+                                }
+                        }
+                        if (val[0] == '\"'){
+                                let int len = lex_string_literal(file, &val);
+                                if (len >= 0){
+                                        data.type = SYMBOL_STRINGLIT;
+                                        data.val_len = len;
+                                }
+                                else {
+                                        prints("error");
+                                        0/0;
+                                }
+                        }
+                        if (val[0] == '+'){
+                                map[0].expected = '+';
+                                map[0].if_expected = SYMBOL_INC;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_PLUS, &val);
+                        }
+                        if (val[0] == '-'){
+                                map[0].expected = '-';
+                                map[0].if_expected = SYMBOL_DEC;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_MINUS, &val);
+                        }
+                        if (val[0] == '&'){
+                                map[0].expected = '&';
+                                map[0].if_expected = SYMBOL_AND;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_AMP, &val);
+                        }
+                        if (val[0] == '|'){
+                                map[0].expected = '|';
+                                map[0].if_expected = SYMBOL_OR;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_BOR, &val);
+                        }
+                        if (val[0] == '!'){
+                                map[0].expected = '=';
+                                map[0].if_expected = SYMBOL_NE;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_NOT, &val);
+                        }
+                        if (val[0] == '>'){
+                                map[0].expected = '=';
+                                map[0].if_expected = SYMBOL_GE;
+                                map[1].expected = '>';
+                                map[1].if_expected = SYMBOL_BRIGHT;
+                                data = find_prefixed_type(file, map, 2, SYMBOL_GT, &val);
+                        }
+                        if (val[0] == '<'){
+                                map[0].expected = '=';
+                                map[0].if_expected = SYMBOL_LE;
+                                map[1].expected = '<';
+                                map[1].if_expected = SYMBOL_BLEFT;
+                                data = find_prefixed_type(file, map, 2, SYMBOL_LT, &val);
+                        }
+                        if (val[0] == '='){
+                                map[0].expected = '=';
+                                map[0].if_expected = SYMBOL_EQ;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_ASSIGN, &val);
+                        }
+                        if (val[0] == '.'){
+                                map[0].expected = '.';
+                                map[0].if_expected = SYMBOL_DOTDOT;
+                                data = find_prefixed_type(file, map, 1, SYMBOL_DOT, &val);
+                        }
+
+                        if (data.type == SYMBOL_NULL){
+                                if (is_alphabetic(val[0])){
+                                        data = find_alphanumeric_value(file, &val);
+                                }
+                                else {
+                                        if (is_numeric_char(val[0])){
+                                                data = find_numeric_value(file, &val);
+                                        }
+                                        else {
+                                                prints("error");
+                                                0/0;
+                                        }
+                                }
+                        }
+
+                        list[token_index].type = data.type;
+                        if (list[token_index].type == SYMBOL_IDENTIFIER || list[token_index].type == SYMBOL_CONSTANT || list[token_index].type == SYMBOL_CHARLIT || list[token_index].type == SYMBOL_STRINGLIT){
+                                list[token_index].value.length = data.val_len;
+                                list[token_index].value.ptr = safe &char(memalloc(data.val_len));
+                                prints("alloc for ");
+                                print(token_index);
+                                println();
+                                for(let int i = 0; i < data.val_len; ++i){
+                                        let &char ptr = unsafe &char(unsafe int(list[token_index].value.ptr) + i);
+                                        *ptr = val[i];
+                                }
+                        }
+                        else {
+                                list[token_index].value.length = 0;
+                        }
+
+                        val[0] = data.excess;
+                        data.excess = safe char(0);
+                        ++token_index;
+                }
+        }
+
+        list[token_index].type = SYMBOL_END;
+        hop list;
+}
+
+void free_tokens(&(token[1000]) tokens){
+        println();
+        let int token_index = 0;
+        while ((*tokens)[token_index].type != SYMBOL_END){
+                if ((*tokens)[token_index].type == SYMBOL_IDENTIFIER ||
+                    (*tokens)[token_index].type == SYMBOL_CONSTANT ||
+                    (*tokens)[token_index].type == SYMBOL_CHARLIT ||
+                    (*tokens)[token_index].type == SYMBOL_STRINGLIT){
+                        prints(" free for ");
+                        print(token_index);
+                        println();
+                        strfree((*tokens)[token_index].value);
+                }
+                ++token_index;
+        }
+}
+
+void main(){
+        meminit();
+        let &char file = safe &char(memalloc(1000));
+        let &char file_base = file;
+        let int i = 0;
+        let char c = scanc();
+        while (c != safe char(255)){
+                if (i >= 1000){
+                        prints("error: input too long");
+                        hop;
+                        0/0;
+                }
+                let &char addr = unsafe &char(unsafe int(file) + i);
+                *addr = c;
+                ++i;
+                c = scanc();
+        }
+
+        let token[1000] tokens = lex(&file);
+        let int token_index = 0;
+        while (tokens[token_index].type != SYMBOL_END){
+                if (tokens[token_index].type == SYMBOL_IDENTIFIER || tokens[token_index].type == SYMBOL_CONSTANT || tokens[token_index].type == SYMBOL_CHARLIT || tokens[token_index].type == SYMBOL_STRINGLIT){
+                        prints(tokens[token_index].value);
+                }
+                else {
+                        prints(symbol_name(tokens[token_index].type));
+                }
+
+                ++token_index;
+        }
+        memfree(safe &int(file_base));
+        free_tokens(&tokens);
+
+        if (memcheck()){
+                prints("\nall freed");
+        }
+        else {
+                prints("\nnot all freed");
+        }
+}
