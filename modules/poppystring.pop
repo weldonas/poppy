@@ -13,7 +13,9 @@ bool streq(string s1, string s2){
         let &char ptr2 = s2.ptr;
 
         for (let int i = 0; i < s1.length; ++i){
-                if (*ptr1 != *ptr2){
+                let char c1 = *ptr1;
+                let char c2 = *ptr2;
+                if (c1 != c2){
                         hop false;
                 }
 
