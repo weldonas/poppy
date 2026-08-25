@@ -220,6 +220,11 @@ string symbol_name(symbol s){
         hop "";
 }
 
+void error(string s){
+        prints(s);
+        *unsafe &int(0);
+}
+
 record token (
         symbol type,
         string value
@@ -577,8 +582,7 @@ token[1000] lex(&&char file){
                                         data.type = SYMBOL_CHARLIT;
                                 }
                                 else {
-                                        prints("error");
-                                        0/0;
+                                        error("could not lex char literal");
                                 }
                         }
                         if (val[0] == '\"'){
@@ -588,8 +592,7 @@ token[1000] lex(&&char file){
                                         data.val_len = len;
                                 }
                                 else {
-                                        prints("error");
-                                        0/0;
+                                        error("could not lex string literal");
                                 }
                         }
                         if (val[0] == '+'){
@@ -651,8 +654,7 @@ token[1000] lex(&&char file){
                                                 data = find_numeric_value(file, &val);
                                         }
                                         else {
-                                                prints("error");
-                                                0/0;
+                                                error("data type is null");
                                         }
                                 }
                         }
@@ -706,17 +708,21 @@ void main(){
         let &char file_base = file;
         let int i = 0;
         let char c = scanc();
+        let &char addr = file;
         while (c != safe char(255)){
                 if (i >= 1000){
                         prints("error: input too long");
                         hop;
                         0/0;
                 }
-                let &char addr = unsafe &char(unsafe int(file) + i);
+
+                addr = unsafe &char(unsafe int(file_base) + i);
                 *addr = c;
                 ++i;
                 c = scanc();
         }
+        !!- add terminating character
+        *addr = c;
 
         let token[1000] tokens = lex(&file);
         let int token_index = 0;
