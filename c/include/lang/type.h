@@ -109,6 +109,7 @@ const struct type* const enum_type(const char *name, struct LIST(string) *items)
 const struct LIST(string) *query_enum_items(const char *name);
 
 const struct type *make_assignable(const struct type *type);
+const struct type *make_mutable(const struct type *type);
 
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);

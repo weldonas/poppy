@@ -9,10 +9,10 @@ bool streq(string s1, string s2){
                 hop false;
         }
 
-        let &char ptr1 = s1.ptr;
-        let &char ptr2 = s2.ptr;
+        let mut &char ptr1 = s1.ptr;
+        let mut &char ptr2 = s2.ptr;
 
-        for (let int i = 0; i < s1.length; ++i){
+        for (let mut int i = 0; i < s1.length; ++i){
                 let char c1 = *ptr1;
                 let char c2 = *ptr2;
                 if (c1 != c2){
@@ -38,17 +38,17 @@ string strconcat(string s1, string s2){
         new_str.length = total_length;
         new_str.ptr = safe &char(memalloc(bytes));
 
-        let &char new_ptr = new_str.ptr;
-        let &char s1_ptr = s1.ptr;
-        let &char s2_ptr = s2.ptr;
+        let mut &mut char new_ptr = new_str.ptr;
+        let mut &char s1_ptr = s1.ptr;
+        let mut &char s2_ptr = s2.ptr;
 
-        for (let int i = 0; i < s1.length; ++i){
+        for (let mut int i = 0; i < s1.length; ++i){
                 *new_ptr = *s1_ptr;
                 new_ptr = unsafe &char(unsafe int(new_ptr) + 1);
                 s1_ptr = unsafe &char(unsafe int(s1_ptr) + 1);
         }
 
-        for (let int i = 0; i < s2.length; ++i){
+        for (let mut int i = 0; i < s2.length; ++i){
                 *new_ptr = *s2_ptr;
                 new_ptr = unsafe &char(unsafe int(new_ptr) + 1);
                 s2_ptr = unsafe &char(unsafe int(s2_ptr) + 1);

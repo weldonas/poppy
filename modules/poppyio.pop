@@ -25,8 +25,8 @@ void println(){
 }
 
 void prints(string s){
-    let &char ptr = s.ptr;
-    for (let int i = 0; i < s.length; ++i){
+    let mut &char ptr = s.ptr;
+    for (let mut int i = 0; i < s.length; ++i){
         printc(*ptr);
         ptr = unsafe &char(unsafe int(ptr) + 1);
     }
@@ -46,15 +46,15 @@ bool isdigit(char c){
 
 int scan(){ 
     !!- this should eventually be implemented in assembly once we do more work with string/buffer manip :,)
-    let char c = scanc();
-    let int sign = 1;
+    let mut char c = scanc();
+    let mut int sign = 1;
     
     if (c == '-'){
         c = scanc();
         sign = -1;
     }
 
-    let int total = sign * (c - '0');
+    let mut int total = sign * (c - '0');
     c = scanc();
 
     while (isdigit(c)){

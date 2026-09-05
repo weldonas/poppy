@@ -51,6 +51,7 @@ enum symbol : uint8_t {
         SYMBOL_IF,
         SYMBOL_INT,
         SYMBOL_LET,
+        SYMBOL_MUT,
         SYMBOL_TRUE,
         SYMBOL_VOID,
         SYMBOL_WHILE,

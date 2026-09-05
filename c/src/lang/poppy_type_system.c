@@ -6,7 +6,7 @@
 #include "lang/type_system.h"
 #include <assert.h>
 
-#define RULE_COUNT 89
+#define RULE_COUNT 90
 
 const struct type_system *poppy_type_system = NULL;
 const struct type_rule *rules[RULE_COUNT];
@@ -50,6 +50,11 @@ bool is_non_null_returnable_type(const struct type *const type){
 bool is_non_null_assignable_type(const struct type *const type){
         return type && (type->assignability != NOT_ASSIGNABLE);
 }
+
+bool is_non_null_mutable_type(const struct type *const type){
+        return type && (type->assignability == ASSIGNABLE_AND_MUTABLE);
+}
+
 
 bool is_non_null_pointer_type(const struct type *const type){
         return type && (type->category == CATEGORY_POINTER);
@@ -363,9 +368,9 @@ const struct type *deduce_dereference(const struct parse_tree *tree){
         return type_tree->type->referenced_type;
 }
 
-const struct type *deduce_vardec(const struct parse_tree *tree){
-        // const struct parse_tree *type_tree; load_child_at(type_tree, tree, 1);
-        return void_type();
+const struct type *deduce_mutable(const struct parse_tree *tree){
+        const struct type *base_type = tree->children->head->next->data->type;
+        return make_mutable(base_type);
 }
 
 const struct type_system *const get_poppy_type_system(){
@@ -473,7 +478,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_types_equal_at_condition(0, 2);
-        conditions[3] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[3] = new_type_at_condition(0, is_non_null_mutable_type);
         rules[i] = new_type_rule(conditions, 4, void_type());
         ++i;
 
@@ -685,7 +690,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(2);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_INC);
         conditions[3] = new_type_at_condition(1, is_non_null_int_or_char_type);
-        conditions[4] = new_type_at_condition(1, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(1, is_non_null_mutable_type);
         rules[i] = new_child_type_rule(conditions, 5, 1);
         ++i;
 
@@ -693,7 +698,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(2);
         conditions[2] = new_symbol_at_condition(0, SYMBOL_DEC);
         conditions[3] = new_type_at_condition(1, is_non_null_int_or_char_type);
-        conditions[4] = new_type_at_condition(1, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(1, is_non_null_mutable_type);
         rules[i] = new_child_type_rule(conditions, 5, 1);
         ++i;
 
@@ -742,7 +747,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_PLUS);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -751,7 +756,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_MINUS);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -760,7 +765,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_STAR);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -769,7 +774,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_DIVIDE);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -778,7 +783,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_MOD);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_or_char_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -787,7 +792,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_AMP);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -796,7 +801,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_BXOR);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -805,7 +810,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_BOR);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -814,7 +819,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_BLEFT);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -823,7 +828,7 @@ const struct type_system *const get_poppy_type_system(){
         conditions[1] = new_length_condition(4);
         conditions[2] = new_symbol_at_condition(1, SYMBOL_BRIGHT);
         conditions[3] = new_types_equal_at_condition(0, 3);
-        conditions[4] = new_type_at_condition(0, is_non_null_assignable_type);
+        conditions[4] = new_type_at_condition(0, is_non_null_mutable_type);
         conditions[5] = new_type_at_condition(0, is_non_null_int_type);
         rules[i] = new_type_rule(conditions, 6, void_type());
         ++i;
@@ -897,6 +902,11 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
         conditions[1] = new_symbol_at_condition(0, SYMBOL_IDENTIFIER);
         rules[i] = new_deducer_type_rule(conditions, 2, deduce_record_type);
+        ++i;
+
+        conditions[0] = new_parent_symbol_condition(SYMBOL_TYPE);
+        conditions[1] = new_symbol_at_condition(0, SYMBOL_MUT);
+        rules[i] = new_deducer_type_rule(conditions, 2, deduce_mutable);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_RECDEFN);

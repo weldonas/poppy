@@ -110,6 +110,7 @@ char * symbol_name(enum symbol s){
                 case SYMBOL_ENUMITEMS: return "ENUMITEMS";
                 case SYMBOL_ENUMITEM: return "ENUMITEM";
                 case SYMBOL_DOTDOT: return "..";
+                case SYMBOL_MUT: return "mut";
                 }
         return 0;
 }

@@ -70,12 +70,12 @@ void add_builtin_types(){
 
         struct variable *ptr = malloc(sizeof(struct variable));
         ptr->string = "ptr";
-        ptr->type = pointer_type(char_type());
+        ptr->type = make_mutable(pointer_type(char_type()));
         append_list((&string_vars), ptr, variable);
 
         struct variable *length = malloc(sizeof(struct variable));
         length->string = "length";
-        length->type = int_type();
+        length->type = make_mutable(int_type());
         append_list((&string_vars), length, variable);
 
         string_ptr = record_type("string", string_vars);
@@ -405,6 +405,17 @@ const struct type *make_assignable(const struct type *type){
                         assert(0);
                         return NULL;
         }
+}
+
+const struct type *make_mutable(const struct type *type){
+        assert(type->byte_count != NOT_IN_MEMORY);
+
+        struct type *new = malloc(sizeof(struct type));
+        add_type(new);
+        memcpy(new, type, sizeof(struct type));
+
+        new->assignability = ASSIGNABLE_AND_MUTABLE;
+        return new;
 }
 
 bool equals_type(const struct type *t1, const struct type *t2){
