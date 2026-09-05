@@ -38,6 +38,12 @@ void free_variable(struct variable *v);
 void free_field(struct field *f);
 void free_enum_item(struct enum_item *i);
 
+enum assignability : uint8_t {
+    NOT_ASSIGNABLE,
+    ASSIGNABLE,
+    ASSIGNABLE_AND_MUTABLE
+};
+
 DEFINE_LIST(type);
 DEFINE_LIST(variable);
 DEFINE_LIST(field);
@@ -46,7 +52,7 @@ DEFINE_LIST(string);
 struct type {
     uint32_t byte_count;
     enum category category;
-    bool is_assignable;
+    enum assignability assignability;
     union{
         struct {
             char repr;
@@ -103,6 +109,7 @@ const struct type* const enum_type(const char *name, struct LIST(string) *items)
 const struct LIST(string) *query_enum_items(const char *name);
 
 const struct type *make_assignable(const struct type *type);
+const struct type *make_mutable(const struct type *type);
 
 bool equals_type(const struct type *t1, const struct type *t2);
 bool is_numeric(const struct type *type);

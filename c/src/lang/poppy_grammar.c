@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RULE_COUNT 124
+#define RULE_COUNT 125
 #define COMMA ,
 #define populate(lh_symbol, rh_symbols, ctr, grmr)                               \
         do {                                                                     \
@@ -59,6 +59,7 @@ const struct grammar * const get_poppy_grammar(){
         populate(SYMBOL_TYPE, {SYMBOL_AMP COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_AND COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
         populate(SYMBOL_TYPE, {SYMBOL_LPAREN COMMA SYMBOL_TYPE COMMA SYMBOL_RPAREN}, i, poppy_grammar); ++i;
+        populate(SYMBOL_TYPE, {SYMBOL_MUT COMMA SYMBOL_TYPE}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {}, i, poppy_grammar); ++i;
         populate(SYMBOL_OPTPARAMS, {SYMBOL_PARAMS}, i, poppy_grammar); ++i;
         populate(SYMBOL_PARAMS, {SYMBOL_PARAM COMMA SYMBOL_COMMA COMMA SYMBOL_PARAMS}, i, poppy_grammar); ++i;

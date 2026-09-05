@@ -30,6 +30,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{AMP type}\\
 \text{type} &\rightarrow \text{AND type}\\
 \text{type} &\rightarrow \text{LPAREN type RPAREN}\\
+\text{type} &\rightarrow \text{MUT type}\\
 \text{optparams} &\rightarrow \varnothing \\
 \text{optparams} &\rightarrow \text{params} \\
 \text{params} &\rightarrow \text{param COMMA params}  \\

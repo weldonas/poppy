@@ -9,17 +9,17 @@ let int NUM_ORDERS = 12
 let int NULL = -1
 
 record metadata (
-        int[12] free_head,
-        char[2048] order_of,
-        int[32] is_free         !!- 2048 / 64
+        mut int[12] free_head,
+        mut char[2048] order_of,
+        mut int[32] is_free         !!- 2048 / 64
 )
 
-let &metadata metadata_ptr = unsafe &metadata(asm("ldr x10, =__heapmeta"))
+let &mut metadata metadata_ptr = unsafe &metadata(asm("ldr x10, =__heapmeta"))
 let int heap_ptr = unsafe int(asm("ldr x10, =__heap"))
 
 record free_node (
-        int next,
-        int prev
+        mut int next,
+        mut int prev
 )
 
 &free_node node_at(int index){
@@ -52,7 +52,7 @@ int order_get(int index){
 }
 
 void list_push(int order, int index){
-        let &free_node n = node_at(index);
+        let &mut free_node n = node_at(index);
 
         n..prev = NULL;
         n..next = metadata_ptr..free_head[order];
@@ -88,12 +88,12 @@ void list_remove(int order, int index){
 
 void meminit(){
         !!- set all memory for metadata to 0 initially
-        for (let int i = 0; i < 12 + 256 + 32; ++i){
-                let &int ptr = unsafe &int(unsafe int(metadata_ptr) + 8 * i);
+        for (let mut int i = 0; i < 12 + 256 + 32; ++i){
+                let &mut int ptr = unsafe &int(unsafe int(metadata_ptr) + 8 * i);
                 *ptr = 0;
         }
 
-        for (let int o = 0; o < NUM_ORDERS; ++o){
+        for (let mut int o = 0; o < NUM_ORDERS; ++o){
                 metadata_ptr..free_head[o] = NULL;
         }
 
@@ -105,8 +105,8 @@ int order_for_size(int size){
                 hop -1;
         }
 
-        let int order = 0;
-        let int block = MIN_SIZE;
+        let mut int order = 0;
+        let mut int block = MIN_SIZE;
         while (block < size){
                 block <<= 1;
                 ++order;
@@ -125,7 +125,7 @@ int order_for_size(int size){
                 hop unsafe &int(0);
         }
 
-        let int o = order;
+        let mut int o = order;
         while (o <= NUM_ORDERS - 1 && metadata_ptr..free_head[o] == NULL){
                 ++o;
         }
@@ -155,10 +155,10 @@ void memfree(&int ptr){
                 hop;
         }
 
-        let int index = (unsafe int(ptr) - heap_ptr) / MIN_SIZE;
-        let int order = order_get(index);
+        let mut int index = (unsafe int(ptr) - heap_ptr) / MIN_SIZE;
+        let mut int order = order_get(index);
 
-        let bool done = false;
+        let mut bool done = false;
         while (!done && order < NUM_ORDERS - 1){
                 let int buddy = index ^ (1 << order);
 
