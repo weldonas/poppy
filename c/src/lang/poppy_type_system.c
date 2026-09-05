@@ -48,7 +48,7 @@ bool is_non_null_returnable_type(const struct type *const type){
 }
 
 bool is_non_null_assignable_type(const struct type *const type){
-        return type && type->is_assignable;
+        return type && (type->assignability != NOT_ASSIGNABLE);
 }
 
 bool is_non_null_pointer_type(const struct type *const type){

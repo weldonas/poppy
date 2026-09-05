@@ -105,7 +105,7 @@ const struct type* const int_type(){
                 int_ptr->category = CATEGORY_PRIMITIVE;
                 int_ptr->repr = INT_CHAR;
                 int_ptr->byte_count = 8;
-                int_ptr->is_assignable = false;
+                int_ptr->assignability = NOT_ASSIGNABLE;
                 add_type(int_ptr);
         }
 
@@ -118,7 +118,7 @@ const struct type* const bool_type(){
                 bool_ptr->category = CATEGORY_PRIMITIVE;
                 bool_ptr->repr = BOOL_CHAR;
                 bool_ptr->byte_count = 1;
-                bool_ptr->is_assignable = false;
+                bool_ptr->assignability = NOT_ASSIGNABLE;
                 add_type(bool_ptr);
         }
 
@@ -131,7 +131,7 @@ const struct type* const void_type(){
                 void_ptr->category = CATEGORY_PRIMITIVE;
                 void_ptr->repr = VOID_CHAR;
                 void_ptr->byte_count = NOT_IN_MEMORY;
-                void_ptr->is_assignable = false;
+                void_ptr->assignability = NOT_ASSIGNABLE;
                 add_type(void_ptr);
         }
 
@@ -144,7 +144,7 @@ const struct type* const char_type(){
                 char_ptr->category = CATEGORY_PRIMITIVE;
                 char_ptr->repr = CHAR_CHAR;
                 char_ptr->byte_count = 1;
-                char_ptr->is_assignable = false;
+                char_ptr->assignability = NOT_ASSIGNABLE;
                 add_type(char_ptr);
         }
 
@@ -156,7 +156,7 @@ const struct type* const unit_type(){
                 unit_ptr = malloc(sizeof(struct type));
                 unit_ptr->category = CATEGORY_UNIT;
                 unit_ptr->byte_count = NOT_IN_MEMORY;
-                unit_ptr->is_assignable = false;
+                unit_ptr->assignability = NOT_ASSIGNABLE;
                 add_type(unit_ptr);
         }
 
@@ -181,7 +181,7 @@ const struct type* const function_type(const struct type *ret, const struct type
         new->ret_type = ret;
         new->params_type = params;
         new->byte_count = NOT_IN_MEMORY;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);
         return new;
 }
@@ -190,7 +190,7 @@ struct type* const param_type(){
         new->category = CATEGORY_PARAMS;
         init_list((&new->subtypes));
         new->byte_count = NOT_IN_MEMORY;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);
         return new;
 }
@@ -200,7 +200,7 @@ const struct type* const pointer_type(const struct type *type){
         new->category = CATEGORY_POINTER;
         new->referenced_type = type;
         new->byte_count = 8;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);
         return new;
 }
@@ -214,7 +214,7 @@ const struct type* const enum_type(const char *name, struct LIST(string) *items)
         new->category = CATEGORY_ENUM;
         new->name = name;
         new->byte_count = 8;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);
 
         struct string *s = malloc(sizeof(struct string));
@@ -246,7 +246,7 @@ const struct type* const array_type(const struct type *element_type, char *lengt
         new->element_type = element_type;
         new->length = length;
         new->byte_count = byte_count;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);
         return new;
 }
@@ -305,7 +305,7 @@ const struct type *query_named_type(const char *name){
         new->category = record_data ? CATEGORY_RECORD : CATEGORY_ENUM;
         new->name = name;
         new->byte_count = record_data ? record_data->byte_count : 8;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);     
         return new;
 }
@@ -321,7 +321,7 @@ const struct type* const record_type(const char *name, struct LIST(variable) fie
         new->category = CATEGORY_RECORD;
         new->name = name;
         new->byte_count = 8;
-        new->is_assignable = false;
+        new->assignability = NOT_ASSIGNABLE;
         add_type(new);
 
         struct string *s = malloc(sizeof(struct string));
@@ -381,7 +381,11 @@ const struct type *make_assignable(const struct type *type){
         add_type(new);
 
         memcpy(new, type, sizeof(struct type));
-        new->is_assignable = true;
+
+        // ensures we don't change value of assignability if new is already assignable
+        if (new->assignability == NOT_ASSIGNABLE){
+                new->assignability = ASSIGNABLE;
+        }
 
         switch(type->category){
                 case CATEGORY_PRIMITIVE:
