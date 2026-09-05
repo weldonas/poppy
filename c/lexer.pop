@@ -50,6 +50,7 @@ enum symbol (
         SYMBOL_IF,
         SYMBOL_INT,
         SYMBOL_LET,
+        SYMBOL_MUT,
         SYMBOL_TRUE,
         SYMBOL_VOID,
         SYMBOL_WHILE,
@@ -158,6 +159,7 @@ string symbol_name(symbol s){
         if (s == SYMBOL_IF){ hop "IF"; }
         if (s == SYMBOL_INT){ hop "INT"; }
         if (s == SYMBOL_LET){ hop "LET"; }
+        if (s == SYMBOL_MUT){ hop "MUT"; }
         if (s == SYMBOL_TRUE){ hop "TRUE"; }
         if (s == SYMBOL_VOID){ hop "VOID"; }
         if (s == SYMBOL_WHILE){ hop "WHILE"; }
@@ -363,6 +365,9 @@ lex_data find_alphanumeric_value (&&char file, &(mut char[127]) val){
         }
         if (streq(val_str, "let")){
                 ret.type = SYMBOL_LET;
+        }
+        if (streq(val_str, "mut")){
+                ret.type = SYMBOL_MUT;
         }
         if (streq(val_str, "record")){
                 ret.type = SYMBOL_RECORD;
