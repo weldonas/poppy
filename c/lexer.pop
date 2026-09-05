@@ -226,11 +226,11 @@ void error(string s){
 }
 
 record token (
-        symbol type,
-        string value
+        mut symbol type,
+        mut string value
 )
 
-char fgetc(&&char file){
+char fgetc(&mut &char file){
         let char ret = **file;
         *file = unsafe &char(unsafe int(*file) + 1);
         hop ret;
@@ -249,18 +249,18 @@ bool is_alphabetic(char c){
 }
 
 record lex_data (
-        symbol type,
-        char excess,
-        int val_len
+        mut symbol type,
+        mut char excess,
+        mut int val_len
 )
 
 record character_symbol_map (
-        char expected,
-        symbol if_expected
+        mut char expected,
+        mut symbol if_expected
 )
 
-lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_len, symbol not_second, &(char[127]) val){
-        let lex_data ret;
+lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_len, symbol not_second, &(mut char[127]) val){
+        let mut lex_data ret;
 
         ret.excess = safe char(0);
         ret.val_len = 1;
@@ -271,7 +271,7 @@ lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_le
         }
 
         let char second = fgetc(file);
-        for (let int i = 0; i < map_len; ++i){
+        for (let mut int i = 0; i < map_len; ++i){
                 if (second == map[i].expected){
                         (*val)[1] = second;
                         ret.val_len = 2;
@@ -285,7 +285,7 @@ lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_le
         hop ret;
 }
 
-lex_data find_numeric_value(&&char file, &(char[127]) val){
+lex_data find_numeric_value(&&char file, &(mut char[127]) val){
         let lex_data ret;
         ret.type = SYMBOL_CONSTANT;
         ret.excess = safe char(0);
@@ -304,14 +304,13 @@ lex_data find_numeric_value(&&char file, &(char[127]) val){
         hop ret;
 }
 
-lex_data find_alphanumeric_value (&&char file, &(char[127]) val){
+lex_data find_alphanumeric_value (&&char file, &(mut char[127]) val){
         let lex_data ret;
         ret.excess = safe char(0);
         ret.val_len = 1;
 
         while (!feof(file) && ret.val_len <= MAX_TOKEN_LENGTH && (is_numeric_char((*val)[ret.val_len - 1]) || is_alphabetic((*val)[ret.val_len - 1]))){
-                (*val)[ret.val_len] = **file;
-                *file = unsafe &char(unsafe int(*file) + 1);
+                (*val)[ret.val_len] = fgetc(file);
                 ++ret.val_len;
         }
 
@@ -386,7 +385,7 @@ lex_data find_alphanumeric_value (&&char file, &(char[127]) val){
         hop ret;
 }
 
-bool lex_single_char(&&char file, &char chr, &bool escaped){
+bool lex_single_char(&&char file, &mut char chr, &mut bool escaped){
         !!- precondition: !feof(file);
         if (escaped != unsafe &bool(0)){
                 *escaped = false;
@@ -473,9 +472,9 @@ int lex_string_literal(&&char file, &(char[127]) val){
                 hop -1;
         }
 
-        let int i = 0;
+        let mut int i = 0;
         let bool escaped;
-        let bool first = true;
+        let mut bool first = true;
 
         while (first || (((*val)[i - 1] != '\"') || escaped) && (i <= MAX_TOKEN_LENGTH)){
                 if (feof(file)){
@@ -500,17 +499,17 @@ bool isspace(char c){
 }
 
 token[1000] lex(&&char file){
-        let char[127] val;
+        let mut char[127] val;
         val[0] = safe char(0);
-        let token[1000] list;
-        let int token_index = 0;
+        let (mut token)[1000] list;
+        let mut int token_index = 0;
 
         while(!feof(file)){
                 if (val[0] == safe char(0)){
                         val[0] = fgetc(file);
                 }
 
-                let lex_data data;
+                let mut lex_data data;
                 data.excess = safe char(0);
                 data.type = SYMBOL_NULL;
 
@@ -518,7 +517,7 @@ token[1000] lex(&&char file){
                         val[0] = safe char(0);
                 }
                 else {
-                        let character_symbol_map[2] map;
+                        let mut character_symbol_map[2] map;
 
                         if (val[0] == safe char(255)){
                                 data.type = SYMBOL_END;
@@ -666,8 +665,8 @@ token[1000] lex(&&char file){
                                 prints("alloc for ");
                                 print(token_index);
                                 println();
-                                for(let int i = 0; i < data.val_len; ++i){
-                                        let &char ptr = unsafe &char(unsafe int(list[token_index].value.ptr) + i);
+                                for(let mut int i = 0; i < data.val_len; ++i){
+                                        let &mut char ptr = unsafe &char(unsafe int(list[token_index].value.ptr) + i);
                                         *ptr = val[i];
                                 }
                         }
@@ -687,7 +686,7 @@ token[1000] lex(&&char file){
 
 void free_tokens(&(token[1000]) tokens){
         println();
-        let int token_index = 0;
+        let mut int token_index = 0;
         while ((*tokens)[token_index].type != SYMBOL_END){
                 if ((*tokens)[token_index].type == SYMBOL_IDENTIFIER ||
                     (*tokens)[token_index].type == SYMBOL_CONSTANT ||
@@ -706,9 +705,9 @@ void main(){
         meminit();
         let &char file = safe &char(memalloc(1000));
         let &char file_base = file;
-        let int i = 0;
-        let char c = scanc();
-        let &char addr = file;
+        let mut int i = 0;
+        let mut char c = scanc();
+        let mut &mut char addr = file;
         while (c != safe char(255)){
                 if (i >= 1000){
                         prints("error: input too long");
@@ -725,7 +724,7 @@ void main(){
         *addr = c;
 
         let token[1000] tokens = lex(&file);
-        let int token_index = 0;
+        let mut int token_index = 0;
         while (tokens[token_index].type != SYMBOL_END){
                 if (tokens[token_index].type == SYMBOL_IDENTIFIER || tokens[token_index].type == SYMBOL_CONSTANT || tokens[token_index].type == SYMBOL_CHARLIT || tokens[token_index].type == SYMBOL_STRINGLIT){
                         prints(tokens[token_index].value);
