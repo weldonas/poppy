@@ -715,9 +715,7 @@ void main(){
         let mut &mut char addr = file;
         while (c != safe char(255)){
                 if (i >= 1000){
-                        prints("error: input too long");
-                        hop;
-                        0/0;
+                        error("input too long");
                 }
 
                 addr = unsafe &char(unsafe int(file_base) + i);

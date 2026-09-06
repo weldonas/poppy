@@ -407,8 +407,9 @@ const struct type *deduce_mutable(const struct parse_tree *tree){
 }
 
 const struct type *deduce_param(const struct parse_tree *tree){
+        const struct type *raw_type = tree->children->head->data->type;
         struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
-        v->type = tree->children->head->data->type;
+        v->type = make_assignable(raw_type);
         v->is_defined = true;
         v->has_compile_time_value = false;
 
@@ -416,7 +417,7 @@ const struct type *deduce_param(const struct parse_tree *tree){
         s->data = tree->children->head->next->data->data.value;
 
         if (add_symbol(tree, s, v)){
-                return v->type;
+                return raw_type;
         }
         else {
                 free(v);
@@ -427,11 +428,9 @@ const struct type *deduce_param(const struct parse_tree *tree){
 
 const struct type *deduce_vardec(const struct parse_tree *tree){
         struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
-        v->type = tree->children->head->next->data->type;
+        v->type = make_assignable(tree->children->head->next->data->type);
         v->is_defined = true;
-        v->has_compile_time_value = false;
-
-        if ((tree->children->len == 5) && evaluate_immediate(tree->children->tail->data, &v->compile_time_value)){
+        if ((tree->children->len == 5) && (v->type->assignability != ASSIGNABLE_AND_MUTABLE) && evaluate_immediate(tree->children->tail->data, &v->compile_time_value)){
                 v->has_compile_time_value = true;
         }
         else {
