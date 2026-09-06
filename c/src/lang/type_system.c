@@ -80,10 +80,18 @@ struct type_rule {
         };
 };
 
-struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map);
+struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree);
 
 bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt2){
         return pt1 == pt2;
+}
+
+struct MAP(string, symbol_table_value) *get_scope_map(const struct parse_tree *tree){
+        const struct parse_tree *cur = tree;
+        while (!cur->symbol_table){
+                cur = cur->parent;
+        }
+        return cur->symbol_table;
 }
 
 bool name_reused(const struct parse_tree *tree){
@@ -157,7 +165,7 @@ struct RESULT(unit) find_types(const struct type_system *const system, struct pa
         struct MAP(string, symbol_table_value) *symbol_table = new_symbol_table();
         tree->symbol_table = symbol_table;
 
-        struct RESULT(type) program_type = find_type(system, tree, symbol_table);
+        struct RESULT(type) program_type = find_type(system, tree);
 
         if (!program_type.is_ok){
                 struct RESULT(unit) result;
@@ -315,19 +323,18 @@ void free_type_system(const struct type_system *type_system){
 struct application_data {
         const struct type_system *system;
         const struct parse_tree *tree;
-        struct MAP(string, symbol_table_value) *scope_map;
 };
 
 struct RESULT(type) get_child_type(struct application_data *data, size_t index){
         struct parse_tree *child; load_child_at(child, data->tree, index);
-        return find_type(data->system, child, data->scope_map);
+        return find_type(data->system, child);
 }
 
-struct RESULT(type) apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map){
+struct RESULT(type) apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree){
         struct application_data data = {0};
         data.system = system;
         data.tree = tree;
-        data.scope_map = scope_map;
+        struct MAP(string, symbol_table_value) *scope_map = get_scope_map(tree);
         
         for (size_t priority = 0; priority <= MAX_PRIORITY; ++priority){
                 for (size_t i = 0; i < type_rule->conditions_len; ++i) {
@@ -470,7 +477,6 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                 case SIDE_EFFECT_ADD_SCOPE:
                                         struct MAP(string, symbol_table_value) *new_map = new_symbol_table();
                                         tree->symbol_table = new_map;
-                                        data.scope_map = new_map;
                                         satisfied = true;
                                         break;
                         }
@@ -512,7 +518,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
         return result;
 }
 
-struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map){
+struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree){
         if (tree->type){
                 struct RESULT(type) result;
                 make_ok(result, tree->type);
@@ -520,7 +526,7 @@ struct RESULT(type) find_type(const struct type_system *const system, struct par
         }
         
         for (size_t i = 0; i < system->rules_len; ++i){
-                struct RESULT(type) current_result = apply(system->rules[i], system, tree, scope_map);
+                struct RESULT(type) current_result = apply(system->rules[i], system, tree);
                 if (current_result.is_ok && current_result.value != NULL){
                         tree->type = current_result.value;
                         return current_result;
