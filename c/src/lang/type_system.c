@@ -25,8 +25,6 @@ enum type_rule_condition_type : uint8_t {
         CONDITION_TYPE_AT,
         CONDITION_TYPES_EQUAL_AT,
         CONDITION_RETURN_TYPE_AT,
-        SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX,
-        SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION,
         SIDE_EFFECT_ADD_SCOPE
 };
 
@@ -84,14 +82,6 @@ struct RESULT(type) find_type(const struct type_system *const system, struct par
 
 bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt2){
         return pt1 == pt2;
-}
-
-struct MAP(string, symbol_table_value) *get_scope_map(const struct parse_tree *tree){
-        const struct parse_tree *cur = tree;
-        while (!cur->symbol_table){
-                cur = cur->parent;
-        }
-        return cur->symbol_table;
 }
 
 bool name_reused(const struct parse_tree *tree){
@@ -207,11 +197,8 @@ size_t get_priority(enum type_rule_condition_type type){
                 case CONDITION_TYPE_AT:
                 case CONDITION_TYPES_EQUAL_AT:
                         return 2;
-                case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
-                case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION:
-                        return 3;
                 case CONDITION_RETURN_TYPE_AT:
-                        return 4;
+                        return 3;
         }
         assert(0);
 }
@@ -244,14 +231,6 @@ const struct type_rule_condition *new_types_equal_at_condition(size_t index1, si
 
 const struct type_rule_condition *new_return_type_at_condition(size_t return_index, size_t function_index) {
         return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_RETURN_TYPE_AT, .return_index = return_index, .function_index = function_index});
-}
-
-const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index, bool is_defined) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index, .is_defined = is_defined});
-}
-
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(const struct parse_tree *(*find_name_tree)(const struct parse_tree *), size_t type_index, bool is_defined) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name_tree = find_name_tree, .type_index = type_index, .is_defined = is_defined});
 }
 
 const struct type_rule_condition *new_add_scope_side_effect() {
@@ -326,8 +305,6 @@ struct RESULT(type) get_child_type(const struct type_system *system, const struc
 }
 
 struct RESULT(type) apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree){
-        struct MAP(string, symbol_table_value) *scope_map = get_scope_map(tree);
-        
         for (size_t priority = 0; priority <= MAX_PRIORITY; ++priority){
                 for (size_t i = 0; i < type_rule->conditions_len; ++i) {
                         const struct type_rule_condition *condition = type_rule->conditions[i];
@@ -396,75 +373,6 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         }
 
                                         satisfied = fn_type_result.value && ret_type_result.value && equals_type(return_type(fn_type_result.value), ret_type_result.value);
-                                        break;
-                                case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
-                                        get_child_type(system, tree, condition->name_index);
-                                        struct parse_tree *child; load_child_at(child, tree, condition->name_index);
-
-                                        if (child->type){
-                                                char *lit = "There is an existing definition for symbol ";
-                                                char *name = child->data.value;
-                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
-                                                strcpy(err, lit);
-                                                strcat(err, name);
-                                                struct RESULT(type) result;
-                                                make_error(result, err);
-                                                return result;
-                                        }
-
-                                        struct string *str = malloc(sizeof(struct string));
-                                        str->data = child->data.value;
-                                        const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        // NOTE: this adds to the enclosing scope, not any new scope created
-                                        struct RESULT(type) new_type_result = get_child_type(system, tree, condition->type_index);
-                                        if (!new_type_result.is_ok){
-                                                free(str);
-                                                return new_type_result;
-                                        }
-                                        const struct type *new_type = make_assignable(new_type_result.value);
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(new_type, condition->is_defined);
-
-                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
-                                                char *lit = "There is an existing definition for symbol ";
-                                                const char *name = str->data;
-                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
-                                                strcpy(err, lit);
-                                                strcat(err, name);
-                                                struct RESULT(type) result;
-                                                make_error(result, err);
-                                                free(str);
-                                                free((void*) new_value);
-                                                return result;
-                                        }
-                                        update_map(scope_map, str, new_value, string, symbol_table_value);
-                                        satisfied = true;
-                                        break;
-                                case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
-                                        struct string *str = malloc(sizeof(struct string));
-                                        str->data = condition->find_name_tree(tree)->data.value;
-                                        const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        // NOTE: this adds to the enclosing scope, not any new scope created
-                                        struct RESULT(type) new_type_result = get_child_type(system, tree, condition->type_index);
-                                        if (!new_type_result.is_ok){
-                                                return new_type_result;
-                                        }
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(new_type_result.value, condition->is_defined);
-
-                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
-                                                char *lit = "There is an existing definition for symbol ";
-                                                const char *name = str->data;
-                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
-                                                strcpy(err, lit);
-                                                strcat(err, name);
-                                                struct RESULT(type) result;
-                                                make_error(result, err);
-                                                free(str);
-                                                free((void*) new_value);
-                                                return result;
-                                        }
-                                        update_map(scope_map, str, new_value, string, symbol_table_value);
-                                }
-                                        satisfied = true;
                                         break;
                                 case SIDE_EFFECT_ADD_SCOPE:
                                         struct MAP(string, symbol_table_value) *new_map = new_symbol_table();

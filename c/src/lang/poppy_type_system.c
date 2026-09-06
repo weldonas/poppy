@@ -337,6 +337,38 @@ const struct type *deduce_symbol_type(const struct parse_tree *tree){
         return NULL;
 }
 
+const struct parse_tree *get_scope(const struct parse_tree *tree){
+        // setting cur to tree->parent ensures we don't add a symbol to a scope that should contain child symbols
+        const struct parse_tree *cur = tree->parent;
+        while (!cur->symbol_table){
+                cur = cur->parent;
+        }
+        return cur;
+}
+
+bool add_symbol(const struct parse_tree *tree, const struct string *s, const struct symbol_table_value *v){
+        const struct parse_tree *cur = tree;
+        
+        while (cur != NULL){
+                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
+                if (symbol_table != NULL){
+                        const struct symbol_table_value *value; query_map(symbol_table, s, value, string, symbol_table_value);
+
+                        if (value != NULL){
+                                return false;
+                        }
+                }
+                cur = cur->parent;
+        }
+
+        const struct parse_tree *scope = get_scope(tree);
+        update_map(scope->symbol_table, s, v, string, symbol_table_value);
+
+        printf("added symbol %s to %s\n", s->data, symbol_name(scope->data.type));
+
+        return true;
+}
+
 const struct type *deduce_cast(const struct parse_tree *tree){
         if (tree->children->head->data->data.type == SYMBOL_UNSAFE){
                 const struct parse_tree *dst_tree; load_child_at(dst_tree, tree, 1);
@@ -373,6 +405,78 @@ const struct type *deduce_mutable(const struct parse_tree *tree){
         return make_mutable(base_type);
 }
 
+const struct type *deduce_param(const struct parse_tree *tree){
+        struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
+        v->type = tree->children->head->data->type;
+        v->is_defined = true;
+
+        struct string *s = malloc(sizeof(struct string));
+        s->data = tree->children->head->next->data->data.value;
+
+        if (add_symbol(tree, s, v)){
+                return v->type;
+        }
+        else {
+                free(v);
+                free(s);
+                return NULL;
+        }
+}
+
+const struct type *deduce_vardec(const struct parse_tree *tree){
+        struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
+        v->type = tree->children->head->next->data->type;
+        v->is_defined = true;
+
+        struct string *s = malloc(sizeof(struct string));
+        s->data = tree->children->head->next->next->data->data.value;
+
+        if (add_symbol(tree, s, v)){
+                return void_type();
+        }
+        else {
+                free(v);
+                free(s);
+                return NULL;
+        }
+}
+
+const struct type *deduce_decl(const struct parse_tree *tree){
+        struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
+        v->type = tree->children->head->next->data->type;
+        v->is_defined = true;
+
+        struct string *s = malloc(sizeof(struct string));
+        s->data = find_decl_signature_name(tree)->data.value;
+
+        if (add_symbol(tree, s, v)){
+                return unit_type();
+        }
+        else {
+                free(v);
+                free(s);
+                return NULL;
+        }
+}
+
+const struct type *deduce_fndefn(const struct parse_tree *tree){
+        struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
+        v->type = tree->children->head->data->type;
+        v->is_defined = true;
+
+        struct string *s = malloc(sizeof(struct string));
+        s->data = find_defn_signature_name(tree)->data.value;
+
+        if (add_symbol(tree, s, v)){
+                return unit_type();
+        }
+        else {
+                free(v);
+                free(s);
+                return NULL;
+        }
+}
+
 const struct type_system *const get_poppy_type_system(){
         if (poppy_type_system){
                 return poppy_type_system;
@@ -397,16 +501,14 @@ const struct type_system *const get_poppy_type_system(){
 
         // Functions
         conditions[0] = new_parent_symbol_condition(SYMBOL_DECL);
-        conditions[1] = new_add_symbol_name_function_side_effect(find_decl_signature_name, 1, false);
-        conditions[2] = new_add_scope_side_effect(); // this ensures params dont get added to the global scope
-        rules[i] = new_type_rule(conditions, 3, unit_type());
+        conditions[1] = new_add_scope_side_effect(); // this ensures params dont get added to the global scope
+        rules[i] = new_deducer_type_rule(conditions, 2, deduce_decl);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_FNDEFN);
-        conditions[1] = new_add_symbol_name_function_side_effect(find_defn_signature_name, 0, true);
-        conditions[2] = new_add_scope_side_effect();
-        conditions[3] = new_return_type_at_condition(2, 0);
-        rules[i] = new_child_type_rule(conditions, 4, 0);
+        conditions[1] = new_add_scope_side_effect();
+        conditions[2] = new_return_type_at_condition(2, 0);
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_fndefn);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_SIGNATURE);
@@ -431,8 +533,7 @@ const struct type_system *const get_poppy_type_system(){
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_PARAM);
-        conditions[1] = new_add_symbol_name_index_side_effect(1, 0, true);
-        rules[i] = new_child_type_rule(conditions, 2, 0);
+        rules[i] = new_deducer_type_rule(conditions, 1, deduce_param);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_OPTARGS);
@@ -450,29 +551,25 @@ const struct type_system *const get_poppy_type_system(){
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
-        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
-        rules[i] = new_type_rule(conditions, 4, void_type());
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_vardec);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
-        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
-        rules[i] = new_type_rule(conditions, 4, void_type());
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_vardec);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_GLOBALVARDEC);
         conditions[1] = new_length_condition(3);
         conditions[2] = new_type_at_condition(1, is_non_null_in_memory_type);
-        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
-        rules[i] = new_type_rule(conditions, 4, void_type());
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_vardec);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_GLOBALVARDEC);
         conditions[1] = new_length_condition(5);
         conditions[2] = new_types_equal_at_condition(1, 4);
-        conditions[3] = new_add_symbol_name_index_side_effect(2, 1, true);
-        rules[i] = new_type_rule(conditions, 4, void_type());
+        rules[i] = new_deducer_type_rule(conditions, 3, deduce_vardec);
         ++i;
 
         conditions[0] = new_parent_symbol_condition(SYMBOL_VARASST);
