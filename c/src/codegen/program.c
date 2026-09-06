@@ -415,14 +415,7 @@ char *generate_ret(const struct parse_tree *tree, struct codegen_params *params)
         return concat(2, value, hop(params->within));
 }
 
-char *generate_binaryexpr(const struct parse_tree *tree, struct codegen_params *params){
-        int64_t result;
-        if (evaluate_immediate(tree, &result)){
-                printf("simplified parse tree to %lli\n", result);
-                print_parse_tree(tree);
-                return movi(REG_RESULT, result);
-        }
-        
+char *generate_binaryexpr(const struct parse_tree *tree, struct codegen_params *params){        
         char *op1 = generate_value(tree->children->head->data, params);
         char *op2 = generate_value(tree->children->head->next->next->data, params);
         enum symbol op_type = tree->children->head->next->data->data.type;
@@ -747,6 +740,13 @@ char *generate_value(const struct parse_tree *tree, struct codegen_params *param
 }
 
 char *generate_from_tree(const struct parse_tree *tree, struct codegen_params *params){
+        int64_t result;
+        if (evaluate_immediate(tree, &result)){
+                printf("simplified parse tree to %lli\n", result);
+                print_parse_tree(tree);
+                return movi(REG_RESULT, result);
+        }
+
         enum symbol symbol = tree->data.type;
 
         switch (symbol) {
@@ -811,24 +811,6 @@ char *generate_from_tree(const struct parse_tree *tree, struct codegen_params *p
         }
 }
 
-void populate_enum(const struct parse_tree *tree, struct codegen_params *params){
-        // char *enum_name = tree->children->head->next->data->data.value;
-        // const struct type *enum_type = query_named_type(enum_name);
-        // const struct LIST(string) *enum_items = query_enum_items(enum_name);
-
-        // uint64_t index = 0;
-        // for (struct LIST_NODE(string) *node = enum_items->head; node != NULL; node = node->next){
-        //         struct global_variable *v = malloc(sizeof(struct global_variable));
-        //         v->name = node->data->data;
-        //         v->size = enum_type->byte_count;
-        //         v->init_code = movi(REG_RESULT, index);
-
-        //         append_list((&params->globals), v, global_variable);
-
-        //         index++;
-        // }
-}
-
 char *generate_code(const struct parse_tree *tree){
         struct MAP(string, function) functions; init_map((&functions), equals_string, free_string_function_entry, string, function);
         // program -> defndecls END
@@ -877,9 +859,6 @@ char *generate_code(const struct parse_tree *tree){
                         }
                         append_list((&params.globals), v, global_variable);
                         
-                }
-                else if (defn->data.type == SYMBOL_ENUMDEFN){
-                        populate_enum(defn, &params);
                 }
                 else if (defn->data.type == SYMBOL_FNDEFN){
                         const struct parse_tree *signature = defn->children->head->data;

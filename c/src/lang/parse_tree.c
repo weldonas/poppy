@@ -174,8 +174,8 @@ const struct symbol_table_value *query_symbol_table(const struct parse_tree *tre
 }
 
 bool evaluate_immediate(const struct parse_tree *tree, int64_t *result){
-        // impossible if type is not int, char, or bool
-        if (!equals_type(tree->type, int_type()) && !equals_type(tree->type, char_type()) && !equals_type(tree->type, bool_type())){
+        // impossible if type is not < 8 bytes (1 word)
+        if (tree->type->byte_count > 8){
                 return false;
         }
 
