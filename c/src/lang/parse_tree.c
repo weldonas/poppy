@@ -153,3 +153,157 @@ struct LIST(variable) get_parameters(const struct parse_tree *tree){
         }
         return list;
 }
+
+const struct symbol_table_value *query_symbol_table(const struct parse_tree *tree){
+        struct string string;
+        string.data = tree->data.value;
+        const struct parse_tree *cur = tree;
+        
+        while (cur != NULL){
+                const struct MAP(string, symbol_table_value) *symbol_table = cur->symbol_table; 
+                if (symbol_table != NULL){
+                        const struct symbol_table_value *value; query_map(symbol_table, &string, value, string, symbol_table_value);
+
+                        if (value != NULL){
+                                return value;
+                        }
+                }
+                cur = cur->parent;
+        }
+        return NULL;
+}
+
+bool evaluate_immediate(const struct parse_tree *tree, int64_t *result){
+        // impossible if type is not int, char, or bool
+        if (!equals_type(tree->type, int_type()) && !equals_type(tree->type, char_type()) && !equals_type(tree->type, bool_type())){
+                return false;
+        }
+
+        if (tree->data.type == SYMBOL_IDENTIFIER){
+                const struct symbol_table_value *value = query_symbol_table(tree);
+                if (value->has_compile_time_value){
+                        *result = value->compile_time_value;
+                        return true;
+                }
+                return false;
+        }
+
+        if (tree->data.type == SYMBOL_CALL){
+                return false;
+        }
+
+        if (tree->data.type == SYMBOL_CONSTANT){
+                *result = strtoll(tree->data.value, NULL, 10);
+                return true;
+        }
+
+        if (tree->data.type == SYMBOL_CHARLIT){
+                *result = tree->data.value[0];
+                return true;
+        }
+
+        if (tree->data.type == SYMBOL_TRUE){
+                *result = true;
+                return true;
+        }
+
+        if (tree->data.type == SYMBOL_FALSE){
+                *result = false;
+                return true;
+        }
+
+        if (tree->children->len == 1){
+                return evaluate_immediate(tree->children->head->data, result);
+        }
+
+        if (tree->children->len == 2){
+                return false;
+        }
+
+        switch (tree->children->head->data->data.type){
+                case SYMBOL_LPAREN:
+                        return evaluate_immediate(tree->children->head->next->data, result);
+                case SYMBOL_UNSAFE:
+                case SYMBOL_SAFE:
+                        const struct parse_tree *expr_tree; load_child_at(expr_tree, tree, 3);
+                        return evaluate_immediate(expr_tree, result);
+                case SYMBOL_ASM:
+                        return false;
+                default:
+                        break;
+        }
+
+        if (tree->children->head->data->data.type == SYMBOL_LPAREN){
+                return evaluate_immediate(tree->children->head->next->data, result);
+        }
+
+
+        const struct parse_tree *op1_tree; load_child_at(op1_tree, tree, 0);
+        const struct parse_tree *operand_tree; load_child_at(operand_tree, tree, 1);
+        const struct parse_tree *op2_tree; load_child_at(op2_tree, tree, 2);
+        int64_t op1;
+        int64_t op2;
+
+        if (!evaluate_immediate(op1_tree, &op1) || !evaluate_immediate(op2_tree, &op2)){
+                return false;
+        }
+
+        switch(operand_tree->data.type){
+                case SYMBOL_OR:
+                        *result = op1 || op2; 
+                        return true;
+                case SYMBOL_AND:
+                        *result = op1 && op2;
+                        return true;
+                case SYMBOL_EQ:
+                        *result = op1 == op2;
+                        return true;
+                case SYMBOL_NE:
+                        *result = op1 != op2;
+                        return true;
+                case SYMBOL_LT:
+                        *result = op1 < op2;
+                        return true;
+                case SYMBOL_LE:
+                        *result = op1 <= op2;
+                        return true;
+                case SYMBOL_GT:
+                        *result = op1 > op2;
+                        return true;
+                case SYMBOL_GE:
+                        *result = op1 >= op2;
+                        return true;
+                case SYMBOL_BOR:
+                        *result = op1 | op2;
+                        return true;
+                case SYMBOL_BXOR:
+                        *result = op1 ^ op2;
+                        return true;
+                case SYMBOL_AMP:
+                        *result = op1 & op2;
+                        return true;
+                case SYMBOL_BLEFT:
+                        *result = op1 << op2;
+                        return true;
+                case SYMBOL_BRIGHT:
+                        *result = op1 >> op2;
+                        return true;
+                case SYMBOL_PLUS:
+                        *result = op1 + op2;
+                        return true;
+                case SYMBOL_MINUS:
+                        *result = op1 - op2;
+                        return true;
+                case SYMBOL_STAR:
+                        *result = op1 * op2;
+                        return true;
+                case SYMBOL_DIVIDE:
+                        *result = op1 / op2;
+                        return true;
+                case SYMBOL_MOD:
+                        *result = op1 % op2;
+                        return true;
+                default:
+                        return false;
+        }
+}

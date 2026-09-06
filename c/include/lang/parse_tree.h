@@ -15,6 +15,8 @@ struct string {
 struct symbol_table_value {
         const struct type *type;
         bool is_defined;
+        bool has_compile_time_value;
+        int64_t compile_time_value;
 };
 
 DEFINE_MAP(string, symbol_table_value);
@@ -50,5 +52,6 @@ struct MAP(string, symbol_table_value) *new_symbol_table();
 struct LIST(variable) get_local_variables(const struct parse_tree *tree);
 struct LIST(variable) get_parameters(const struct parse_tree *tree);
 struct variable find_symbol_variable(const struct parse_tree *tree);
+bool evaluate_immediate(const struct parse_tree *tree, int64_t *result);
 
 #endif

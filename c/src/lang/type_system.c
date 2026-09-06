@@ -237,13 +237,6 @@ const struct type_rule_condition *new_add_scope_side_effect() {
         return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SCOPE});
 }
 
-const struct symbol_table_value *new_symbol_table_value(const struct type *type, bool is_defined){
-        struct symbol_table_value *value = malloc(sizeof(struct symbol_table_value));
-        value->type = type;
-        value->is_defined = is_defined;
-        return value;
-}
-
 const struct type_rule *new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type){
         struct type_rule *ptr = malloc(sizeof(struct type_rule));
         for (size_t i = 0; i < conditions_len; ++i){

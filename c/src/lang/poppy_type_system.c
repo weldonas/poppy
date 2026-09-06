@@ -187,7 +187,6 @@ const struct type *deduce_enum(const struct parse_tree *tree){
                 return NULL;
         }
 
-        // const struct type *type = make_assignable(enum_type(name_tree->data.value));
         struct LIST(string) *items = malloc(sizeof(struct LIST(string)));
         init_list(items);
 
@@ -199,6 +198,7 @@ const struct type *deduce_enum(const struct parse_tree *tree){
         }
 
         const struct type *type = make_assignable(enum_type(name_tree->data.value, items));
+        int64_t item_value = 0;
         for (struct LIST_NODE(string) *node = items->head; node != NULL; node = node->next){
                 const char *item_name = node->data->data;
                 struct string *s = malloc(sizeof(struct string));
@@ -207,7 +207,10 @@ const struct type *deduce_enum(const struct parse_tree *tree){
                 struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
                 v->type = type;
                 v->is_defined = true;
+                v->has_compile_time_value = true;
+                v->compile_time_value = item_value;
                 update_map((parent->symbol_table), s, v, string, symbol_table_value); 
+                ++item_value;
         }
 
         return void_type();
@@ -364,8 +367,6 @@ bool add_symbol(const struct parse_tree *tree, const struct string *s, const str
         const struct parse_tree *scope = get_scope(tree);
         update_map(scope->symbol_table, s, v, string, symbol_table_value);
 
-        printf("added symbol %s to %s\n", s->data, symbol_name(scope->data.type));
-
         return true;
 }
 
@@ -409,6 +410,7 @@ const struct type *deduce_param(const struct parse_tree *tree){
         struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
         v->type = tree->children->head->data->type;
         v->is_defined = true;
+        v->has_compile_time_value = false;
 
         struct string *s = malloc(sizeof(struct string));
         s->data = tree->children->head->next->data->data.value;
@@ -427,6 +429,14 @@ const struct type *deduce_vardec(const struct parse_tree *tree){
         struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
         v->type = tree->children->head->next->data->type;
         v->is_defined = true;
+        v->has_compile_time_value = false;
+
+        if ((tree->children->len == 5) && evaluate_immediate(tree->children->tail->data, &v->compile_time_value)){
+                v->has_compile_time_value = true;
+        }
+        else {
+                v->has_compile_time_value = false;
+        }
 
         struct string *s = malloc(sizeof(struct string));
         s->data = tree->children->head->next->next->data->data.value;
@@ -444,7 +454,8 @@ const struct type *deduce_vardec(const struct parse_tree *tree){
 const struct type *deduce_decl(const struct parse_tree *tree){
         struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
         v->type = tree->children->head->next->data->type;
-        v->is_defined = true;
+        v->is_defined = false;
+        v->has_compile_time_value = false;
 
         struct string *s = malloc(sizeof(struct string));
         s->data = find_decl_signature_name(tree)->data.value;
@@ -463,6 +474,7 @@ const struct type *deduce_fndefn(const struct parse_tree *tree){
         struct symbol_table_value *v = malloc(sizeof(struct symbol_table_value));
         v->type = tree->children->head->data->type;
         v->is_defined = true;
+        v->has_compile_time_value = false;
 
         struct string *s = malloc(sizeof(struct string));
         s->data = find_defn_signature_name(tree)->data.value;
