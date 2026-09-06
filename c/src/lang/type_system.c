@@ -320,20 +320,12 @@ void free_type_system(const struct type_system *type_system){
         free((void*) type_system);
 }
 
-struct application_data {
-        const struct type_system *system;
-        const struct parse_tree *tree;
-};
-
-struct RESULT(type) get_child_type(struct application_data *data, size_t index){
-        struct parse_tree *child; load_child_at(child, data->tree, index);
-        return find_type(data->system, child);
+struct RESULT(type) get_child_type(const struct type_system *system, const struct parse_tree *tree, size_t index){
+        struct parse_tree *child; load_child_at(child, tree, index);
+        return find_type(system, child);
 }
 
 struct RESULT(type) apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree){
-        struct application_data data = {0};
-        data.system = system;
-        data.tree = tree;
         struct MAP(string, symbol_table_value) *scope_map = get_scope_map(tree);
         
         for (size_t priority = 0; priority <= MAX_PRIORITY; ++priority){
@@ -374,7 +366,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         }
                                         else {
                                                 load_child_at(child, tree, condition->index);
-                                                struct RESULT(type) child_type_result = get_child_type(&data, condition->index);
+                                                struct RESULT(type) child_type_result = get_child_type(system, tree, condition->index);
                                                 if (!child_type_result.is_ok){
                                                         return child_type_result;
                                                 }
@@ -382,8 +374,8 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         }
                                         break;
                                 case CONDITION_TYPES_EQUAL_AT:
-                                        struct RESULT(type) child_type_result1 = get_child_type(&data, condition->index1);
-                                        struct RESULT(type) child_type_result2 = get_child_type(&data, condition->index2);
+                                        struct RESULT(type) child_type_result1 = get_child_type(system, tree, condition->index1);
+                                        struct RESULT(type) child_type_result2 = get_child_type(system, tree, condition->index2);
                                         if (!child_type_result1.is_ok){
                                                 return child_type_result1;
                                         }
@@ -394,8 +386,8 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         satisfied = child_type_result1.value && child_type_result2.value && equals_type(child_type_result1.value, child_type_result2.value);
                                         break;
                                 case CONDITION_RETURN_TYPE_AT:
-                                        struct RESULT(type) fn_type_result = get_child_type(&data, condition->function_index);
-                                        struct RESULT(type) ret_type_result = get_child_type(&data, condition->return_index);
+                                        struct RESULT(type) fn_type_result = get_child_type(system, tree, condition->function_index);
+                                        struct RESULT(type) ret_type_result = get_child_type(system, tree, condition->return_index);
                                         if (!fn_type_result.is_ok){
                                                 return fn_type_result;
                                         }
@@ -406,7 +398,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         satisfied = fn_type_result.value && ret_type_result.value && equals_type(return_type(fn_type_result.value), ret_type_result.value);
                                         break;
                                 case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
-                                        get_child_type(&data, condition->name_index);
+                                        get_child_type(system, tree, condition->name_index);
                                         struct parse_tree *child; load_child_at(child, tree, condition->name_index);
 
                                         if (child->type){
@@ -424,7 +416,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         str->data = child->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        struct RESULT(type) new_type_result = get_child_type(&data, condition->type_index);
+                                        struct RESULT(type) new_type_result = get_child_type(system, tree, condition->type_index);
                                         if (!new_type_result.is_ok){
                                                 free(str);
                                                 return new_type_result;
@@ -452,7 +444,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         str->data = condition->find_name_tree(tree)->data.value;
                                         const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
                                         // NOTE: this adds to the enclosing scope, not any new scope created
-                                        struct RESULT(type) new_type_result = get_child_type(&data, condition->type_index);
+                                        struct RESULT(type) new_type_result = get_child_type(system, tree, condition->type_index);
                                         if (!new_type_result.is_ok){
                                                 return new_type_result;
                                         }
@@ -495,12 +487,12 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                 return result;
         }
         else if (type_rule->type == TYPE_RULE_CHILD){
-                return get_child_type(&data, type_rule->output_index);
+                return get_child_type(system, tree, type_rule->output_index);
         }
         else if (type_rule->type == TYPE_RULE_DEDUCER){
                 if (tree->children){
                         for (size_t i = 0; i < tree->children->len; ++i){
-                                struct RESULT(type) result = get_child_type(&data, i);
+                                struct RESULT(type) result = get_child_type(system, tree, i);
                                 if (!result.is_ok){
                                         return result;
                                 }
