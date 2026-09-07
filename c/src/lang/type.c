@@ -228,13 +228,8 @@ void add_param(struct type *params, const struct type *type_to_add){
         append_list((&params->subtypes), (struct type*) type_to_add, type);
 }
 
-const struct type* const array_type(const struct type *element_type, char *length_str){
+const struct type* const array_type(const struct type *element_type, uint32_t length){
         if (element_type->byte_count == NOT_IN_MEMORY){
-                return NULL;
-        }
-
-        long long length = strtoll(length_str, NULL, 10);
-        if (length < 1){
                 return NULL;
         }
 

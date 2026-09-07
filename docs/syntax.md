@@ -26,7 +26,7 @@ $$\begin{align*}
 \text{type} &\rightarrow \text{CHAR}\\
 \text{type} &\rightarrow \text{BOOL}\\
 \text{type} &\rightarrow \text{IDENTIFIER}\\
-\text{type} &\rightarrow \text{type LBRACKET CONSTANT RBRACKET}\\
+\text{type} &\rightarrow \text{type LBRACKET expr RBRACKET}\\
 \text{type} &\rightarrow \text{AMP type}\\
 \text{type} &\rightarrow \text{AND type}\\
 \text{type} &\rightarrow \text{LPAREN type RPAREN}\\

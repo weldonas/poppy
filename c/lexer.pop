@@ -2,6 +2,8 @@
 !!munch poppyio
 
 let int MAX_TOKEN_LENGTH = 127
+let int MAX_TOKEN_COUNT = 1000
+let int MAX_CHAR_COUNT = 1000
 
 enum symbol (
         SYMBOL_NULL,
@@ -261,7 +263,7 @@ record character_symbol_map (
         mut symbol if_expected
 )
 
-lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_len, symbol not_second, &(mut char[127]) val){
+lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_len, symbol not_second, &(mut char[MAX_TOKEN_LENGTH]) val){
         let mut lex_data ret;
 
         ret.excess = safe char(0);
@@ -287,7 +289,7 @@ lex_data find_prefixed_type(&&char file, character_symbol_map[2] map, int map_le
         hop ret;
 }
 
-lex_data find_numeric_value(&&char file, &(mut char[127]) val){
+lex_data find_numeric_value(&&char file, &(mut char[MAX_TOKEN_LENGTH]) val){
         let lex_data ret;
         ret.type = SYMBOL_CONSTANT;
         ret.excess = safe char(0);
@@ -306,7 +308,7 @@ lex_data find_numeric_value(&&char file, &(mut char[127]) val){
         hop ret;
 }
 
-lex_data find_alphanumeric_value (&&char file, &(mut char[127]) val){
+lex_data find_alphanumeric_value (&&char file, &(mut char[MAX_TOKEN_LENGTH]) val){
         let lex_data ret;
         ret.excess = safe char(0);
         ret.val_len = 1;
@@ -455,7 +457,7 @@ bool lex_single_char(&&char file, &mut char chr, &mut bool escaped){
         hop true;
 }
 
-bool lex_char_literal(&&char file, &(char[127]) val){
+bool lex_char_literal(&&char file, &(char[MAX_TOKEN_LENGTH]) val){
         if (feof(file)){
                 hop false;
         }
@@ -471,7 +473,7 @@ bool lex_char_literal(&&char file, &(char[127]) val){
         hop true;
 }
 
-int lex_string_literal(&&char file, &(char[127]) val){
+int lex_string_literal(&&char file, &(char[MAX_TOKEN_LENGTH]) val){
         !!- ensure we have char after opening single quote
         if (feof(file)){
                 hop -1;
@@ -503,10 +505,10 @@ bool isspace(char c){
         hop c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
 }
 
-token[1000] lex(&&char file){
-        let mut char[127] val;
+token[MAX_TOKEN_COUNT] lex(&&char file){
+        let mut char[MAX_TOKEN_LENGTH] val;
         val[0] = safe char(0);
-        let (mut token)[1000] list;
+        let (mut token)[MAX_TOKEN_COUNT] list;
         let mut int token_index = 0;
 
         while(!feof(file)){
@@ -689,7 +691,7 @@ token[1000] lex(&&char file){
         hop list;
 }
 
-void free_tokens(&(token[1000]) tokens){
+void free_tokens(&(token[MAX_TOKEN_COUNT]) tokens){
         println();
         let mut int token_index = 0;
         while ((*tokens)[token_index].type != SYMBOL_END){
@@ -708,13 +710,13 @@ void free_tokens(&(token[1000]) tokens){
 
 void main(){
         meminit();
-        let &char file = safe &char(memalloc(1000));
+        let &char file = safe &char(memalloc(MAX_CHAR_COUNT));
         let &char file_base = file;
         let mut int i = 0;
         let mut char c = scanc();
         let mut &mut char addr = file;
         while (c != safe char(255)){
-                if (i >= 1000){
+                if (i >= MAX_CHAR_COUNT){
                         error("input too long");
                 }
 
@@ -726,7 +728,7 @@ void main(){
         !!- add terminating character
         *addr = c;
 
-        let token[1000] tokens = lex(&file);
+        let token[MAX_TOKEN_COUNT] tokens = lex(&file);
         let mut int token_index = 0;
         while (tokens[token_index].type != SYMBOL_END){
                 if (tokens[token_index].type == SYMBOL_IDENTIFIER || tokens[token_index].type == SYMBOL_CONSTANT || tokens[token_index].type == SYMBOL_CHARLIT || tokens[token_index].type == SYMBOL_STRINGLIT){

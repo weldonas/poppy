@@ -291,7 +291,12 @@ const struct type *deduce_array(const struct parse_tree *tree){
                 return NULL;
         }
 
-        return array_type(element_tree->type, length_tree->data.value);
+        int64_t length;
+        if (!evaluate_immediate(length_tree, &length) || (length < 0)){
+                return NULL;
+        }
+        
+        return array_type(element_tree->type, length);
 }
 
 const struct type *deduce_function(const struct parse_tree *tree){
