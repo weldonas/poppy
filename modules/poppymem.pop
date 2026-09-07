@@ -7,11 +7,12 @@ let int HEAP_SIZE = 65536
 let int MIN_SIZE = 32
 let int NUM_ORDERS = 12
 let int NULL = -1
+let int MAX_BLOCKS = HEAP_SIZE / MIN_SIZE
 
 record metadata (
-        mut int[12] free_head,
-        mut char[2048] order_of,
-        mut int[32] is_free         !!- 2048 / 64
+        mut int[NUM_ORDERS] free_head,
+        mut char[MAX_BLOCKS] order_of,          !!- one byte per block
+        mut int[MAX_BLOCKS / 64] is_free        !!- one bit per block
 )
 
 let &mut metadata metadata_ptr = unsafe &metadata(asm("ldr x10, =__heapmeta"))
@@ -88,7 +89,7 @@ void list_remove(int order, int index){
 
 void meminit(){
         !!- set all memory for metadata to 0 initially
-        for (let mut int i = 0; i < 12 + 256 + 32; ++i){
+        for (let mut int i = 0; i < NUM_ORDERS + MAX_BLOCKS / 8 + MAX_BLOCKS / 64; ++i){
                 let &mut int ptr = unsafe &int(unsafe int(metadata_ptr) + 8 * i);
                 *ptr = 0;
         }

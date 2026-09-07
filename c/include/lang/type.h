@@ -96,7 +96,7 @@ const struct type* const return_type(const struct type *type);
 struct type* const param_type();
 void add_param(struct type *params, const struct type *type_to_add);
 
-const struct type* const array_type(const struct type *element_type, char *length);
+const struct type* const array_type(const struct type *element_type, uint32_t length);
 
 const struct type* const record_type(const char *name, struct LIST(variable) fields);
 const struct type *query_named_type(const char *name);

@@ -25,8 +25,6 @@ enum type_rule_condition_type : uint8_t {
         CONDITION_TYPE_AT,
         CONDITION_TYPES_EQUAL_AT,
         CONDITION_RETURN_TYPE_AT,
-        SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX,
-        SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION,
         SIDE_EFFECT_ADD_SCOPE
 };
 
@@ -80,7 +78,7 @@ struct type_rule {
         };
 };
 
-struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map);
+struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree);
 
 bool equals_parse_tree(const struct parse_tree *pt1, const struct parse_tree *pt2){
         return pt1 == pt2;
@@ -157,7 +155,7 @@ struct RESULT(unit) find_types(const struct type_system *const system, struct pa
         struct MAP(string, symbol_table_value) *symbol_table = new_symbol_table();
         tree->symbol_table = symbol_table;
 
-        struct RESULT(type) program_type = find_type(system, tree, symbol_table);
+        struct RESULT(type) program_type = find_type(system, tree);
 
         if (!program_type.is_ok){
                 struct RESULT(unit) result;
@@ -199,11 +197,8 @@ size_t get_priority(enum type_rule_condition_type type){
                 case CONDITION_TYPE_AT:
                 case CONDITION_TYPES_EQUAL_AT:
                         return 2;
-                case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
-                case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION:
-                        return 3;
                 case CONDITION_RETURN_TYPE_AT:
-                        return 4;
+                        return 3;
         }
         assert(0);
 }
@@ -238,23 +233,8 @@ const struct type_rule_condition *new_return_type_at_condition(size_t return_ind
         return new_type_rule_condition((struct type_rule_condition){.type = CONDITION_RETURN_TYPE_AT, .return_index = return_index, .function_index = function_index});
 }
 
-const struct type_rule_condition *new_add_symbol_name_index_side_effect(size_t name_index, size_t type_index, bool is_defined) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX, .name_index = name_index, .type_index = type_index, .is_defined = is_defined});
-}
-
-const struct type_rule_condition *new_add_symbol_name_function_side_effect(const struct parse_tree *(*find_name_tree)(const struct parse_tree *), size_t type_index, bool is_defined) {
-        return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION, .find_name_tree = find_name_tree, .type_index = type_index, .is_defined = is_defined});
-}
-
 const struct type_rule_condition *new_add_scope_side_effect() {
         return new_type_rule_condition((struct type_rule_condition){.type = SIDE_EFFECT_ADD_SCOPE});
-}
-
-const struct symbol_table_value *new_symbol_table_value(const struct type *type, bool is_defined){
-        struct symbol_table_value *value = malloc(sizeof(struct symbol_table_value));
-        value->type = type;
-        value->is_defined = is_defined;
-        return value;
 }
 
 const struct type_rule *new_type_rule(const struct type_rule_condition *conditions[MAX_CONDITION_COUNT], size_t conditions_len, const struct type *const output_type){
@@ -312,23 +292,12 @@ void free_type_system(const struct type_system *type_system){
         free((void*) type_system);
 }
 
-struct application_data {
-        const struct type_system *system;
-        const struct parse_tree *tree;
-        struct MAP(string, symbol_table_value) *scope_map;
-};
-
-struct RESULT(type) get_child_type(struct application_data *data, size_t index){
-        struct parse_tree *child; load_child_at(child, data->tree, index);
-        return find_type(data->system, child, data->scope_map);
+struct RESULT(type) get_child_type(const struct type_system *system, const struct parse_tree *tree, size_t index){
+        struct parse_tree *child; load_child_at(child, tree, index);
+        return find_type(system, child);
 }
 
-struct RESULT(type) apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map){
-        struct application_data data = {0};
-        data.system = system;
-        data.tree = tree;
-        data.scope_map = scope_map;
-        
+struct RESULT(type) apply(const struct type_rule *const type_rule, const struct type_system *system, struct parse_tree *tree){
         for (size_t priority = 0; priority <= MAX_PRIORITY; ++priority){
                 for (size_t i = 0; i < type_rule->conditions_len; ++i) {
                         const struct type_rule_condition *condition = type_rule->conditions[i];
@@ -367,7 +336,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         }
                                         else {
                                                 load_child_at(child, tree, condition->index);
-                                                struct RESULT(type) child_type_result = get_child_type(&data, condition->index);
+                                                struct RESULT(type) child_type_result = get_child_type(system, tree, condition->index);
                                                 if (!child_type_result.is_ok){
                                                         return child_type_result;
                                                 }
@@ -375,8 +344,8 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         }
                                         break;
                                 case CONDITION_TYPES_EQUAL_AT:
-                                        struct RESULT(type) child_type_result1 = get_child_type(&data, condition->index1);
-                                        struct RESULT(type) child_type_result2 = get_child_type(&data, condition->index2);
+                                        struct RESULT(type) child_type_result1 = get_child_type(system, tree, condition->index1);
+                                        struct RESULT(type) child_type_result2 = get_child_type(system, tree, condition->index2);
                                         if (!child_type_result1.is_ok){
                                                 return child_type_result1;
                                         }
@@ -387,8 +356,8 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                                         satisfied = child_type_result1.value && child_type_result2.value && equals_type(child_type_result1.value, child_type_result2.value);
                                         break;
                                 case CONDITION_RETURN_TYPE_AT:
-                                        struct RESULT(type) fn_type_result = get_child_type(&data, condition->function_index);
-                                        struct RESULT(type) ret_type_result = get_child_type(&data, condition->return_index);
+                                        struct RESULT(type) fn_type_result = get_child_type(system, tree, condition->function_index);
+                                        struct RESULT(type) ret_type_result = get_child_type(system, tree, condition->return_index);
                                         if (!fn_type_result.is_ok){
                                                 return fn_type_result;
                                         }
@@ -398,79 +367,9 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
 
                                         satisfied = fn_type_result.value && ret_type_result.value && equals_type(return_type(fn_type_result.value), ret_type_result.value);
                                         break;
-                                case SIDE_EFFECT_ADD_SYMBOL_NAME_INDEX:
-                                        get_child_type(&data, condition->name_index);
-                                        struct parse_tree *child; load_child_at(child, tree, condition->name_index);
-
-                                        if (child->type){
-                                                char *lit = "There is an existing definition for symbol ";
-                                                char *name = child->data.value;
-                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
-                                                strcpy(err, lit);
-                                                strcat(err, name);
-                                                struct RESULT(type) result;
-                                                make_error(result, err);
-                                                return result;
-                                        }
-
-                                        struct string *str = malloc(sizeof(struct string));
-                                        str->data = child->data.value;
-                                        const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        // NOTE: this adds to the enclosing scope, not any new scope created
-                                        struct RESULT(type) new_type_result = get_child_type(&data, condition->type_index);
-                                        if (!new_type_result.is_ok){
-                                                free(str);
-                                                return new_type_result;
-                                        }
-                                        const struct type *new_type = make_assignable(new_type_result.value);
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(new_type, condition->is_defined);
-
-                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
-                                                char *lit = "There is an existing definition for symbol ";
-                                                const char *name = str->data;
-                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
-                                                strcpy(err, lit);
-                                                strcat(err, name);
-                                                struct RESULT(type) result;
-                                                make_error(result, err);
-                                                free(str);
-                                                free((void*) new_value);
-                                                return result;
-                                        }
-                                        update_map(scope_map, str, new_value, string, symbol_table_value);
-                                        satisfied = true;
-                                        break;
-                                case SIDE_EFFECT_ADD_SYMBOL_NAME_FUNCTION: {
-                                        struct string *str = malloc(sizeof(struct string));
-                                        str->data = condition->find_name_tree(tree)->data.value;
-                                        const struct symbol_table_value *v; query_map(scope_map, str, v, string, symbol_table_value);
-                                        // NOTE: this adds to the enclosing scope, not any new scope created
-                                        struct RESULT(type) new_type_result = get_child_type(&data, condition->type_index);
-                                        if (!new_type_result.is_ok){
-                                                return new_type_result;
-                                        }
-                                        const struct symbol_table_value *new_value = new_symbol_table_value(new_type_result.value, condition->is_defined);
-
-                                        if ((v != NULL) && ((v->is_defined) || !equals_type(v->type, new_value->type))){
-                                                char *lit = "There is an existing definition for symbol ";
-                                                const char *name = str->data;
-                                                char *err = malloc((strlen(lit) + strlen(name) + 1) * sizeof(char));
-                                                strcpy(err, lit);
-                                                strcat(err, name);
-                                                struct RESULT(type) result;
-                                                make_error(result, err);
-                                                free(str);
-                                                free((void*) new_value);
-                                                return result;
-                                        }
-                                        update_map(scope_map, str, new_value, string, symbol_table_value);
-                                }
-                                        satisfied = true;
-                                        break;
                                 case SIDE_EFFECT_ADD_SCOPE:
                                         struct MAP(string, symbol_table_value) *new_map = new_symbol_table();
                                         tree->symbol_table = new_map;
-                                        data.scope_map = new_map;
                                         satisfied = true;
                                         break;
                         }
@@ -489,12 +388,12 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
                 return result;
         }
         else if (type_rule->type == TYPE_RULE_CHILD){
-                return get_child_type(&data, type_rule->output_index);
+                return get_child_type(system, tree, type_rule->output_index);
         }
         else if (type_rule->type == TYPE_RULE_DEDUCER){
                 if (tree->children){
                         for (size_t i = 0; i < tree->children->len; ++i){
-                                struct RESULT(type) result = get_child_type(&data, i);
+                                struct RESULT(type) result = get_child_type(system, tree, i);
                                 if (!result.is_ok){
                                         return result;
                                 }
@@ -512,7 +411,7 @@ struct RESULT(type) apply(const struct type_rule *const type_rule, const struct 
         return result;
 }
 
-struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree, struct MAP(string, symbol_table_value) *scope_map){
+struct RESULT(type) find_type(const struct type_system *const system, struct parse_tree *tree){
         if (tree->type){
                 struct RESULT(type) result;
                 make_ok(result, tree->type);
@@ -520,7 +419,7 @@ struct RESULT(type) find_type(const struct type_system *const system, struct par
         }
         
         for (size_t i = 0; i < system->rules_len; ++i){
-                struct RESULT(type) current_result = apply(system->rules[i], system, tree, scope_map);
+                struct RESULT(type) current_result = apply(system->rules[i], system, tree);
                 if (current_result.is_ok && current_result.value != NULL){
                         tree->type = current_result.value;
                         return current_result;
