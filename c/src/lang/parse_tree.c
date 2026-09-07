@@ -175,41 +175,34 @@ const struct symbol_table_value *query_symbol_table(const struct parse_tree *tre
 
 bool evaluate_immediate(const struct parse_tree *tree, int64_t *result){
         // impossible if type is not < 8 bytes (1 word)
-        if (tree->type->byte_count > 8){
+        if (!tree->type || (tree->type->byte_count > 8)){
                 return false;
         }
 
-        if (tree->data.type == SYMBOL_IDENTIFIER){
-                const struct symbol_table_value *value = query_symbol_table(tree);
-                if (value->has_compile_time_value){
-                        *result = value->compile_time_value;
+        switch(tree->data.type){
+                case SYMBOL_IDENTIFIER:
+                        const struct symbol_table_value *value = query_symbol_table(tree);
+                        if (value->has_compile_time_value){
+                                *result = value->compile_time_value;
+                                return true;
+                        }
+                        return false;
+                case SYMBOL_CALL:
+                        return false;
+                case SYMBOL_CONSTANT:
+                        *result = strtoll(tree->data.value, NULL, 10);
+                        return true; 
+                case SYMBOL_CHARLIT:
+                        *result = tree->data.value[0];
                         return true;
-                }
-                return false;
-        }
-
-        if (tree->data.type == SYMBOL_CALL){
-                return false;
-        }
-
-        if (tree->data.type == SYMBOL_CONSTANT){
-                *result = strtoll(tree->data.value, NULL, 10);
-                return true;
-        }
-
-        if (tree->data.type == SYMBOL_CHARLIT){
-                *result = tree->data.value[0];
-                return true;
-        }
-
-        if (tree->data.type == SYMBOL_TRUE){
-                *result = true;
-                return true;
-        }
-
-        if (tree->data.type == SYMBOL_FALSE){
-                *result = false;
-                return true;
+                case SYMBOL_TRUE:
+                        *result = true;
+                        return true;
+                case SYMBOL_FALSE:
+                        *result = false;
+                        return true;
+                default:
+                        break;
         }
 
         if (tree->children->len == 1){
@@ -217,7 +210,26 @@ bool evaluate_immediate(const struct parse_tree *tree, int64_t *result){
         }
 
         if (tree->children->len == 2){
-                return false;
+                const struct parse_tree *operand_tree; load_child_at(operand_tree, tree, 0);
+                const struct parse_tree *op_tree; load_child_at(op_tree, tree, 1);
+                int64_t op;
+                if (!evaluate_immediate(op_tree, &op)){
+                        return false;
+                }
+
+                switch(operand_tree->data.type){
+                        case SYMBOL_MINUS:
+                                *result = -op;
+                                return true;
+                        case SYMBOL_NOT:
+                                *result = !op;
+                                return true;
+                        case SYMBOL_BNOT:
+                                *result = ~op;
+                                return true;
+                        default:
+                                return false;
+                }
         }
 
         switch (tree->children->head->data->data.type){
@@ -232,11 +244,6 @@ bool evaluate_immediate(const struct parse_tree *tree, int64_t *result){
                 default:
                         break;
         }
-
-        if (tree->children->head->data->data.type == SYMBOL_LPAREN){
-                return evaluate_immediate(tree->children->head->next->data, result);
-        }
-
 
         const struct parse_tree *op1_tree; load_child_at(op1_tree, tree, 0);
         const struct parse_tree *operand_tree; load_child_at(operand_tree, tree, 1);
